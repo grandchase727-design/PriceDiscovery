@@ -10,17 +10,14 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-import sys, os
+import sys, os, pickle
+from datetime import datetime
 
 # ── make sure price_discovery module is importable ──
 sys.path.insert(0, os.path.dirname(__file__))
-from price_discovery import (
-    GLOBAL_ETF_UNIVERSE, STOCK_UNIVERSE, CATEGORY_BENCHMARK, STOCK_BENCHMARK,
-    DataEngine, NaiveDiscoveryDetector, SignalValidityEngine,
-    evaluate_eligible, compute_7day_history, fmt_data_as_of, sf, ss,
-)
-from collections import defaultdict
-from datetime import datetime
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+CACHE_PATH = os.path.join(SCRIPT_DIR, ".scan_cache.pkl")
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # PAGE CONFIG
@@ -57,106 +54,46 @@ CLASS_SHORT = {
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# DATA LOADING (cached)
+# DATA LOADING — cache-first, live-scan only when requested
 # ═══════════════════════════════════════════════════════════════════════════════
-@st.cache_data(show_spinner="Downloading & scoring universe …", ttl=3600)
-def load_scan(lookback_days, use_realtime, include_stocks):
-    """Run the full scan pipeline and return structured results."""
-    engine = DataEngine(lookback_days=lookback_days, use_realtime=use_realtime)
-    all_data = engine.download_universe()
-    if not all_data:
-        return pd.DataFrame(), [], {}, None, {}
+def load_from_cache():
+    """Load pre-computed results from .scan_cache.pkl (written by run_scan)."""
+    if not os.path.exists(CACHE_PATH):
+        return None
+    try:
+        with open(CACHE_PATH, "rb") as f:
+            cache = pickle.load(f)
+        results = cache["results"]
+        df = pd.DataFrame(results)
+        history = cache.get("history", {})
+        ve_stats = {
+            "bucket": cache.get("ve_bucket", {}),
+            "class": cache.get("ve_class", {}),
+            "transitions": cache.get("ve_transitions", {}),
+            "transition_totals": cache.get("ve_transition_totals", {}),
+        }
+        scan_time = cache.get("scan_time", "unknown")
+        return df, results, history, ve_stats, scan_time
+    except Exception as e:
+        st.warning(f"Cache load failed: {e}")
+        return None
 
-    if include_stocks:
-        stock_data = engine.download_universe(universe=STOCK_UNIVERSE)
-        all_data.update(stock_data)
-
-    detector = NaiveDiscoveryDetector()
-    detector.load_benchmarks(all_data, extra_benchmarks=STOCK_BENCHMARK if include_stocks else None)
-
-    # Phase 1: raw indicators
-    all_raw = {}
-    for ticker, etf in sorted(all_data.items()):
-        if etf.valid and len(etf.df) >= 60:
-            try:
-                all_raw[ticker] = detector.compute_raw(etf.df, etf.category)
-            except Exception:
-                pass
-
-    # Phase 2: cross-sectional percentile ranking
-    all_ranks = NaiveDiscoveryDetector.compute_percentile_ranks(all_raw)
-
-    # Phase 3: signal validity
-    ve = SignalValidityEngine()
-    ve.compute(all_data, detector)
-
-    # Phase 4: scoring & classification
-    results = []
-    for ticker in sorted(all_raw.keys()):
-        etf = all_data[ticker]
-        raw = all_raw[ticker]
-        ranks = all_ranks[ticker]
-        try:
-            tcs = NaiveDiscoveryDetector.score_tcs(raw)
-            tfs = NaiveDiscoveryDetector.score_tfs(raw)
-            oer = NaiveDiscoveryDetector.score_oer(raw)
-            rss = round(ranks["rss"], 1)
-            comp = NaiveDiscoveryDetector.composite(tcs, tfs, rss, oer)
-            cls = NaiveDiscoveryDetector.classify(raw, tcs, tfs, oer)
-            eligible, rejection = evaluate_eligible(
-                {"classification": cls, "composite": comp}, raw["adv_usd"]
-            )
-            validity = ve.get_validity(ticker, comp, cls)
-            current_close = raw["last_close"]
-            data_as_of = fmt_data_as_of(etf.df)
-
-            def _hist(df_hist):
-                if df_hist is None or df_hist.empty or len(df_hist) < 60:
-                    return 0.0, False, 0.0
-                a = detector.analyze_single(df_hist, etf.category)
-                el, _ = evaluate_eligible(a, a["adv_usd"])
-                hc = sf(df_hist["Close"].iloc[-1])
-                ret = ((current_close / hc) - 1) * 100 if hc > 0 else 0.0
-                return a["composite"], el, ret
-
-            df_1w = etf.df[etf.df.index <= (etf.df.index[-1] - pd.Timedelta(days=7))]
-            sc_1w, el_1w, ret_1w = _hist(df_1w)
-            df_1m = etf.df[etf.df.index <= (etf.df.index[-1] - pd.Timedelta(days=30))]
-            sc_1m, el_1m, ret_1m = _hist(df_1m)
-            df_3m = etf.df[etf.df.index <= (etf.df.index[-1] - pd.Timedelta(days=90))]
-            sc_3m, el_3m, ret_3m = _hist(df_3m)
-
-            results.append({
-                "ticker": ticker, "name": etf.name, "category": etf.category,
-                "data_as_of": data_as_of,
-                "composite": comp, "tcs": tcs, "tfs": tfs, "oer": oer, "rss": rss,
-                "classification": cls, "eligible": eligible, "rejection": rejection,
-                "rsi": round(raw["rsi"], 1), "trend_age": raw["trend_age"],
-                "sma50_dist": round(raw["sma50_dist"], 2),
-                "adv_usd": raw["adv_usd"],
-                **validity,
-                "score_1w": sc_1w, "ret_1w": ret_1w,
-                "score_1m": sc_1m, "ret_1m": ret_1m,
-                "score_3m": sc_3m, "ret_3m": ret_3m,
-            })
-        except Exception:
-            pass
-
-    results.sort(key=lambda x: (-x["composite"], x["ticker"]))
-
-    # 7-day history
-    history = compute_7day_history(all_data, detector)
-
-    # validity engine stats
-    ve_stats = {
-        "bucket": ve.bucket_stats,
-        "class": ve.class_stats,
-        "transitions": dict(ve.transition_counts),
-        "transition_totals": dict(ve.transition_totals),
-    }
-
+@st.cache_data(show_spinner="Running live scan (this takes a few minutes) …", ttl=3600)
+def run_live_scan(lookback_days, use_realtime, include_stocks):
+    """Full live scan — only called when user clicks Run Scan."""
+    from price_discovery import run_scan as _run_scan
+    _df, results, _all_data = _run_scan(
+        lookback_days=lookback_days,
+        use_realtime=use_realtime,
+        include_stocks=include_stocks,
+    )
+    # After run_scan, cache file is written automatically; reload it
+    loaded = load_from_cache()
+    if loaded:
+        return loaded
+    # fallback: build from run_scan results directly
     df = pd.DataFrame(results)
-    return df, results, history, ve, ve_stats
+    return df, results, {}, {}, datetime.today().isoformat()
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -164,18 +101,42 @@ def load_scan(lookback_days, use_realtime, include_stocks):
 # ═══════════════════════════════════════════════════════════════════════════════
 with st.sidebar:
     st.title("📡 Scanner Controls")
+
+    # Cache status
+    cache_exists = os.path.exists(CACHE_PATH)
+    if cache_exists:
+        mtime = datetime.fromtimestamp(os.path.getmtime(CACHE_PATH))
+        age_min = (datetime.now() - mtime).total_seconds() / 60
+        if age_min < 60:
+            age_str = f"{age_min:.0f}min ago"
+        else:
+            age_str = mtime.strftime("%Y-%m-%d %H:%M")
+        st.success(f"Cache: {age_str}")
+    else:
+        st.warning("No cache — run scan first or run `python3 price_discovery.py`")
+
+    st.divider()
+    st.caption("Live Scan (optional)")
     lookback = st.selectbox("Lookback", [1, 2, 3, 5], index=3, format_func=lambda y: f"{y}Y")
     use_rt = st.toggle("Real-time price", value=True)
     inc_stk = st.toggle("Include stocks", value=True)
-
-    if st.button("🔄 Run Scan", type="primary", use_container_width=True):
-        st.cache_data.clear()
+    do_scan = st.button("🔄 Run Live Scan", type="primary", use_container_width=True)
 
     st.divider()
     st.caption("Filters")
 
-# ── run / load ──
-df, results, history, ve, ve_stats = load_scan(lookback * 365, use_rt, inc_stk)
+# ── data load strategy ──
+if do_scan:
+    st.cache_data.clear()
+    loaded = run_live_scan(lookback * 365, use_rt, inc_stk)
+    df, results, history, ve_stats, scan_time = loaded
+else:
+    cached = load_from_cache()
+    if cached:
+        df, results, history, ve_stats, scan_time = cached
+    else:
+        st.info("No cached results found. Click **Run Live Scan** or run `python3 price_discovery.py` in terminal first.")
+        st.stop()
 
 if df.empty:
     st.error("No data returned. Check network / yfinance.")

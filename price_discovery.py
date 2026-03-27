@@ -36,6 +36,8 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 import time
 import json
+import pickle
+import os
 
 print("=" * 80)
 print("  Global ETF Price Discovery Scanner v5.0 (Naive Redesign)")
@@ -239,14 +241,57 @@ class DataEngine:
                  if c in src for t, n in src[c]["tickers"].items()]
         tasks.sort(key=lambda x: x[0])
         label = "stocks" if universe is not None else "ETFs"
-        print(f"\n📡 Downloading {len(tasks)} {label} (Start: {self.start_date})...")
-        results = {}; rt = 0
-        for i, (t, n, c) in enumerate(tasks):
-            etf = self.download_single(t, n, c)
-            if etf.valid:
-                results[etf.ticker] = etf
-                if etf.realtime_updated: rt += 1
-            if (i + 1) % 30 == 0: print(f"   ... {i+1}/{len(tasks)}")
+        all_tickers = [t for t, n, c in tasks]
+        meta = {t: (n, c) for t, n, c in tasks}
+        print(f"\n📡 Batch-downloading {len(all_tickers)} {label} (Start: {self.start_date})...")
+
+        # ── batch download (single API call, much faster) ──
+        try:
+            bulk = yf.download(all_tickers, start=self.start_date, progress=True,
+                               auto_adjust=False, group_by='ticker', threads=True)
+        except Exception as e:
+            print(f"   ⚠️ Batch download failed ({e}), falling back to sequential...")
+            bulk = None
+
+        results = {}; rt = 0; failed = []
+        if bulk is not None and not bulk.empty:
+            for ticker in all_tickers:
+                name, cat = meta[ticker]
+                etf = ETFData(ticker=ticker, name=name, category=cat)
+                try:
+                    if len(all_tickers) == 1:
+                        tdf = bulk.copy()
+                    else:
+                        tdf = bulk[ticker].copy() if ticker in bulk.columns.get_level_values(0) else None
+                    if tdf is None or tdf.empty or tdf.dropna(how='all').empty:
+                        failed.append(ticker); continue
+                    tdf = _standardize(tdf)
+                    if tdf.empty or len(tdf) < 60:
+                        failed.append(ticker); continue
+                    if 'Adj Close' in tdf.columns:
+                        af = (tdf['Adj Close'] / tdf['Close']).fillna(1.0)
+                        for c in ['Open','High','Low','Close']: tdf[c] = tdf[c] * af
+                    if self.use_realtime:
+                        tdf, rtu = _apply_realtime(tdf, ticker)
+                        etf.realtime_updated = rtu
+                        if rtu: rt += 1
+                    etf.df, etf.valid = tdf, True
+                    results[ticker] = etf
+                except Exception:
+                    failed.append(ticker)
+        else:
+            failed = all_tickers
+
+        # ── sequential fallback for failed tickers ──
+        if failed:
+            print(f"   ↻ Retrying {len(failed)} failed tickers sequentially...")
+            for t in failed:
+                n, c = meta[t]
+                etf = self.download_single(t, n, c)
+                if etf.valid:
+                    results[etf.ticker] = etf
+                    if etf.realtime_updated: rt += 1
+
         print(f"   ✅ {len(results)} valid {label}, {rt} real-time updated")
         return results
 
@@ -570,7 +615,8 @@ class SignalValidityEngine:
         print(f"\n[Transition Matrix (% row→col)]")
         classes = ["⬇️ DOWNTREND","🟠 NEUTRAL","🔵 FORMATION","🟢 CONTINUATION","🟡 OVEREXTENDED", "🟤 EXHAUSTING"]
         shorts = [self.CLASS_SHORT[c] for c in classes]
-        print(f"{'From\\To':<12}" + "".join(f"{s:>10}" for s in shorts))
+        header_label = 'From\\To'
+        print(f"{header_label:<12}" + "".join(f"{s:>10}" for s in shorts))
         for cf in classes:
             tot = self.transition_totals.get(cf, 0)
             row = f"{self.CLASS_SHORT[cf]:<12}"
@@ -1049,6 +1095,27 @@ def run_scan(categories=None, lookback_days=365, custom_date=None,
 
     pp.close()
     print(f"✅ PDF saved: '{pdf_fn}'")
+
+    # ═══════════════════════════════════════════════════════════════════════
+    # CACHE — save results + history + validity for dashboard instant-load
+    # ═══════════════════════════════════════════════════════════════════════
+    cache_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".scan_cache.pkl")
+    try:
+        cache = {
+            "results": results,
+            "history": history_7d,
+            "ve_bucket": ve.bucket_stats,
+            "ve_class": ve.class_stats,
+            "ve_transitions": dict(ve.transition_counts),
+            "ve_transition_totals": dict(ve.transition_totals),
+            "scan_time": datetime.today().isoformat(),
+            "include_stocks": include_stocks,
+        }
+        with open(cache_path, "wb") as f:
+            pickle.dump(cache, f)
+        print(f"💾 Cache saved: {cache_path}")
+    except Exception as e:
+        print(f"⚠️ Cache save failed: {e}")
 
     return pd.DataFrame(results), results, all_data
 
