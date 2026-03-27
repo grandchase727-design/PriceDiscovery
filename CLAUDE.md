@@ -70,9 +70,19 @@ Three orthogonal axes scored 0–100, combined into a `composite` score:
 
 ### Universes
 - `GLOBAL_ETF_UNIVERSE`: ~180 ETFs across 12 categories
-- `STOCK_UNIVERSE`: individual stocks (M7, semiconductors, etc.) — enabled via `include_stocks=True`
+- `STOCK_UNIVERSE`: ~85 individual stocks across 10 GICS-aligned categories — enabled via `include_stocks=True`
+  - `STK_Mag7`: Magnificent 7
+  - `STK_Semicon`: Semiconductor value chain (design / foundry / equipment)
+  - `STK_Software`: Enterprise SW / SaaS / Cybersecurity
+  - `STK_AI_Infra`: AI & Data Center Infrastructure (power / networking)
+  - `STK_Healthcare`: Pharma / Biotech / MedTech
+  - `STK_Financials`: Banks / Payments / Asset Management
+  - `STK_Consumer`: Discretionary & Staples leaders
+  - `STK_Industrials`: Aerospace / Defense / Capital Goods
+  - `STK_Energy_Materials`: Oil & Gas / Mining / Chemicals
+  - `STK_Korea`: Korea blue chips (semicon / battery / platform / defense)
 - `CATEGORY_BENCHMARK`: per-category benchmark ticker for excess return calculation
-- `STOCK_BENCHMARK`: benchmark overrides for stock categories
+- `STOCK_BENCHMARK`: per-stock-category benchmark (SMH, IGV, XLV, XLF, XLY, XLI, XLE, KODEX200)
 
 ### Adding Tickers
 Add to the appropriate dict in `GLOBAL_ETF_UNIVERSE` or `STOCK_UNIVERSE`. Korean ETFs use `.KS` suffix (e.g., `069500.KS`). Minimum 60 trading days of data required for any ticker to be scored.

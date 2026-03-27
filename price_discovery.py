@@ -122,40 +122,205 @@ GLOBAL_ETF_UNIVERSE = {
 ###############################################################################
 
 STOCK_UNIVERSE = {
-    "STK_Mega_Tech": {
-        "tickers": {
-            "AAPL": "Apple",
-            "MSFT": "Microsoft",
-            "GOOGL": "Alphabet",
-            "AMZN": "Amazon",
-            "NVDA": "NVIDIA",
-            "META": "Meta Platforms",
-            "TSLA": "Tesla",
-        }
-    },
-    "STK_Semicon": {
-        "tickers": {
-            "005930.KS": "Samsung Elec",
-            "000660.KS": "SK Hynix",
-            "MU": "Micron",
-            "AMD": "Advanced Micro Devices",
-            "TSM": "Taiwan Semiconductor",
-            "INTC": "Intel",
-            "AVGO": "Broadcom",
-            "LITE": "Lumentum Holdings",
-        }
-    },
-    "STK_Electric Infra": {
-        "tickers": {
-            "010120.KS": "LS Electric",
-            "005935.KS": "Samsung Elec"
-        }
-    },
+    # ══════════════════════════════════════════════════════════════════════
+    # 1. Magnificent 7 — 글로벌 PM 필수 모니터링 (별도 트래킹 그룹)
+    # ══════════════════════════════════════════════════════════════════════
+    "STK_Mag7": {"tickers": {
+        "AAPL": "Apple", "MSFT": "Microsoft", "GOOGL": "Alphabet",
+        "AMZN": "Amazon", "NVDA": "NVIDIA", "META": "Meta Platforms",
+        "TSLA": "Tesla",
+    }},
+    # ══════════════════════════════════════════════════════════════════════
+    # 2. Semiconductors — 설계 / 파운드리 / 장비 / EDA 밸류체인 Top30
+    # ══════════════════════════════════════════════════════════════════════
+    "STK_Semicon": {"tickers": {
+        "TSM": "TSMC", "AVGO": "Broadcom", "ASML": "ASML",
+        "AMD": "AMD", "QCOM": "Qualcomm", "TXN": "Texas Instruments",
+        "ARM": "Arm Holdings", "AMAT": "Applied Materials",
+        "LRCX": "Lam Research", "MU": "Micron",
+        "KLAC": "KLA Corp", "ADI": "Analog Devices",
+        "INTC": "Intel", "SNPS": "Synopsys",
+        "CDNS": "Cadence Design", "MRVL": "Marvell Technology",
+        "NXPI": "NXP Semiconductors", "MPWR": "Monolithic Power",
+        "ON": "ON Semiconductor", "MCHP": "Microchip Technology",
+        "GFS": "GlobalFoundries", "STM": "STMicroelectronics",
+        "ENTG": "Entegris", "SWKS": "Skyworks Solutions",
+        "UMC": "United Microelectronics", "CRUS": "Cirrus Logic",
+        "ONTO": "Onto Innovation", "RMBS": "Rambus",
+        "LSCC": "Lattice Semiconductor", "MBLY": "Mobileye",
+    }},
+    # ══════════════════════════════════════════════════════════════════════
+    # 3. Software & Cybersecurity — Enterprise SW / SaaS / 보안 / 플랫폼 Top30
+    # ══════════════════════════════════════════════════════════════════════
+    "STK_Software": {"tickers": {
+        "ORCL": "Oracle", "SAP": "SAP", "CRM": "Salesforce",
+        "PLTR": "Palantir", "INTU": "Intuit", "NOW": "ServiceNow",
+        "ADBE": "Adobe", "SHOP": "Shopify", "UBER": "Uber",
+        "APP": "AppLovin", "PANW": "Palo Alto Networks",
+        "CRWD": "CrowdStrike", "FTNT": "Fortinet",
+        "WDAY": "Workday", "TTD": "Trade Desk",
+        "SNOW": "Snowflake", "DASH": "DoorDash",
+        "TEAM": "Atlassian", "DDOG": "Datadog",
+        "FICO": "Fair Isaac", "ZS": "Zscaler",
+        "NET": "Cloudflare", "HUBS": "HubSpot",
+        "VEEV": "Veeva Systems", "ANSS": "Ansys",
+        "COIN": "Coinbase", "MDB": "MongoDB",
+        "RBLX": "Roblox", "BILL": "BILL Holdings",
+        "TWLO": "Twilio",
+    }},
+    # ══════════════════════════════════════════════════════════════════════
+    # 4. AI / Data Center Infrastructure — 전력 / 네트워킹 / 스토리지 / 냉각 Top30
+    # ══════════════════════════════════════════════════════════════════════
+    "STK_AI_Infra": {"tickers": {
+        "CSCO": "Cisco", "ETN": "Eaton Corp",
+        "ANET": "Arista Networks", "EQIX": "Equinix",
+        "APH": "Amphenol", "CEG": "Constellation Energy",
+        "GEV": "GE Vernova", "DELL": "Dell Technologies",
+        "DLR": "Digital Realty", "VRT": "Vertiv",
+        "VST": "Vistra Energy", "TEL": "TE Connectivity",
+        "PWR": "Quanta Services", "GLW": "Corning",
+        "AME": "Ametek", "KEYS": "Keysight Technologies",
+        "HPE": "HP Enterprise", "SMCI": "Super Micro Computer",
+        "VLTO": "Veralto", "NTAP": "NetApp",
+        "PSTG": "Pure Storage", "EME": "EMCOR Group",
+        "HUBB": "Hubbell", "NRG": "NRG Energy",
+        "WDC": "Western Digital", "STX": "Seagate",
+        "FLEX": "Flex", "COHR": "Coherent",
+        "LITE": "Lumentum", "NTNX": "Nutanix",
+    }},
+    # ══════════════════════════════════════════════════════════════════════
+    # 5. Healthcare — 제약 / 바이오 / 메드테크 / 보험 / 서비스 Top30
+    # ══════════════════════════════════════════════════════════════════════
+    "STK_Healthcare": {"tickers": {
+        "LLY": "Eli Lilly", "UNH": "UnitedHealth",
+        "NVO": "Novo Nordisk", "JNJ": "Johnson & Johnson",
+        "ABBV": "AbbVie", "MRK": "Merck",
+        "AZN": "AstraZeneca", "TMO": "Thermo Fisher",
+        "ABT": "Abbott Labs", "ISRG": "Intuitive Surgical",
+        "DHR": "Danaher", "AMGN": "Amgen",
+        "SYK": "Stryker", "PFE": "Pfizer",
+        "BSX": "Boston Scientific", "VRTX": "Vertex Pharma",
+        "GILD": "Gilead Sciences", "MDT": "Medtronic",
+        "BMY": "Bristol-Myers Squibb", "REGN": "Regeneron",
+        "CI": "Cigna Group", "HCA": "HCA Healthcare",
+        "ZTS": "Zoetis", "MCK": "McKesson",
+        "BDX": "Becton Dickinson", "EW": "Edwards Lifesciences",
+        "GEHC": "GE HealthCare", "A": "Agilent Technologies",
+        "IQV": "IQVIA", "IDXX": "IDEXX Labs",
+    }},
+    # ══════════════════════════════════════════════════════════════════════
+    # 6. Financials — 은행 / 결제 / 보험 / 거래소 / 자산운용 Top30
+    # ══════════════════════════════════════════════════════════════════════
+    "STK_Financials": {"tickers": {
+        "BRK-B": "Berkshire Hathaway", "JPM": "JPMorgan Chase",
+        "V": "Visa", "MA": "Mastercard",
+        "BAC": "Bank of America", "WFC": "Wells Fargo",
+        "AXP": "American Express", "GS": "Goldman Sachs",
+        "MS": "Morgan Stanley", "SPGI": "S&P Global",
+        "BLK": "BlackRock", "PGR": "Progressive",
+        "C": "Citigroup", "SCHW": "Charles Schwab",
+        "FI": "Fiserv", "CB": "Chubb",
+        "MMC": "Marsh & McLennan", "ICE": "Intercontinental Exchange",
+        "MCO": "Moody's", "CME": "CME Group",
+        "AON": "Aon", "PYPL": "PayPal",
+        "PNC": "PNC Financial", "USB": "US Bancorp",
+        "COF": "Capital One", "TRV": "Travelers",
+        "MET": "MetLife", "AFL": "Aflac",
+        "ALL": "Allstate", "MSCI": "MSCI Inc",
+    }},
+    # ══════════════════════════════════════════════════════════════════════
+    # 7. Consumer — 소비재 / 필수소비 / 리테일 / 외식 / 럭셔리 Top30
+    # ══════════════════════════════════════════════════════════════════════
+    "STK_Consumer": {"tickers": {
+        "WMT": "Walmart", "HD": "Home Depot",
+        "PG": "Procter & Gamble", "COST": "Costco",
+        "LVMUY": "LVMH", "KO": "Coca-Cola",
+        "PEP": "PepsiCo", "PM": "Philip Morris Intl",
+        "MCD": "McDonald's", "BKNG": "Booking Holdings",
+        "LOW": "Lowe's", "TJX": "TJX Companies",
+        "NKE": "Nike", "SBUX": "Starbucks",
+        "CL": "Colgate-Palmolive", "MDLZ": "Mondelez",
+        "CMG": "Chipotle", "ABNB": "Airbnb",
+        "ORLY": "O'Reilly Auto", "AZO": "AutoZone",
+        "MNST": "Monster Beverage", "RCL": "Royal Caribbean",
+        "TGT": "Target", "ROST": "Ross Stores",
+        "YUM": "Yum! Brands", "HLT": "Hilton",
+        "LULU": "Lululemon", "MO": "Altria",
+        "KHC": "Kraft Heinz", "EL": "Estee Lauder",
+    }},
+    # ══════════════════════════════════════════════════════════════════════
+    # 8. Industrials & Defense — 방산 / 항공 / 자본재 / 운송 / 폐기물 Top30
+    # ══════════════════════════════════════════════════════════════════════
+    "STK_Industrials": {"tickers": {
+        "GE": "GE Aerospace", "CAT": "Caterpillar",
+        "RTX": "RTX Corp", "UNP": "Union Pacific",
+        "HON": "Honeywell", "LMT": "Lockheed Martin",
+        "BA": "Boeing", "DE": "Deere",
+        "UPS": "UPS", "WM": "Waste Management",
+        "GD": "General Dynamics", "PH": "Parker-Hannifin",
+        "CTAS": "Cintas", "TDG": "TransDigm",
+        "NOC": "Northrop Grumman", "ITW": "Illinois Tool Works",
+        "MMM": "3M", "RSG": "Republic Services",
+        "CSX": "CSX Corp", "EMR": "Emerson Electric",
+        "CARR": "Carrier Global", "FDX": "FedEx",
+        "NSC": "Norfolk Southern", "AXON": "Axon Enterprise",
+        "VRSK": "Verisk Analytics", "OTIS": "Otis Worldwide",
+        "IR": "Ingersoll Rand", "ROK": "Rockwell Automation",
+        "DOV": "Dover Corp", "WAB": "Wabtec",
+    }},
+    # ══════════════════════════════════════════════════════════════════════
+    # 9. Energy & Materials — 석유 / 가스 / 광업 / 화학 / 소재 Top30
+    # ══════════════════════════════════════════════════════════════════════
+    "STK_Energy_Materials": {"tickers": {
+        "XOM": "Exxon Mobil", "CVX": "Chevron",
+        "LIN": "Linde", "SHEL": "Shell",
+        "BHP": "BHP Group", "TTE": "TotalEnergies",
+        "COP": "ConocoPhillips", "SHW": "Sherwin-Williams",
+        "ENB": "Enbridge", "EOG": "EOG Resources",
+        "SLB": "Schlumberger", "FCX": "Freeport-McMoRan",
+        "APD": "Air Products", "ECL": "Ecolab",
+        "NEM": "Newmont Mining", "MPC": "Marathon Petroleum",
+        "FANG": "Diamondback Energy", "PSX": "Phillips 66",
+        "VLO": "Valero Energy", "OXY": "Occidental Petroleum",
+        "BKR": "Baker Hughes", "CTVA": "Corteva",
+        "NUE": "Nucor", "DD": "DuPont",
+        "DOW": "Dow Inc", "VMC": "Vulcan Materials",
+        "MLM": "Martin Marietta", "HAL": "Halliburton",
+        "DVN": "Devon Energy", "CE": "Celanese",
+    }},
+    # ══════════════════════════════════════════════════════════════════════
+    # 10. Korea Blue Chips — KOSPI 시가총액 Top30
+    # ══════════════════════════════════════════════════════════════════════
+    "STK_Korea": {"tickers": {
+        "005930.KS": "Samsung Elec", "000660.KS": "SK Hynix",
+        "207940.KS": "Samsung Biologics", "005380.KS": "현대자동차",
+        "068270.KS": "셀트리온", "005490.KS": "POSCO홀딩스",
+        "035420.KS": "NAVER", "006400.KS": "Samsung SDI",
+        "000270.KS": "기아", "051910.KS": "LG Chem",
+        "012450.KS": "한화에어로스페이스", "105560.KS": "KB금융",
+        "055550.KS": "신한지주", "034730.KS": "SK",
+        "035720.KS": "Kakao", "028260.KS": "삼성물산",
+        "066570.KS": "LG전자", "032830.KS": "삼성생명",
+        "086790.KS": "하나금융지주", "009150.KS": "삼성전기",
+        "017670.KS": "SK텔레콤", "003550.KS": "LG",
+        "033780.KS": "KT&G", "030200.KS": "KT",
+        "010130.KS": "고려아연", "047050.KS": "포스코인터내셔널",
+        "010120.KS": "LS Electric", "003670.KS": "포스코퓨처엠",
+        "005935.KS": "Samsung Elec Pref", "018260.KS": "삼성SDS",
+    }},
 }
 
 STOCK_BENCHMARK = {
-    "STK_Mega_Tech": "QQQ",
+    "STK_Mag7": "QQQ",
     "STK_Semicon": "SMH",
+    "STK_Software": "IGV",
+    "STK_AI_Infra": "QQQ",
+    "STK_Healthcare": "XLV",
+    "STK_Financials": "XLF",
+    "STK_Consumer": "XLY",
+    "STK_Industrials": "XLI",
+    "STK_Energy_Materials": "XLE",
+    "STK_Korea": "069500.KS",
 }
 
 
