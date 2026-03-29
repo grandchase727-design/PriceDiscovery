@@ -191,11 +191,12 @@ st.caption(f"Universe: {len(df)} tickers | Filtered: {len(fdf)} | "
 
 (tab_overview, tab_table, tab_deep, tab_signals, tab_category,
  tab_theme, tab_breadth, tab_portfolio, tab_effectiveness, tab_validity,
- tab_history) = st.tabs([
+ tab_history, tab_report) = st.tabs([
     "Overview", "Master Table", "Ticker Deep Dive",
     "Signal Decomposition", "Category Analysis", "Theme Analysis",
     "Market Breadth", "Portfolio View",
     "Signal Effectiveness", "Signal Validity", "7-Day History",
+    "Report",
 ])
 
 
@@ -1248,3 +1249,564 @@ with tab_history:
     )
     fig_change.add_vline(x=0, line_color=C["gray"])
     st.plotly_chart(fig_change, use_container_width=True)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TAB 12: REPORT (NEW)
+# ─────────────────────────────────────────────────────────────────────────────
+def _build_report(fdf, df, history, ve_stats):
+    """Generate a full analytical report (~A4 20 pages) from scan data."""
+    scan_date = df["data_as_of"].iloc[0] if not df.empty else "N/A"
+    total = len(df)
+    filtered = len(fdf)
+    n_eligible = int(fdf["eligible"].sum())
+    avg_comp = fdf["composite"].mean() if len(fdf) else 0
+    avg_rsi = fdf["rsi"].mean() if len(fdf) else 0
+    n_above_sma = int((fdf["sma50_dist"] > 0).sum())
+    pct_above = n_above_sma / max(filtered, 1) * 100
+
+    is_stk = fdf["category"].str.startswith("STK_")
+    etf_df = fdf[~is_stk]
+    stk_df = fdf[is_stk]
+
+    cls_dist = fdf["classification"].value_counts()
+    cats = sorted(fdf["category"].unique())
+
+    lines = []
+    L = lines.append
+
+    # ══════════════════════════════════════════════════════════════════
+    # 1. COVER & EXECUTIVE SUMMARY
+    # ══════════════════════════════════════════════════════════════════
+    L("# Global Price Discovery Scanner v5.0 — Analytical Report")
+    L(f"**Report Date:** {scan_date}  ")
+    L(f"**Universe:** {total} tickers ({len(etf_df)} ETFs + {len(stk_df)} Stocks)  ")
+    L(f"**Eligible Candidates:** {n_eligible}  ")
+    L("")
+    L("---")
+    L("## 1. Executive Summary")
+    L("")
+    # Key findings
+    top3_cls = cls_dist.head(3)
+    top_eligible = fdf[fdf["eligible"]].head(5)
+    L(f"전체 유니버스 {total}개 종목 중 **{n_eligible}개({n_eligible/max(total,1)*100:.1f}%)**가 포트폴리오 편입 기준을 충족합니다. "
+      f"유니버스 평균 Composite Score는 **{avg_comp:.1f}**, 평균 RSI는 **{avg_rsi:.1f}**이며, "
+      f"SMA50 상회 비율은 **{pct_above:.1f}%**입니다.")
+    L("")
+    L("**주요 발견:**")
+    L("")
+    # Classification summary
+    for cls_name, cnt in top3_cls.items():
+        pct = cnt / filtered * 100
+        L(f"- **{cls_name}**: {cnt}개 ({pct:.1f}%) — ", )
+    L("")
+    if not top_eligible.empty:
+        tickers_str = ", ".join(f"**{r['ticker']}**({r['composite']:.1f})" for _, r in top_eligible.iterrows())
+        L(f"- Top Eligible: {tickers_str}")
+    L("")
+
+    # Market regime
+    if pct_above >= 70:
+        regime = "강세 (Bullish)"
+        regime_desc = "대부분의 종목이 SMA50 위에 위치하며 광범위한 상승 추세가 확인됩니다."
+    elif pct_above >= 50:
+        regime = "중립-강세 (Neutral-Bullish)"
+        regime_desc = "과반의 종목이 상승 추세이나 일부 섹터에서 약세 신호가 관찰됩니다."
+    elif pct_above >= 30:
+        regime = "중립-약세 (Neutral-Bearish)"
+        regime_desc = "상승 추세 종목이 소수이며 방어적 포지셔닝이 필요한 구간입니다."
+    else:
+        regime = "약세 (Bearish)"
+        regime_desc = "대부분의 종목이 SMA50 하회 — 현금 비중 확대 또는 숏 포지션 고려 구간입니다."
+    L(f"**Market Regime: {regime}** — {regime_desc}")
+    L("")
+
+    # ══════════════════════════════════════════════════════════════════
+    # 2. MARKET BREADTH & HEALTH
+    # ══════════════════════════════════════════════════════════════════
+    L("---")
+    L("## 2. Market Breadth & Health Analysis")
+    L("")
+    L("### 2.1 Classification Distribution")
+    L("")
+    L("| Classification | Count | % | Interpretation |")
+    L("|---|---|---|---|")
+    interp = {
+        "🟢 CONTINUATION": "확립된 상승추세 지속 중",
+        "🔵 FORMATION": "새로운 상승추세 형성 초기",
+        "🟡 OVEREXTENDED": "과열 구간 — 단기 조정 리스크",
+        "🟤 EXHAUSTING": "추세 소진 — 모멘텀 약화",
+        "🟠 NEUTRAL": "뚜렷한 방향성 없음",
+        "⬇️ DOWNTREND": "하락 추세 — 진입 부적합",
+    }
+    for cls_name in ["🟢 CONTINUATION", "🔵 FORMATION", "🟡 OVEREXTENDED",
+                     "🟤 EXHAUSTING", "🟠 NEUTRAL", "⬇️ DOWNTREND"]:
+        cnt = cls_dist.get(cls_name, 0)
+        pct = cnt / max(filtered, 1) * 100
+        L(f"| {cls_name} | {cnt} | {pct:.1f}% | {interp.get(cls_name, '')} |")
+    L("")
+
+    L("### 2.2 SMA50 Breadth by Category")
+    L("")
+    L("| Category | Total | Above SMA50 | % | Avg Composite |")
+    L("|---|---|---|---|---|")
+    for cat in cats:
+        cdf = fdf[fdf["category"] == cat]
+        n = len(cdf)
+        na = int((cdf["sma50_dist"] > 0).sum())
+        ac = cdf["composite"].mean()
+        L(f"| {cat} | {n} | {na} | {na/max(n,1)*100:.0f}% | {ac:.1f} |")
+    L("")
+
+    L("### 2.3 RSI & Overextension")
+    L("")
+    n_rsi_over70 = int((fdf["rsi"] > 70).sum())
+    n_rsi_under30 = int((fdf["rsi"] < 30).sum())
+    n_oer_high = int((fdf["oer"] >= 60).sum())
+    L(f"- RSI > 70 (과매수): **{n_rsi_over70}**개 ({n_rsi_over70/max(filtered,1)*100:.1f}%)")
+    L(f"- RSI < 30 (과매도): **{n_rsi_under30}**개 ({n_rsi_under30/max(filtered,1)*100:.1f}%)")
+    L(f"- OER ≥ 60 (과열): **{n_oer_high}**개 ({n_oer_high/max(filtered,1)*100:.1f}%)")
+    L("")
+
+    # ══════════════════════════════════════════════════════════════════
+    # 3. SECTOR ROTATION
+    # ══════════════════════════════════════════════════════════════════
+    L("---")
+    L("## 3. Sector / Category Rotation Analysis")
+    L("")
+    cat_stats = fdf.groupby("category").agg(
+        n=("ticker", "size"), eligible=("eligible", "sum"),
+        avg_comp=("composite", "mean"), avg_tcs=("tcs", "mean"),
+        avg_tfs=("tfs", "mean"), avg_oer=("oer", "mean"),
+        avg_rsi=("rsi", "mean"),
+        r1w=("ret_1w", "mean"), r1m=("ret_1m", "mean"), r3m=("ret_3m", "mean"),
+    ).round(1)
+    cat_stats["eligible"] = cat_stats["eligible"].astype(int)
+    cat_stats = cat_stats.sort_values("avg_comp", ascending=False)
+
+    L("| Category | N | Elig | Comp | TCS | TFS | OER | RSI | 1W% | 1M% | 3M% |")
+    L("|---|---|---|---|---|---|---|---|---|---|---|")
+    for cat, r in cat_stats.iterrows():
+        L(f"| {cat} | {r['n']:.0f} | {r['eligible']} | {r['avg_comp']:.1f} | "
+          f"{r['avg_tcs']:.0f} | {r['avg_tfs']:.0f} | {r['avg_oer']:.0f} | {r['avg_rsi']:.0f} | "
+          f"{r['r1w']:.2f} | {r['r1m']:.2f} | {r['r3m']:.2f} |")
+    L("")
+
+    # Top/bottom sectors
+    best_cat = cat_stats.index[0]
+    worst_cat = cat_stats.index[-1]
+    L(f"**가장 강한 섹터:** {best_cat} (Avg Composite {cat_stats.loc[best_cat, 'avg_comp']:.1f}, "
+      f"1M Return {cat_stats.loc[best_cat, 'r1m']:.2f}%)")
+    L("")
+    L(f"**가장 약한 섹터:** {worst_cat} (Avg Composite {cat_stats.loc[worst_cat, 'avg_comp']:.1f}, "
+      f"1M Return {cat_stats.loc[worst_cat, 'r1m']:.2f}%)")
+    L("")
+
+    # Momentum shift
+    L("### 3.1 Momentum Shift (Score Change)")
+    L("")
+    cat_delta = fdf.groupby("category").agg(
+        d1w=("ret_1w", "mean"),
+        score_now=("composite", "mean"),
+    )
+    # Compare avg score_1w if available
+    if "score_1w" in fdf.columns:
+        cat_delta["score_1w_avg"] = fdf.groupby("category")["score_1w"].mean()
+        cat_delta["delta_1w"] = cat_delta["score_now"] - cat_delta["score_1w_avg"]
+        improving = cat_delta[cat_delta["delta_1w"] > 2].sort_values("delta_1w", ascending=False)
+        declining = cat_delta[cat_delta["delta_1w"] < -2].sort_values("delta_1w")
+        if not improving.empty:
+            L("**개선 중인 섹터 (1W score +2 이상):**")
+            for cat, r in improving.iterrows():
+                L(f"- {cat}: +{r['delta_1w']:.1f}pt")
+            L("")
+        if not declining.empty:
+            L("**악화 중인 섹터 (1W score -2 이상 하락):**")
+            for cat, r in declining.iterrows():
+                L(f"- {cat}: {r['delta_1w']:.1f}pt")
+            L("")
+
+    # ══════════════════════════════════════════════════════════════════
+    # 4. THEME ANALYSIS
+    # ══════════════════════════════════════════════════════════════════
+    L("---")
+    L("## 4. Theme Rotation Analysis")
+    L("")
+    themed = fdf[fdf["theme"] != "-"]
+    if not themed.empty:
+        theme_stats = themed.groupby("theme").agg(
+            n=("ticker", "size"), eligible=("eligible", "sum"),
+            avg_comp=("composite", "mean"),
+            r1m=("ret_1m", "mean"), r3m=("ret_3m", "mean"),
+        ).round(1)
+        theme_stats["eligible"] = theme_stats["eligible"].astype(int)
+
+        L("### 4.1 Top 15 Themes by Composite")
+        L("")
+        top_themes = theme_stats.sort_values("avg_comp", ascending=False).head(15)
+        L("| Theme | N | Elig | Avg Comp | 1M% | 3M% |")
+        L("|---|---|---|---|---|---|")
+        for th, r in top_themes.iterrows():
+            L(f"| {th} | {r['n']:.0f} | {r['eligible']} | {r['avg_comp']:.1f} | {r['r1m']:.2f} | {r['r3m']:.2f} |")
+        L("")
+
+        L("### 4.2 Bottom 15 Themes by Composite")
+        L("")
+        bot_themes = theme_stats.sort_values("avg_comp", ascending=True).head(15)
+        L("| Theme | N | Elig | Avg Comp | 1M% | 3M% |")
+        L("|---|---|---|---|---|---|")
+        for th, r in bot_themes.iterrows():
+            L(f"| {th} | {r['n']:.0f} | {r['eligible']} | {r['avg_comp']:.1f} | {r['r1m']:.2f} | {r['r3m']:.2f} |")
+        L("")
+
+    # ══════════════════════════════════════════════════════════════════
+    # 5. TOP CONVICTION IDEAS
+    # ══════════════════════════════════════════════════════════════════
+    L("---")
+    L("## 5. Top Conviction Ideas")
+    L("")
+    top_elig = fdf[fdf["eligible"]].head(25)
+    if not top_elig.empty:
+        L("### 5.1 Top 25 Eligible by Composite Score")
+        L("")
+        L("| Rk | Ticker | Name | Cat | Comp | TCS | TFS | OER | RSS | Class | Val% | 1M% | 3M% |")
+        L("|---|---|---|---|---|---|---|---|---|---|---|---|---|")
+        for i, (_, r) in enumerate(top_elig.iterrows()):
+            L(f"| {i+1} | {r['ticker']} | {r['name'][:16]} | {r['category'][:12]} | "
+              f"{r['composite']:.1f} | {r['tcs']:.0f} | {r['tfs']:.0f} | {r['oer']:.0f} | {r['rss']:.1f} | "
+              f"{CLASS_SHORT.get(r['classification'], '?')} | {r['val_prob']:.1f} | "
+              f"{r['ret_1m']:.2f} | {r['ret_3m']:.2f} |")
+        L("")
+
+        # Newly eligible (eligible now, score_1w was below threshold)
+        if "score_1w" in fdf.columns:
+            new_elig = fdf[(fdf["eligible"]) & (fdf["score_1w"] < 55)].head(10)
+            if not new_elig.empty:
+                L("### 5.2 Newly Eligible (1주 내 편입 기준 충족)")
+                L("")
+                for _, r in new_elig.iterrows():
+                    L(f"- **{r['ticker']}** ({r['name'][:16]}): Composite {r['composite']:.1f} "
+                      f"(1W ago: {r['score_1w']:.1f}), {r['classification']}")
+                L("")
+
+    # By validity
+    top_val = fdf[fdf["eligible"]].sort_values("val_prob", ascending=False).head(15)
+    if not top_val.empty:
+        L("### 5.3 Top 15 by Validity Probability")
+        L("")
+        L("| Ticker | Name | Comp | Val% | Persist | Class |")
+        L("|---|---|---|---|---|---|")
+        for _, r in top_val.iterrows():
+            L(f"| {r['ticker']} | {r['name'][:16]} | {r['composite']:.1f} | "
+              f"{r['val_prob']:.1f} | {r['val_persist']:.0f} | {CLASS_SHORT.get(r['classification'], '?')} |")
+        L("")
+
+    # ══════════════════════════════════════════════════════════════════
+    # 6. SIGNAL EFFECTIVENESS
+    # ══════════════════════════════════════════════════════════════════
+    L("---")
+    L("## 6. Signal Quality & Effectiveness")
+    L("")
+    obs_list = ve_stats.get("observations", [])
+    if obs_list:
+        obs_df = pd.DataFrame(obs_list)
+        try:
+            from scipy import stats as sp_stats
+            ic, ic_p = sp_stats.spearmanr(obs_df["score"], obs_df["excess_return"])
+            overall_hr = (obs_df["excess_return"] > 0).mean() * 100
+            avg_exc = obs_df["excess_return"].mean()
+
+            L(f"- **Information Coefficient (IC):** {ic:.4f} (p={ic_p:.4f})")
+            L(f"- **Excess Hit Rate:** {overall_hr:.1f}%")
+            L(f"- **Avg Excess Return:** {avg_exc:.2f}%")
+            L(f"- **Observations:** {len(obs_df):,}")
+            L("")
+
+            if ic > 0.05:
+                L("IC가 양수이며 통계적으로 유의미합니다. Composite Score가 높을수록 벤치마크 대비 "
+                  "초과수익을 달성할 확률이 높다는 것을 의미합니다.")
+            else:
+                L("IC가 약하여 시그널의 예측력이 제한적입니다. 시장 국면 변화에 따른 재검토가 필요합니다.")
+            L("")
+
+            # Quintile
+            obs_df["quintile"] = pd.qcut(obs_df["score"], 5,
+                                          labels=["Q1(Low)", "Q2", "Q3", "Q4", "Q5(High)"],
+                                          duplicates="drop")
+            q_agg = obs_df.groupby("quintile", observed=True).agg(
+                n=("score", "size"), avg_exc=("excess_return", "mean"),
+                hr=("excess_return", lambda x: (x > 0).mean() * 100),
+            ).round(2)
+            L("### 6.1 Quintile Analysis")
+            L("")
+            L("| Quintile | N | Avg Excess% | Hit Rate% |")
+            L("|---|---|---|---|")
+            for q, r in q_agg.iterrows():
+                L(f"| {q} | {r['n']:.0f} | {r['avg_exc']:.2f} | {r['hr']:.1f} |")
+            L("")
+            if len(q_agg) >= 2:
+                spread = q_agg["avg_exc"].iloc[-1] - q_agg["avg_exc"].iloc[0]
+                L(f"**Q5-Q1 Long-Short Spread:** {spread:.2f}%")
+                L("")
+        except Exception:
+            L("Signal effectiveness computation not available.")
+            L("")
+    else:
+        L("Observations 데이터가 캐시에 없습니다.")
+        L("")
+
+    # ══════════════════════════════════════════════════════════════════
+    # 7. RISK ALERTS
+    # ══════════════════════════════════════════════════════════════════
+    L("---")
+    L("## 7. Risk Alerts & Watchlist")
+    L("")
+
+    L("### 7.1 OVEREXTENDED — 과열 종목 (단기 조정 주의)")
+    L("")
+    overext = fdf[fdf["classification"] == "🟡 OVEREXTENDED"].sort_values("oer", ascending=False).head(15)
+    if not overext.empty:
+        L("| Ticker | Name | Comp | OER | RSI | SMA50 Dist% | 1M% |")
+        L("|---|---|---|---|---|---|---|")
+        for _, r in overext.iterrows():
+            L(f"| {r['ticker']} | {r['name'][:16]} | {r['composite']:.1f} | "
+              f"{r['oer']:.0f} | {r['rsi']:.1f} | {r['sma50_dist']:.1f}% | {r['ret_1m']:.2f} |")
+        L("")
+    else:
+        L("해당 종목 없음.")
+        L("")
+
+    L("### 7.2 EXHAUSTING — 추세 소진 종목")
+    L("")
+    exhaust = fdf[fdf["classification"] == "🟤 EXHAUSTING"].head(15)
+    if not exhaust.empty:
+        L("| Ticker | Name | Comp | Trend Age | 1M% | 3M% |")
+        L("|---|---|---|---|---|---|")
+        for _, r in exhaust.iterrows():
+            L(f"| {r['ticker']} | {r['name'][:16]} | {r['composite']:.1f} | "
+              f"{r['trend_age']:.0f}d | {r['ret_1m']:.2f} | {r['ret_3m']:.2f} |")
+        L("")
+    else:
+        L("해당 종목 없음.")
+        L("")
+
+    L("### 7.3 DOWNTREND — 하락 추세 주요 종목")
+    L("")
+    down = fdf[fdf["classification"] == "⬇️ DOWNTREND"].sort_values("composite", ascending=False).head(15)
+    if not down.empty:
+        L("| Ticker | Name | Cat | Comp | RSI | 1M% | 3M% |")
+        L("|---|---|---|---|---|---|---|")
+        for _, r in down.iterrows():
+            L(f"| {r['ticker']} | {r['name'][:16]} | {r['category'][:12]} | "
+              f"{r['composite']:.1f} | {r['rsi']:.1f} | {r['ret_1m']:.2f} | {r['ret_3m']:.2f} |")
+        L("")
+    else:
+        L("해당 종목 없음.")
+        L("")
+
+    # ══════════════════════════════════════════════════════════════════
+    # 8. ETF vs STOCK COMPARISON
+    # ══════════════════════════════════════════════════════════════════
+    L("---")
+    L("## 8. ETF vs Individual Stock Comparison")
+    L("")
+    if len(etf_df) and len(stk_df):
+        L("| Metric | ETF | Stock |")
+        L("|---|---|---|")
+        L(f"| Count | {len(etf_df)} | {len(stk_df)} |")
+        L(f"| Eligible | {int(etf_df['eligible'].sum())} | {int(stk_df['eligible'].sum())} |")
+        L(f"| Avg Composite | {etf_df['composite'].mean():.1f} | {stk_df['composite'].mean():.1f} |")
+        L(f"| Avg RSI | {etf_df['rsi'].mean():.1f} | {stk_df['rsi'].mean():.1f} |")
+        L(f"| Above SMA50% | {(etf_df['sma50_dist']>0).mean()*100:.0f}% | {(stk_df['sma50_dist']>0).mean()*100:.0f}% |")
+        L(f"| Avg 1M Return | {etf_df['ret_1m'].mean():.2f}% | {stk_df['ret_1m'].mean():.2f}% |")
+        L(f"| Avg 3M Return | {etf_df['ret_3m'].mean():.2f}% | {stk_df['ret_3m'].mean():.2f}% |")
+        L("")
+
+    # ══════════════════════════════════════════════════════════════════
+    # 9. CLASSIFICATION CHANGES
+    # ══════════════════════════════════════════════════════════════════
+    L("---")
+    L("## 9. 7-Day Classification Changes")
+    L("")
+    if history:
+        class_rank = {"⬇️ DOWNTREND": 0, "🟠 NEUTRAL": 1, "🟤 EXHAUSTING": 1,
+                      "🔵 FORMATION": 2, "🟡 OVEREXTENDED": 2, "🟢 CONTINUATION": 3}
+        upgrades, downgrades = [], []
+        for t in fdf["ticker"]:
+            h = history.get(t, [])
+            if len(h) < 2:
+                continue
+            fc, lc = h[0].get("class", ""), h[-1].get("class", "")
+            if fc == lc:
+                continue
+            ro, rn = class_rank.get(fc, 1), class_rank.get(lc, 1)
+            name = fdf.loc[fdf["ticker"] == t, "name"].iloc[0] if len(fdf[fdf["ticker"] == t]) else ""
+            entry = f"**{t}** ({name[:14]}): {CLASS_SHORT.get(fc, '?')} → {CLASS_SHORT.get(lc, '?')}"
+            if rn > ro:
+                upgrades.append(entry)
+            elif rn < ro:
+                downgrades.append(entry)
+
+        L(f"### Upgrades ({len(upgrades)})")
+        L("")
+        for e in upgrades[:20]:
+            L(f"- {e}")
+        L("")
+        L(f"### Downgrades ({len(downgrades)})")
+        L("")
+        for e in downgrades[:20]:
+            L(f"- {e}")
+        L("")
+
+    # ══════════════════════════════════════════════════════════════════
+    # 10. APPENDIX
+    # ══════════════════════════════════════════════════════════════════
+    L("---")
+    L("## 10. Appendix — Full Top 40 Eligible & Bottom 20")
+    L("")
+    L("### A. Top 40 Eligible")
+    L("")
+    L("| Rk | Ticker | Name | Category | Comp | TCS | TFS | OER | RSS | Class | RSI | Age | Val% |")
+    L("|---|---|---|---|---|---|---|---|---|---|---|---|---|")
+    for i, (_, r) in enumerate(fdf[fdf["eligible"]].head(40).iterrows()):
+        L(f"| {i+1} | {r['ticker']} | {r['name'][:14]} | {r['category'][:12]} | "
+          f"{r['composite']:.1f} | {r['tcs']:.0f} | {r['tfs']:.0f} | {r['oer']:.0f} | {r['rss']:.1f} | "
+          f"{CLASS_SHORT.get(r['classification'], '?')} | {r['rsi']:.0f} | {r['trend_age']:.0f} | {r['val_prob']:.1f} |")
+    L("")
+
+    L("### B. Bottom 20 (Lowest Composite)")
+    L("")
+    L("| Rk | Ticker | Name | Category | Comp | Class | RSI | 1M% | 3M% |")
+    L("|---|---|---|---|---|---|---|---|---|")
+    bottom = fdf.sort_values("composite").head(20)
+    for i, (_, r) in enumerate(bottom.iterrows()):
+        L(f"| {i+1} | {r['ticker']} | {r['name'][:14]} | {r['category'][:12]} | "
+          f"{r['composite']:.1f} | {CLASS_SHORT.get(r['classification'], '?')} | "
+          f"{r['rsi']:.0f} | {r['ret_1m']:.2f} | {r['ret_3m']:.2f} |")
+    L("")
+
+    L("---")
+    L("*This report was auto-generated by Price Discovery Scanner v5.0.*")
+
+    return "\n".join(lines)
+
+
+def _build_llm_prompt(report_md, fdf, ve_stats):
+    """Build a prompt for LLM to generate narrative commentary."""
+    scan_date = fdf["data_as_of"].iloc[0] if not fdf.empty else "N/A"
+    prompt = f"""당신은 글로벌 자산운용사의 시니어 포트폴리오 매니저이자 투자 전략 리서치 헤드입니다.
+아래 제공된 Price Discovery Scanner v5.0 결과 데이터를 기반으로, A4 20페이지 분량의 **전문 투자 코멘터리 리포트**를 한국어로 작성해주세요.
+
+## 작성 지침
+
+1. **어조**: 기관투자자 대상 리서치 리포트 수준의 전문적이고 분석적인 문체
+2. **분량**: A4 20페이지 (약 10,000~12,000 단어)
+3. **구조**: 아래 10개 섹션으로 구성
+4. **데이터 기반**: 아래 제공된 스캐너 결과를 인용하며 구체적 수치를 포함
+5. **해석 중심**: 단순 데이터 나열이 아닌, "왜 이런 결과가 나왔는가", "이것이 투자에 어떤 의미인가"에 초점
+6. **실행 가능한 인사이트**: 각 섹션마다 구체적인 투자 행동 제안 포함
+
+## 리포트 구조 (각 섹션 2페이지)
+
+### 1. Executive Summary (2p)
+- 현재 시장 국면 진단 (모멘텀/변동성/브레드스 기반)
+- 핵심 발견 5가지
+- 포트폴리오 액션 플랜 요약
+
+### 2. Market Regime & Breadth (2p)
+- SMA50 브레드스 분석: 전체/섹터별
+- Classification 분포가 의미하는 시장 사이클 위치
+- RSI/OER 분포로 본 과열/과매도 진단
+- 과거 유사 시기 비교 및 향후 전망
+
+### 3. Sector Rotation (2p)
+- 카테고리별 Composite/Return 분석
+- 리더 섹터 vs 래거드 섹터 대비
+- 1W/1M/3M 모멘텀 시프트 해석
+- 섹터 로테이션 전략 제안
+
+### 4. Theme Deep Dive (2p)
+- 상위/하위 테마 분석
+- 테마 내 종목 분산도
+- AI인프라/반도체/에너지 등 핵심 테마 심층 분석
+- 테마 기반 포지셔닝 제안
+
+### 5. Top Conviction Ideas (2p)
+- 상위 10개 Eligible 종목 심층 분석 (왜 이 종목이 상위인가)
+- 신규 편입 종목 분석
+- Validity/Persistence 기반 확신도 평가
+- 포지션 사이징 고려사항
+
+### 6. Signal Quality Review (2p)
+- IC/Quintile 분석 해석
+- 현재 시그널의 신뢰도 평가
+- 분류별 실효성 (CONTINUATION이 실제로 수익을 내는가?)
+- 시그널 한계점 및 보완 방안
+
+### 7. Risk Monitor (2p)
+- OVEREXTENDED 종목의 조정 리스크 평가
+- EXHAUSTING 종목의 추세 소진 시나리오
+- DOWNTREND 종목 중 반등 후보 스크리닝
+- 포트폴리오 리스크 관리 체크리스트
+
+### 8. ETF vs Stock (1p)
+- ETF와 개별주식의 모멘텀 차이
+- 각 자산군의 현 시점 활용 전략
+
+### 9. 7-Day Changes & Outlook (1p)
+- 주간 분류 변동 해석
+- 향후 1~2주 시장 전망
+
+### 10. Conclusion & Action Items (2p)
+- 종합 결론
+- 구체적 투자 행동 체크리스트 (매수/매도/관망)
+- 모니터링 포인트
+
+## 스캐너 결과 데이터
+
+```
+Scan Date: {scan_date}
+```
+
+아래는 자동 생성된 데이터 리포트입니다. 이 데이터를 기반으로 위 구조에 따라 전문 코멘터리를 작성하세요.
+
+---
+
+{report_md}
+"""
+    return prompt
+
+
+with tab_report:
+    st.subheader("Analytical Report")
+
+    report_md = _build_report(fdf, df, history, ve_stats)
+
+    mode = st.radio("Mode", ["Auto Report (Data-Driven)", "LLM Prompt (Copy for AI)"],
+                    horizontal=True)
+
+    if mode == "Auto Report (Data-Driven)":
+        st.caption("스캐너 결과 기반 자동 생성 리포트 — Markdown 형식")
+
+        # Download button
+        st.download_button(
+            "Download Report (.md)", report_md.encode("utf-8"),
+            f"PD_Report_{datetime.now().strftime('%Y%m%d')}.md",
+            "text/markdown", use_container_width=False,
+        )
+
+        st.markdown(report_md)
+
+    else:
+        st.caption("아래 프롬프트를 복사하여 Claude / ChatGPT에 붙여넣으면 A4 20페이지 분량의 전문 코멘터리가 생성됩니다.")
+
+        llm_prompt = _build_llm_prompt(report_md, fdf, ve_stats)
+
+        st.download_button(
+            "Download Prompt (.txt)", llm_prompt.encode("utf-8"),
+            f"PD_LLM_Prompt_{datetime.now().strftime('%Y%m%d')}.txt",
+            "text/plain", use_container_width=False,
+        )
+
+        st.text_area("LLM Prompt", llm_prompt, height=600)
+        st.info(f"Prompt length: {len(llm_prompt):,} chars (~{len(llm_prompt)//4:,} tokens)")
