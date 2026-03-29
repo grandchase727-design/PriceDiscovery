@@ -700,7 +700,7 @@ class SignalValidityEngine:
                    "🔵 FORMATION":"FORMATION","🟢 CONTINUATION":"CONT",
                    "🟡 OVEREXTENDED":"OVEREXT", "🟤 EXHAUSTING":"EXHAUST"}
 
-    def __init__(self, n_eval=12, lookback_td=22):
+    def __init__(self, n_eval=12, lookback_td=63):
         self.n_eval = n_eval; self.lookback_td = lookback_td
         self.observations = []; self.bucket_stats = {}; self.class_stats = {}
         self.etf_stats = {}; self.transition_counts = defaultdict(int)
