@@ -325,15 +325,14 @@ with tab_table:
     stk_df = show_df[is_stock]
 
     st.divider()
-    col_etf, col_stk = st.columns(2)
-    with col_etf:
-        st.subheader(f"ETF ({len(etf_df)})")
-        st.dataframe(etf_df, use_container_width=True, height=500,
-                     column_config=_col_cfg, hide_index=True)
-    with col_stk:
-        st.subheader(f"Stocks ({len(stk_df)})")
-        st.dataframe(stk_df, use_container_width=True, height=500,
-                     column_config=_col_cfg, hide_index=True)
+    st.subheader(f"ETF ({len(etf_df)})")
+    st.dataframe(etf_df, use_container_width=True, height=700,
+                 column_config=_col_cfg, hide_index=True)
+
+    st.divider()
+    st.subheader(f"Stocks ({len(stk_df)})")
+    st.dataframe(stk_df, use_container_width=True, height=700,
+                 column_config=_col_cfg, hide_index=True)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
