@@ -131,7 +131,7 @@ STOCK_UNIVERSE = {
         "TSLA": "Tesla",
     }},
     # ══════════════════════════════════════════════════════════════════════
-    # 2. Semiconductors — 설계 / 파운드리 / 장비 / EDA 밸류체인 Top30
+    # 2. Semiconductors — 설계 / 파운드리 / 장비 / EDA / 아날로그
     # ══════════════════════════════════════════════════════════════════════
     "STK_Semicon": {"tickers": {
         "TSM": "TSMC", "AVGO": "Broadcom", "ASML": "ASML",
@@ -148,9 +148,13 @@ STOCK_UNIVERSE = {
         "UMC": "United Microelectronics", "CRUS": "Cirrus Logic",
         "ONTO": "Onto Innovation", "RMBS": "Rambus",
         "LSCC": "Lattice Semiconductor", "MBLY": "Mobileye",
+        # ── 추가 ──
+        "WOLF": "Wolfspeed", "ACLS": "Axcelis Technologies",
+        "MKSI": "MKS Instruments", "SLAB": "Silicon Labs",
+        "ALGM": "Allegro MicroSystems",
     }},
     # ══════════════════════════════════════════════════════════════════════
-    # 3. Software & Cybersecurity — Enterprise SW / SaaS / 보안 / 플랫폼 Top30
+    # 3. Software & Cybersecurity — Enterprise / SaaS / 보안 / 플랫폼
     # ══════════════════════════════════════════════════════════════════════
     "STK_Software": {"tickers": {
         "ORCL": "Oracle", "SAP": "SAP", "CRM": "Salesforce",
@@ -167,9 +171,17 @@ STOCK_UNIVERSE = {
         "COIN": "Coinbase", "MDB": "MongoDB",
         "RBLX": "Roblox", "BILL": "BILL Holdings",
         "TWLO": "Twilio",
+        # ── 추가 ──
+        "OKTA": "Okta", "PATH": "UiPath",
+        "DOCU": "DocuSign", "MNDY": "Monday.com",
+        "S": "SentinelOne", "SE": "Sea Limited",
+        "GRAB": "Grab Holdings", "PINS": "Pinterest",
+        "SNAP": "Snap", "SPOT": "Spotify",
+        "ROKU": "Roku", "ESTC": "Elastic",
+        "IOT": "Samsara", "GEN": "Gen Digital",
     }},
     # ══════════════════════════════════════════════════════════════════════
-    # 4. AI / Data Center Infrastructure — 전력 / 네트워킹 / 스토리지 / 냉각 Top30
+    # 4. AI / Data Center Infrastructure — 전력 / 네트워킹 / 스토리지 / 냉각
     # ══════════════════════════════════════════════════════════════════════
     "STK_AI_Infra": {"tickers": {
         "CSCO": "Cisco", "ETN": "Eaton Corp",
@@ -187,9 +199,14 @@ STOCK_UNIVERSE = {
         "WDC": "Western Digital", "STX": "Seagate",
         "FLEX": "Flex", "COHR": "Coherent",
         "LITE": "Lumentum", "NTNX": "Nutanix",
+        # ── 추가 ──
+        "CLS": "Celestica", "POWL": "Powell Industries",
+        "AAON": "AAON Inc", "FTV": "Fortive",
+        "TDY": "Teledyne", "GNRC": "Generac",
+        "WCC": "WESCO Intl", "ENPH": "Enphase Energy",
     }},
     # ══════════════════════════════════════════════════════════════════════
-    # 5. Healthcare — 제약 / 바이오 / 메드테크 / 보험 / 서비스 Top30
+    # 5. Healthcare — 제약 / 바이오 / 메드테크 / 보험 / 서비스
     # ══════════════════════════════════════════════════════════════════════
     "STK_Healthcare": {"tickers": {
         "LLY": "Eli Lilly", "UNH": "UnitedHealth",
@@ -207,9 +224,17 @@ STOCK_UNIVERSE = {
         "BDX": "Becton Dickinson", "EW": "Edwards Lifesciences",
         "GEHC": "GE HealthCare", "A": "Agilent Technologies",
         "IQV": "IQVIA", "IDXX": "IDEXX Labs",
+        # ── 추가 ──
+        "MRNA": "Moderna", "BIIB": "Biogen",
+        "ALNY": "Alnylam Pharma", "ALGN": "Align Technology",
+        "HOLX": "Hologic", "RMD": "ResMed",
+        "PODD": "Insulet Corp", "INCY": "Incyte",
+        "ILMN": "Illumina", "DXCM": "DexCom",
+        "WAT": "Waters Corp", "CNC": "Centene",
+        "MOH": "Molina Healthcare", "TECH": "Bio-Techne",
     }},
     # ══════════════════════════════════════════════════════════════════════
-    # 6. Financials — 은행 / 결제 / 보험 / 거래소 / 자산운용 Top30
+    # 6. Financials — 은행 / 결제 / 보험 / 거래소 / 자산운용 / PE
     # ══════════════════════════════════════════════════════════════════════
     "STK_Financials": {"tickers": {
         "BRK-B": "Berkshire Hathaway", "JPM": "JPMorgan Chase",
@@ -227,9 +252,17 @@ STOCK_UNIVERSE = {
         "COF": "Capital One", "TRV": "Travelers",
         "MET": "MetLife", "AFL": "Aflac",
         "ALL": "Allstate", "MSCI": "MSCI Inc",
+        # ── 추가 ──
+        "KKR": "KKR & Co", "APO": "Apollo Global",
+        "ARES": "Ares Management", "TROW": "T. Rowe Price",
+        "RJF": "Raymond James", "NDAQ": "Nasdaq Inc",
+        "MKTX": "MarketAxess", "WTW": "Willis Towers Watson",
+        "FITB": "Fifth Third Bancorp", "MTB": "M&T Bank",
+        "HBAN": "Huntington Bancshares", "SYF": "Synchrony Financial",
+        "HOOD": "Robinhood",
     }},
     # ══════════════════════════════════════════════════════════════════════
-    # 7. Consumer — 소비재 / 필수소비 / 리테일 / 외식 / 럭셔리 Top30
+    # 7. Consumer — 소비재 / 필수소비 / 리테일 / 외식 / 럭셔리 / 레저
     # ══════════════════════════════════════════════════════════════════════
     "STK_Consumer": {"tickers": {
         "WMT": "Walmart", "HD": "Home Depot",
@@ -247,9 +280,17 @@ STOCK_UNIVERSE = {
         "YUM": "Yum! Brands", "HLT": "Hilton",
         "LULU": "Lululemon", "MO": "Altria",
         "KHC": "Kraft Heinz", "EL": "Estee Lauder",
+        # ── 추가 ──
+        "MELI": "MercadoLibre", "CPNG": "Coupang",
+        "DPZ": "Domino's Pizza", "DECK": "Deckers Outdoor",
+        "ULTA": "Ulta Beauty", "MAR": "Marriott Intl",
+        "DKNG": "DraftKings", "CCL": "Carnival Corp",
+        "LVS": "Las Vegas Sands", "MGM": "MGM Resorts",
+        "WYNN": "Wynn Resorts", "ETSY": "Etsy",
+        "TPR": "Tapestry", "GRMN": "Garmin",
     }},
     # ══════════════════════════════════════════════════════════════════════
-    # 8. Industrials & Defense — 방산 / 항공 / 자본재 / 운송 / 폐기물 Top30
+    # 8. Industrials & Defense — 방산 / 항공 / 자본재 / 운송 / 폐기물
     # ══════════════════════════════════════════════════════════════════════
     "STK_Industrials": {"tickers": {
         "GE": "GE Aerospace", "CAT": "Caterpillar",
@@ -267,9 +308,17 @@ STOCK_UNIVERSE = {
         "VRSK": "Verisk Analytics", "OTIS": "Otis Worldwide",
         "IR": "Ingersoll Rand", "ROK": "Rockwell Automation",
         "DOV": "Dover Corp", "WAB": "Wabtec",
+        # ── 추가 ──
+        "HWM": "Howmet Aerospace", "HEI": "HEICO Corp",
+        "TT": "Trane Technologies", "FAST": "Fastenal",
+        "XYL": "Xylem", "LHX": "L3Harris Technologies",
+        "LDOS": "Leidos", "BWXT": "BWX Technologies",
+        "TXT": "Textron", "GWW": "W.W. Grainger",
+        "SNA": "Snap-on", "NDSN": "Nordson",
+        "J": "Jacobs Solutions",
     }},
     # ══════════════════════════════════════════════════════════════════════
-    # 9. Energy & Materials — 석유 / 가스 / 광업 / 화학 / 소재 Top30
+    # 9. Energy & Materials — 석유 / 가스 / 광업 / 화학 / 소재
     # ══════════════════════════════════════════════════════════════════════
     "STK_Energy_Materials": {"tickers": {
         "XOM": "Exxon Mobil", "CVX": "Chevron",
@@ -287,9 +336,17 @@ STOCK_UNIVERSE = {
         "DOW": "Dow Inc", "VMC": "Vulcan Materials",
         "MLM": "Martin Marietta", "HAL": "Halliburton",
         "DVN": "Devon Energy", "CE": "Celanese",
+        # ── 추가 ──
+        "RIO": "Rio Tinto", "VALE": "Vale SA",
+        "GOLD": "Barrick Gold", "WPM": "Wheaton Precious Metals",
+        "TECK": "Teck Resources", "ALB": "Albemarle",
+        "KMI": "Kinder Morgan", "WMB": "Williams Companies",
+        "OKE": "ONEOK", "PPG": "PPG Industries",
+        "IFF": "Intl Flavors & Fragrances", "EMN": "Eastman Chemical",
+        "MP": "MP Materials",
     }},
     # ══════════════════════════════════════════════════════════════════════
-    # 10. Korea Blue Chips — KOSPI 시가총액 Top30
+    # 10. Korea — KOSPI 대형주 + 핵심 중형주
     # ══════════════════════════════════════════════════════════════════════
     "STK_Korea": {"tickers": {
         "005930.KS": "Samsung Elec", "000660.KS": "SK Hynix",
@@ -307,6 +364,14 @@ STOCK_UNIVERSE = {
         "010130.KS": "고려아연", "047050.KS": "포스코인터내셔널",
         "010120.KS": "LS Electric", "003670.KS": "포스코퓨처엠",
         "005935.KS": "Samsung Elec Pref", "018260.KS": "삼성SDS",
+        # ── 추가 ──
+        "373220.KS": "LG에너지솔루션", "352820.KS": "하이브",
+        "000810.KS": "삼성화재", "259960.KS": "크래프톤",
+        "402340.KS": "SK스퀘어", "011070.KS": "LG이노텍",
+        "096770.KS": "SK이노베이션", "034020.KS": "두산에너빌리티",
+        "078930.KS": "GS", "316140.KS": "우리금융지주",
+        "036570.KS": "엔씨소프트", "011200.KS": "HMM",
+        "267260.KS": "HD현대일렉트릭", "042700.KS": "한미반도체",
     }},
 }
 
@@ -437,6 +502,71 @@ STOCK_THEMES = {
     "010130.KS": "Zinc/Smelting", "047050.KS": "Trading/Steel",
     "010120.KS": "Electric Infra", "003670.KS": "Battery Materials",
     "005935.KS": "Semiconductor", "018260.KS": "IT Services",
+    # ════════════════════ 추가 종목 테마 ════════════════════
+    # Semicon 추가
+    "WOLF": "SiC/Wide Bandgap", "ACLS": "Equipment (Ion Implant)",
+    "MKSI": "Instruments/Photonics", "SLAB": "IoT/Timing", "ALGM": "Magnetic Sensors",
+    # Software 추가
+    "OKTA": "Identity/Zero Trust", "PATH": "RPA/Automation",
+    "DOCU": "Digital Signature", "MNDY": "Project Management",
+    "S": "Cybersecurity (EDR)", "SE": "E-commerce/Gaming (SEA)",
+    "GRAB": "Super App (SEA)", "PINS": "Social Commerce",
+    "SNAP": "Social/AR", "SPOT": "Audio Streaming",
+    "ROKU": "Streaming Platform", "ESTC": "Search/Observability",
+    "IOT": "IoT Platform", "GEN": "Consumer Security",
+    # AI Infra 추가
+    "CLS": "Contract Mfg (AI)", "POWL": "Power/Transformer",
+    "AAON": "Cooling/HVAC", "FTV": "Industrial IoT",
+    "TDY": "Instruments/Imaging", "GNRC": "Backup Power",
+    "WCC": "Electrical Distribution", "ENPH": "Solar/Microinverter",
+    # Healthcare 추가
+    "MRNA": "mRNA Therapeutics", "BIIB": "Neuroscience",
+    "ALNY": "RNAi Therapeutics", "ALGN": "Dental/Ortho",
+    "HOLX": "Women's Health Dx", "RMD": "Sleep/Respiratory",
+    "PODD": "Diabetes Devices", "INCY": "Biotech (Oncology)",
+    "ILMN": "Genomics/Sequencing", "DXCM": "CGM/Diabetes",
+    "WAT": "Analytical Instruments", "CNC": "Managed Care (Medicaid)",
+    "MOH": "Managed Care (Medicaid)", "TECH": "Life Science Reagents",
+    # Financials 추가
+    "KKR": "Private Equity", "APO": "Private Equity",
+    "ARES": "Alternative Asset Mgmt", "TROW": "Asset Management",
+    "RJF": "Wealth Management", "NDAQ": "Exchange",
+    "MKTX": "Bond Trading", "WTW": "Insurance Broker",
+    "FITB": "Regional Bank", "MTB": "Regional Bank",
+    "HBAN": "Regional Bank", "SYF": "Consumer Finance",
+    "HOOD": "Retail Trading",
+    # Consumer 추가
+    "MELI": "E-commerce (LatAm)", "CPNG": "E-commerce (Korea)",
+    "DPZ": "QSR (Pizza)", "DECK": "Footwear/Outdoor",
+    "ULTA": "Beauty Retail", "MAR": "Hotels/Lodging",
+    "DKNG": "Sports Betting", "CCL": "Cruise/Leisure",
+    "LVS": "Gaming/Casino", "MGM": "Gaming/Casino",
+    "WYNN": "Gaming/Casino", "ETSY": "Online Marketplace",
+    "TPR": "Luxury (Accessible)", "GRMN": "Wearables/Nav",
+    # Industrials 추가
+    "HWM": "Aerospace Metals", "HEI": "Aero Components",
+    "TT": "HVAC/Climate", "FAST": "Fasteners/MRO",
+    "XYL": "Water Technology", "LHX": "Defense Electronics",
+    "LDOS": "Defense IT", "BWXT": "Nuclear Components",
+    "TXT": "Aviation (Multi)", "GWW": "Industrial Distribution",
+    "SNA": "Professional Tools", "NDSN": "Precision Dispensing",
+    "J": "Engineering Services",
+    # Energy & Materials 추가
+    "RIO": "Diversified Mining", "VALE": "Iron Ore Mining",
+    "GOLD": "Gold Mining", "WPM": "Precious Metals Streaming",
+    "TECK": "Diversified Mining", "ALB": "Lithium",
+    "KMI": "Midstream/Pipeline", "WMB": "Midstream/Pipeline",
+    "OKE": "Midstream/Pipeline", "PPG": "Coatings",
+    "IFF": "Flavors/Fragrances", "EMN": "Specialty Chemical",
+    "MP": "Rare Earth",
+    # Korea 추가
+    "373220.KS": "Battery (Cell)", "352820.KS": "Entertainment/K-Pop",
+    "000810.KS": "Insurance (P&C)", "259960.KS": "Gaming",
+    "402340.KS": "Holding/Investment", "011070.KS": "Camera Module",
+    "096770.KS": "Energy/Battery", "034020.KS": "Nuclear/Power Plant",
+    "078930.KS": "Holding/Energy", "316140.KS": "Banking",
+    "036570.KS": "Gaming (MMORPG)", "011200.KS": "Shipping/Container",
+    "267260.KS": "Transformer/Switchgear", "042700.KS": "Semicon Equipment",
 }
 
 
