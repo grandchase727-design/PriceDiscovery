@@ -301,24 +301,39 @@ with tab_table:
     show_df = fdf[display_cols].copy()
     show_df["adv_M"] = (fdf["adv_usd"] / 1e6).round(1)
 
-    st.dataframe(
-        show_df, use_container_width=True, height=700,
-        column_config={
-            "composite": st.column_config.NumberColumn("Comp", format="%.1f"),
-            "tcs": st.column_config.ProgressColumn("TCS", min_value=0, max_value=100, format="%d"),
-            "tfs": st.column_config.ProgressColumn("TFS", min_value=0, max_value=100, format="%d"),
-            "oer": st.column_config.ProgressColumn("OER", min_value=0, max_value=100, format="%d"),
-            "rss": st.column_config.NumberColumn("RSS", format="%.1f"),
-            "val_prob": st.column_config.NumberColumn("Val%", format="%.1f"),
-            "val_persist": st.column_config.NumberColumn("Persist", format="%.0f"),
-            "ret_1w": st.column_config.NumberColumn("1W Ret%", format="%.2f%%"),
-            "ret_1m": st.column_config.NumberColumn("1M Ret%", format="%.2f%%"),
-            "ret_3m": st.column_config.NumberColumn("3M Ret%", format="%.2f%%"),
-            "sma50_dist": st.column_config.NumberColumn("SMA50 Dist%", format="%.2f"),
-            "adv_M": st.column_config.NumberColumn("ADV ($M)", format="%.1f"),
-        },
-        hide_index=True,
-    )
+    _col_cfg = {
+        "composite": st.column_config.NumberColumn("Comp", format="%.1f"),
+        "tcs": st.column_config.ProgressColumn("TCS", min_value=0, max_value=100, format="%d"),
+        "tfs": st.column_config.ProgressColumn("TFS", min_value=0, max_value=100, format="%d"),
+        "oer": st.column_config.ProgressColumn("OER", min_value=0, max_value=100, format="%d"),
+        "rss": st.column_config.NumberColumn("RSS", format="%.1f"),
+        "val_prob": st.column_config.NumberColumn("Val%", format="%.1f"),
+        "val_persist": st.column_config.NumberColumn("Persist", format="%.0f"),
+        "ret_1w": st.column_config.NumberColumn("1W Ret%", format="%.2f%%"),
+        "ret_1m": st.column_config.NumberColumn("1M Ret%", format="%.2f%%"),
+        "ret_3m": st.column_config.NumberColumn("3M Ret%", format="%.2f%%"),
+        "sma50_dist": st.column_config.NumberColumn("SMA50 Dist%", format="%.2f"),
+        "adv_M": st.column_config.NumberColumn("ADV ($M)", format="%.1f"),
+    }
+
+    st.dataframe(show_df, use_container_width=True, height=700,
+                 column_config=_col_cfg, hide_index=True)
+
+    # ── ETF / Stock split tables ──
+    is_stock = show_df["category"].str.startswith("STK_")
+    etf_df = show_df[~is_stock]
+    stk_df = show_df[is_stock]
+
+    st.divider()
+    col_etf, col_stk = st.columns(2)
+    with col_etf:
+        st.subheader(f"ETF ({len(etf_df)})")
+        st.dataframe(etf_df, use_container_width=True, height=500,
+                     column_config=_col_cfg, hide_index=True)
+    with col_stk:
+        st.subheader(f"Stocks ({len(stk_df)})")
+        st.dataframe(stk_df, use_container_width=True, height=500,
+                     column_config=_col_cfg, hide_index=True)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
