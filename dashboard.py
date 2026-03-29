@@ -75,6 +75,7 @@ def load_from_cache():
             "class": cache.get("ve_class", {}),
             "transitions": cache.get("ve_transitions", {}),
             "transition_totals": cache.get("ve_transition_totals", {}),
+            "observations": cache.get("ve_observations", []),
         }
         scan_time = cache.get("scan_time", "unknown")
         return df, results, history, ve_stats, scan_time
@@ -180,10 +181,11 @@ st.caption(f"Universe: {len(df)} tickers | Filtered: {len(fdf)} | "
            f"Scan: {df['data_as_of'].iloc[0] if not df.empty else 'N/A'}")
 
 (tab_overview, tab_table, tab_deep, tab_signals, tab_category,
- tab_breadth, tab_portfolio, tab_validity, tab_history) = st.tabs([
+ tab_breadth, tab_portfolio, tab_effectiveness, tab_validity, tab_history) = st.tabs([
     "Overview", "Master Table", "Ticker Deep Dive",
     "Signal Decomposition", "Category Analysis",
-    "Market Breadth", "Portfolio View", "Signal Validity", "7-Day History",
+    "Market Breadth", "Portfolio View",
+    "Signal Effectiveness", "Signal Validity", "7-Day History",
 ])
 
 
@@ -704,7 +706,267 @@ with tab_portfolio:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# TAB 8: SIGNAL VALIDITY
+# TAB 8: SIGNAL EFFECTIVENESS (NEW)
+# ─────────────────────────────────────────────────────────────────────────────
+with tab_effectiveness:
+    st.subheader("Signal Effectiveness Analysis")
+    st.caption("Composite score가 실제 forward return을 얼마나 잘 예측하는지 정량 평가")
+
+    obs_list = ve_stats.get("observations", [])
+    if not obs_list:
+        st.warning("Observations 데이터가 캐시에 없습니다. `python3 price_discovery.py`를 다시 실행해주세요.")
+    else:
+        obs_df = pd.DataFrame(obs_list)
+
+        # ══════════════════════════════════════════════════════════════════
+        # 1. SUMMARY KPIs
+        # ══════════════════════════════════════════════════════════════════
+        from scipy import stats as sp_stats
+
+        ic_spearman, ic_pval = sp_stats.spearmanr(obs_df["score"], obs_df["excess_return"])
+        overall_hit = (obs_df["excess_return"] > 0).mean() * 100
+        avg_exc = obs_df["excess_return"].mean()
+        n_obs = len(obs_df)
+
+        k1, k2, k3, k4 = st.columns(4)
+        k1.metric("Information Coefficient (IC)", f"{ic_spearman:.3f}",
+                   help="Spearman rank correlation: score vs excess return. >0.05 = useful signal")
+        k2.metric("Excess Hit Rate", f"{overall_hit:.1f}%",
+                   help="% of observations that beat benchmark")
+        k3.metric("Avg Excess Return", f"{avg_exc:.2f}%")
+        k4.metric("Observations", f"{n_obs:,}")
+
+        # IC interpretation
+        if ic_spearman > 0.10:
+            st.success(f"IC = {ic_spearman:.3f} — Strong predictive signal (p={ic_pval:.4f})")
+        elif ic_spearman > 0.05:
+            st.info(f"IC = {ic_spearman:.3f} — Moderate predictive signal (p={ic_pval:.4f})")
+        elif ic_spearman > 0.0:
+            st.warning(f"IC = {ic_spearman:.3f} — Weak positive signal (p={ic_pval:.4f})")
+        else:
+            st.error(f"IC = {ic_spearman:.3f} — No predictive power (p={ic_pval:.4f})")
+
+        # ══════════════════════════════════════════════════════════════════
+        # 2. IC BY EVAL DATE (Signal Consistency)
+        # ══════════════════════════════════════════════════════════════════
+        if "eval_date" in obs_df.columns:
+            st.subheader("IC Time Series (Signal Consistency)")
+            ic_by_date = []
+            for d, grp in obs_df.groupby("eval_date"):
+                if len(grp) >= 10:
+                    ic_val, _ = sp_stats.spearmanr(grp["score"], grp["excess_return"])
+                    ic_by_date.append({"date": d, "IC": ic_val, "n": len(grp)})
+            if ic_by_date:
+                ic_df = pd.DataFrame(ic_by_date)
+                fig_ic = go.Figure()
+                fig_ic.add_trace(go.Bar(
+                    x=ic_df["date"], y=ic_df["IC"],
+                    marker_color=[C["green"] if v > 0 else C["red"] for v in ic_df["IC"]],
+                    name="IC",
+                ))
+                fig_ic.add_hline(y=0, line_color=C["gray"])
+                fig_ic.add_hline(y=ic_spearman, line_dash="dash", line_color=C["cyan"],
+                                 annotation_text=f"Avg IC={ic_spearman:.3f}")
+                fig_ic.update_layout(**DARK_LAYOUT, height=350,
+                                      xaxis_title="Eval Date", yaxis_title="IC (Spearman)",
+                                      title="IC per Evaluation Point — 양수=시그널 유효, 음수=역행")
+                st.plotly_chart(fig_ic, use_container_width=True)
+
+        # ══════════════════════════════════════════════════════════════════
+        # 3. QUINTILE ANALYSIS
+        # ══════════════════════════════════════════════════════════════════
+        st.subheader("Quintile Analysis")
+        st.caption("Composite score 5분위별 평균 수익률 — 단조 증가하면 시그널 유효")
+
+        obs_df["quintile"] = pd.qcut(obs_df["score"], 5, labels=["Q1 (Low)", "Q2", "Q3", "Q4", "Q5 (High)"],
+                                      duplicates="drop")
+        q_stats = obs_df.groupby("quintile", observed=True).agg(
+            n=("score", "size"),
+            avg_score=("score", "mean"),
+            avg_fwd=("fwd_return", "mean"),
+            avg_exc=("excess_return", "mean"),
+            hit_rate=("excess_return", lambda x: (x > 0).mean() * 100),
+        ).round(2).reset_index()
+
+        col_qt, col_qc = st.columns(2)
+
+        with col_qt:
+            st.dataframe(q_stats, use_container_width=True, hide_index=True)
+
+        with col_qc:
+            fig_q = go.Figure()
+            fig_q.add_trace(go.Bar(
+                x=q_stats["quintile"], y=q_stats["avg_fwd"],
+                name="Avg Forward Return", marker_color=C["blue"],
+            ))
+            fig_q.add_trace(go.Bar(
+                x=q_stats["quintile"], y=q_stats["avg_exc"],
+                name="Avg Excess Return", marker_color=C["cyan"],
+            ))
+            fig_q.update_layout(**DARK_LAYOUT, barmode="group", height=350,
+                                 title="Quintile Returns",
+                                 yaxis_title="Return %")
+            fig_q.add_hline(y=0, line_color=C["gray"])
+            st.plotly_chart(fig_q, use_container_width=True)
+
+        # Long-Short spread
+        if len(q_stats) >= 2:
+            ls_spread = q_stats["avg_exc"].iloc[-1] - q_stats["avg_exc"].iloc[0]
+            mono_check = all(q_stats["avg_exc"].iloc[i] <= q_stats["avg_exc"].iloc[i+1]
+                             for i in range(len(q_stats)-1))
+            s1, s2 = st.columns(2)
+            s1.metric("Q5-Q1 Spread (Long-Short)", f"{ls_spread:.2f}%",
+                      help="Top quintile excess return minus bottom quintile")
+            s2.metric("Monotonic", "Yes" if mono_check else "No",
+                      help="수익률이 quintile 순서대로 단조 증가하는지 여부")
+
+        # ══════════════════════════════════════════════════════════════════
+        # 4. HIT RATE CURVE
+        # ══════════════════════════════════════════════════════════════════
+        st.subheader("Hit Rate Curve")
+        st.caption("Composite threshold별 해당 점수 이상 종목의 벤치마크 초과 확률")
+
+        thresholds = list(range(10, 95, 5))
+        hr_data = []
+        for th in thresholds:
+            sub = obs_df[obs_df["score"] >= th]
+            if len(sub) >= 5:
+                hr_data.append({
+                    "threshold": th,
+                    "hit_rate": (sub["excess_return"] > 0).mean() * 100,
+                    "avg_exc": sub["excess_return"].mean(),
+                    "n": len(sub),
+                })
+        if hr_data:
+            hr_df = pd.DataFrame(hr_data)
+            fig_hr = make_subplots(specs=[[{"secondary_y": True}]])
+            fig_hr.add_trace(go.Scatter(
+                x=hr_df["threshold"], y=hr_df["hit_rate"],
+                mode="lines+markers", name="Excess Hit Rate %",
+                line=dict(color=C["green"], width=2), marker=dict(size=6),
+            ), secondary_y=False)
+            fig_hr.add_trace(go.Bar(
+                x=hr_df["threshold"], y=hr_df["avg_exc"],
+                name="Avg Excess Ret %", marker_color=C["cyan"], opacity=0.5,
+            ), secondary_y=True)
+            fig_hr.add_hline(y=50, line_dash="dot", line_color=C["gray"],
+                             annotation_text="50% (random)")
+            fig_hr.update_layout(**DARK_LAYOUT, height=400,
+                                  title="Score Threshold vs Hit Rate & Excess Return",
+                                  xaxis_title="Minimum Composite Score")
+            fig_hr.update_yaxes(title_text="Hit Rate %", secondary_y=False)
+            fig_hr.update_yaxes(title_text="Avg Excess %", secondary_y=True)
+            st.plotly_chart(fig_hr, use_container_width=True)
+
+        # ══════════════════════════════════════════════════════════════════
+        # 5. CLASSIFICATION EFFECTIVENESS (Box Plot)
+        # ══════════════════════════════════════════════════════════════════
+        st.subheader("Classification Effectiveness")
+        st.caption("각 분류가 의도대로 작동하는지 — CONT/FORM은 양의 초과수익, DOWN은 음의 수익 예상")
+
+        obs_df["cls_short"] = obs_df["classification"].map(CLASS_SHORT)
+        cls_order = ["DOWN", "NEUTRAL", "EXHAUST", "FORMATION", "OVEREXT", "CONT"]
+        obs_df["cls_short"] = pd.Categorical(obs_df["cls_short"], categories=cls_order, ordered=True)
+
+        fig_box = px.box(
+            obs_df.sort_values("cls_short"), x="cls_short", y="excess_return",
+            color="cls_short",
+            color_discrete_map={v: CLASS_COLORS.get(k, C["gray"]) for k, v in CLASS_SHORT.items()},
+            title="Excess Return Distribution by Classification",
+        )
+        fig_box.update_layout(**DARK_LAYOUT, height=450, showlegend=False,
+                               xaxis_title="Classification", yaxis_title="Excess Return %")
+        fig_box.add_hline(y=0, line_dash="dash", line_color=C["gray"])
+        st.plotly_chart(fig_box, use_container_width=True)
+
+        # Classification summary table
+        cls_eff = obs_df.groupby("cls_short", observed=True).agg(
+            n=("score", "size"),
+            avg_score=("score", "mean"),
+            avg_fwd=("fwd_return", "mean"),
+            avg_exc=("excess_return", "mean"),
+            hit_rate=("excess_return", lambda x: (x > 0).mean() * 100),
+            median_exc=("excess_return", "median"),
+            std_exc=("excess_return", "std"),
+        ).round(2).reset_index()
+        cls_eff.columns = ["Class", "N", "Avg Score", "Avg Fwd%", "Avg Exc%",
+                           "Hit Rate%", "Median Exc%", "Std Exc%"]
+        st.dataframe(cls_eff, use_container_width=True, hide_index=True)
+
+        # ══════════════════════════════════════════════════════════════════
+        # 6. SCORE vs FORWARD RETURN (Scatter + Regression)
+        # ══════════════════════════════════════════════════════════════════
+        st.subheader("Score vs Forward Return")
+        fig_scatter_eff = px.scatter(
+            obs_df, x="score", y="excess_return",
+            color="cls_short",
+            color_discrete_map={v: CLASS_COLORS.get(k, C["gray"]) for k, v in CLASS_SHORT.items()},
+            hover_data=["ticker", "eval_date"] if "eval_date" in obs_df.columns else ["ticker"],
+            opacity=0.5, title="Composite Score vs Excess Return (all observations)",
+        )
+        # OLS trend line
+        slope, intercept, r_val, p_val, std_err = sp_stats.linregress(obs_df["score"], obs_df["excess_return"])
+        x_line = np.array([obs_df["score"].min(), obs_df["score"].max()])
+        fig_scatter_eff.add_trace(go.Scatter(
+            x=x_line, y=intercept + slope * x_line,
+            mode="lines", name=f"OLS (R²={r_val**2:.3f})",
+            line=dict(color=C["yellow"], width=2, dash="dash"),
+        ))
+        fig_scatter_eff.update_layout(**DARK_LAYOUT, height=500,
+                                       xaxis_title="Composite Score",
+                                       yaxis_title="Excess Return %")
+        fig_scatter_eff.add_hline(y=0, line_color=C["gray"])
+        fig_scatter_eff.add_vline(x=55, line_dash="dot", line_color=C["orange"],
+                                   annotation_text="Eligible=55")
+        st.plotly_chart(fig_scatter_eff, use_container_width=True)
+
+        # R² and slope summary
+        r1, r2, r3 = st.columns(3)
+        r1.metric("R²", f"{r_val**2:.4f}", help="결정계수: 0에 가까우면 노이즈, 1에 가까우면 완벽한 예측")
+        r2.metric("Slope", f"{slope:.4f}", help="Score 1pt 증가 시 Excess Return 변화폭")
+        r3.metric("p-value", f"{p_val:.4f}", help="<0.05면 통계적으로 유의미한 관계")
+
+        # ══════════════════════════════════════════════════════════════════
+        # 7. SUB-SIGNAL EFFECTIVENESS (TCS / TFS / OER)
+        # ══════════════════════════════════════════════════════════════════
+        if "tcs" in obs_df.columns:
+            st.subheader("Sub-Signal IC (TCS / TFS / OER)")
+            st.caption("개별 축 시그널의 예측력 비교")
+
+            sub_ics = {}
+            for sig in ["tcs", "tfs", "oer"]:
+                if sig in obs_df.columns:
+                    valid = obs_df[[sig, "excess_return"]].dropna()
+                    if len(valid) >= 10:
+                        ic_val, p_val = sp_stats.spearmanr(valid[sig], valid["excess_return"])
+                        sub_ics[sig.upper()] = {"IC": round(ic_val, 4), "p-value": round(p_val, 4)}
+
+            if sub_ics:
+                sub_ic_df = pd.DataFrame(sub_ics).T.reset_index()
+                sub_ic_df.columns = ["Signal", "IC", "p-value"]
+
+                col_ic_tbl, col_ic_bar = st.columns(2)
+                with col_ic_tbl:
+                    st.dataframe(sub_ic_df, use_container_width=True, hide_index=True)
+                with col_ic_bar:
+                    fig_sub = go.Figure(go.Bar(
+                        x=sub_ic_df["Signal"], y=sub_ic_df["IC"],
+                        marker_color=[C["green"] if v > 0 else C["red"] for v in sub_ic_df["IC"]],
+                        text=sub_ic_df["IC"].apply(lambda v: f"{v:.4f}"),
+                        textposition="outside",
+                    ))
+                    fig_sub.add_hline(y=0, line_color=C["gray"])
+                    fig_sub.update_layout(**DARK_LAYOUT, height=300,
+                                           title="Sub-Signal IC Comparison",
+                                           yaxis_title="IC (Spearman)")
+                    st.plotly_chart(fig_sub, use_container_width=True)
+
+                st.caption("TCS IC > 0 = 추세 지속 시그널 유효 | TFS IC > 0 = 형성 시그널 유효 | "
+                           "OER IC < 0 = 과열 시그널 유효 (OER 높을수록 수익률 낮아야 정상)")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TAB 9: SIGNAL VALIDITY
 # ─────────────────────────────────────────────────────────────────────────────
 with tab_validity:
     st.subheader("Signal Validity Verification (Past 1-Month Backtest)")

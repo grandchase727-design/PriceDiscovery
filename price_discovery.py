@@ -740,9 +740,11 @@ class SignalValidityEngine:
                 for lo, hi, lbl in self.SCORE_BUCKETS:
                     if lo <= a['composite'] < hi: bucket = lbl; break
                 self.observations.append({'ticker': ticker, 'score': a['composite'],
+                    'tcs': a['tcs'], 'tfs': a['tfs'], 'oer': a['oer'],
                     'classification': a['classification'], 'bucket': bucket,
                     'fwd_return': fwd_ret, 'bench_return': b_ret,
-                    'excess_return': fwd_ret - b_ret})
+                    'excess_return': fwd_ret - b_ret,
+                    'eval_date': str(ed.date()) if hasattr(ed, 'date') else str(ed)})
                 if ticker in prev_cls:
                     self.transition_counts[(prev_cls[ticker], a['classification'])] += 1
                     self.transition_totals[prev_cls[ticker]] += 1
@@ -1273,6 +1275,7 @@ def run_scan(categories=None, lookback_days=365, custom_date=None,
             "ve_class": ve.class_stats,
             "ve_transitions": dict(ve.transition_counts),
             "ve_transition_totals": dict(ve.transition_totals),
+            "ve_observations": ve.observations,
             "scan_time": datetime.today().isoformat(),
             "include_stocks": include_stocks,
         }
