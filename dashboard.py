@@ -172,6 +172,15 @@ if eligible_only:
     mask &= df["eligible"]
 fdf = df[mask].copy()
 
+# ── attach theme from STOCK_THEMES ──
+try:
+    from price_discovery import STOCK_THEMES
+    fdf["theme"] = fdf["ticker"].map(STOCK_THEMES).fillna("-")
+    df["theme"] = df["ticker"].map(STOCK_THEMES).fillna("-")
+except ImportError:
+    fdf["theme"] = "-"
+    df["theme"] = "-"
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # HEADER & TABS
@@ -181,9 +190,10 @@ st.caption(f"Universe: {len(df)} tickers | Filtered: {len(fdf)} | "
            f"Scan: {df['data_as_of'].iloc[0] if not df.empty else 'N/A'}")
 
 (tab_overview, tab_table, tab_deep, tab_signals, tab_category,
- tab_breadth, tab_portfolio, tab_effectiveness, tab_validity, tab_history) = st.tabs([
+ tab_theme, tab_breadth, tab_portfolio, tab_effectiveness, tab_validity,
+ tab_history) = st.tabs([
     "Overview", "Master Table", "Ticker Deep Dive",
-    "Signal Decomposition", "Category Analysis",
+    "Signal Decomposition", "Category Analysis", "Theme Analysis",
     "Market Breadth", "Portfolio View",
     "Signal Effectiveness", "Signal Validity", "7-Day History",
 ])
@@ -542,7 +552,120 @@ with tab_category:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# TAB 6: MARKET BREADTH (NEW) + Classification Change Tracker
+# TAB 6: THEME ANALYSIS (NEW)
+# ─────────────────────────────────────────────────────────────────────────────
+with tab_theme:
+    st.subheader("Theme Analysis")
+    st.caption("카테고리 내 세부 테마별 모멘텀/시그널 분해 — 동일 섹터 내 테마 로테이션 파악")
+
+    themed = fdf[fdf["theme"] != "-"].copy()
+    if themed.empty:
+        st.info("Theme 데이터가 없습니다 (ETF에는 theme이 할당되지 않음). Stocks 포함 필터를 확인하세요.")
+    else:
+        # ── Category selector ──
+        theme_cats = sorted(themed["category"].unique())
+        sel_cat = st.selectbox("Category", theme_cats, index=0)
+        cat_themed = themed[themed["category"] == sel_cat].copy()
+
+        # ── Theme summary table ──
+        theme_agg = cat_themed.groupby("theme").agg(
+            n=("ticker", "size"),
+            eligible=("eligible", "sum"),
+            avg_comp=("composite", "mean"),
+            avg_tcs=("tcs", "mean"),
+            avg_tfs=("tfs", "mean"),
+            avg_oer=("oer", "mean"),
+            avg_rsi=("rsi", "mean"),
+            avg_ret_1w=("ret_1w", "mean"),
+            avg_ret_1m=("ret_1m", "mean"),
+            avg_ret_3m=("ret_3m", "mean"),
+        ).round(1).reset_index()
+        theme_agg["eligible"] = theme_agg["eligible"].astype(int)
+        theme_agg = theme_agg.sort_values("avg_comp", ascending=False)
+
+        st.dataframe(theme_agg, use_container_width=True, hide_index=True,
+                     column_config={
+                         "avg_ret_1w": st.column_config.NumberColumn("1W%", format="%.2f%%"),
+                         "avg_ret_1m": st.column_config.NumberColumn("1M%", format="%.2f%%"),
+                         "avg_ret_3m": st.column_config.NumberColumn("3M%", format="%.2f%%"),
+                     })
+
+        col_tbar, col_tret = st.columns(2)
+
+        # ── Theme avg composite bar ──
+        with col_tbar:
+            fig_tbar = px.bar(
+                theme_agg.sort_values("avg_comp", ascending=True),
+                y="theme", x="avg_comp", orientation="h",
+                color="avg_comp", color_continuous_scale="Viridis",
+                text="n",
+                title=f"{sel_cat} — Avg Composite by Theme (label = count)",
+            )
+            fig_tbar.update_layout(**DARK_LAYOUT,
+                                    height=max(300, len(theme_agg) * 28))
+            fig_tbar.add_vline(x=55, line_dash="dot", line_color=C["orange"])
+            st.plotly_chart(fig_tbar, use_container_width=True)
+
+        # ── Theme returns comparison ──
+        with col_tret:
+            tret_melt = theme_agg.melt(
+                id_vars="theme",
+                value_vars=["avg_ret_1w", "avg_ret_1m", "avg_ret_3m"],
+                var_name="period", value_name="return_%",
+            )
+            tret_melt["period"] = tret_melt["period"].map(
+                {"avg_ret_1w": "1W", "avg_ret_1m": "1M", "avg_ret_3m": "3M"})
+            fig_tret = px.bar(
+                tret_melt, x="theme", y="return_%", color="period",
+                barmode="group", title=f"{sel_cat} — Returns by Theme & Period",
+                color_discrete_sequence=[C["cyan"], C["blue"], C["purple"]],
+            )
+            fig_tret.update_layout(**DARK_LAYOUT, xaxis_tickangle=-45,
+                                    height=max(300, len(theme_agg) * 28))
+            fig_tret.add_hline(y=0, line_dash="dash", line_color=C["gray"])
+            st.plotly_chart(fig_tret, use_container_width=True)
+
+        # ── Classification mix by theme (stacked bar) ──
+        st.subheader(f"{sel_cat} — Classification by Theme")
+        cls_theme = cat_themed.groupby(["theme", "classification"]).size().reset_index(name="count")
+        fig_cls_theme = px.bar(
+            cls_theme, x="theme", y="count", color="classification",
+            color_discrete_map=CLASS_COLORS, barmode="stack",
+        )
+        fig_cls_theme.update_layout(**DARK_LAYOUT, xaxis_tickangle=-45, height=400)
+        st.plotly_chart(fig_cls_theme, use_container_width=True)
+
+        # ── Theme scatter: Composite vs 1M Return ──
+        st.subheader(f"{sel_cat} — Theme Momentum Map")
+        fig_tmom = px.scatter(
+            cat_themed, x="composite", y="ret_1m",
+            color="theme", size="adv_usd", size_max=25,
+            hover_data=["ticker", "name", "classification", "tcs", "tfs"],
+            title="Composite vs 1M Return (size = ADV, color = Theme)",
+        )
+        fig_tmom.update_layout(**DARK_LAYOUT, height=500,
+                                xaxis_title="Composite Score",
+                                yaxis_title="1M Return %")
+        fig_tmom.add_vline(x=55, line_dash="dot", line_color=C["orange"])
+        fig_tmom.add_hline(y=0, line_dash="dash", line_color=C["gray"])
+        st.plotly_chart(fig_tmom, use_container_width=True)
+
+        # ── Per-theme ticker detail ──
+        st.subheader(f"{sel_cat} — Ticker Detail by Theme")
+        for theme in theme_agg["theme"]:
+            tdf = cat_themed[cat_themed["theme"] == theme].sort_values("composite", ascending=False)
+            n_el = int(tdf["eligible"].sum())
+            with st.expander(f"{theme}  ({len(tdf)} tickers, {n_el} eligible)"):
+                st.dataframe(
+                    tdf[["ticker", "name", "composite", "tcs", "tfs", "oer", "rss",
+                         "classification", "eligible", "rsi", "trend_age",
+                         "ret_1w", "ret_1m", "ret_3m"]],
+                    use_container_width=True, hide_index=True,
+                )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TAB 7: MARKET BREADTH + Classification Change Tracker
 # ─────────────────────────────────────────────────────────────────────────────
 with tab_breadth:
     st.subheader("Market Breadth")
