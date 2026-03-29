@@ -781,6 +781,24 @@ class NaiveDiscoveryDetector:
         ret_63d = ((last_close / close_63d_ago) - 1) * 100 if close_63d_ago > 0 else 0.0
         ret_126d = ((last_close / close_126d_ago) - 1) * 100 if close_126d_ago > 0 else 0.0
 
+        # ── 12-1M Return (Jegadeesh & Titman 1993): 12개월 수익률에서 최근 1개월 제외 ──
+        # 단기 반전(short-term reversal) 오염을 회피하는 학계 표준 모멘텀 팩터
+        close_252d_ago = sf(close.iloc[-253]) if len(close) >= 253 else close_126d_ago
+        ret_12_1m = ((close_21d_ago / close_252d_ago) - 1) * 100 if close_252d_ago > 0 else ret_126d
+
+        # ── Realized Volatility (60일 연환산): return 정규화 기준 ──
+        daily_rets = close.pct_change().dropna()
+        if len(daily_rets) >= 60:
+            realized_vol = float(daily_rets.iloc[-60:].std() * np.sqrt(252) * 100)
+        elif len(daily_rets) > 5:
+            realized_vol = float(daily_rets.std() * np.sqrt(252) * 100)
+        else:
+            realized_vol = 20.0
+        realized_vol = max(realized_vol, 1.0)
+
+        # ── Vol-Adjusted Momentum (AQR 방식): ret / vol → 고변동 종목 과대평가 방지 ──
+        vol_adj_mom = ret_126d / realized_vol
+
         avg_vol_20d = sf(vol_valid.iloc[-20:].mean()) if len(vol_valid) >= 20 else sf(vol_valid.mean()) if len(vol_valid) > 0 else 0
         avg_price_5d = sf(close.iloc[-5:].mean()) if len(close) >= 5 else last_close
         adv_usd = avg_vol_20d * avg_price_5d
@@ -800,6 +818,9 @@ class NaiveDiscoveryDetector:
             'ret_21d': ret_21d,
             'ret_63d': ret_63d,
             'ret_126d': ret_126d,
+            'ret_12_1m': ret_12_1m,
+            'realized_vol': realized_vol,
+            'vol_adj_mom': vol_adj_mom,
             'adv_usd': adv_usd,
             'last_close': last_close,
         }
@@ -841,7 +862,8 @@ class NaiveDiscoveryDetector:
     def compute_percentile_ranks(all_raw: Dict[str, dict]) -> Dict[str, dict]:
         tickers = list(all_raw.keys())
         indicators = ['sma50_slope', 'trend_age', 'sma50_dist', 'rsi',
-                       'range_pct', 'vol_ratio', 'ret_21d', 'ret_63d', 'ret_126d']
+                       'range_pct', 'vol_ratio', 'ret_21d', 'ret_63d', 'ret_126d',
+                       'ret_12_1m', 'vol_adj_mom']
         arrays = {ind: np.array([all_raw[t][ind] for t in tickers], dtype=float) for ind in indicators}
 
         ranks = {}
@@ -849,8 +871,15 @@ class NaiveDiscoveryDetector:
             r = {}
             for ind in indicators:
                 r[ind + '_pctile'] = pct_rank(arrays[ind][i], arrays[ind])
-            r['rss'] = (r['ret_21d_pctile'] + r['ret_63d_pctile']
-                        + r['ret_126d_pctile'] + r['sma50_slope_pctile']) / 4.0
+            # RSS v2: 학술/실무 기반 5-factor momentum composite
+            #   1. ret_12_1m  — Jegadeesh & Titman(1993) 12-1M 모멘텀 (단기 반전 제외)
+            #   2. ret_63d    — 중기 3개월 모멘텀
+            #   3. vol_adj_mom — AQR 방식 변동성 조정 6M 모멘텀
+            #   4. sma50_slope — 추세 강도
+            #   5. range_pct  — George & Hwang(2004) 52주 고점 근접도
+            r['rss'] = (r['ret_12_1m_pctile'] + r['ret_63d_pctile']
+                        + r['vol_adj_mom_pctile'] + r['sma50_slope_pctile']
+                        + r['range_pct_pctile']) / 5.0
             ranks[t] = r
         return ranks
 
