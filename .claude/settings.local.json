@@ -4,7 +4,30 @@
       "Bash(pip list:*)",
       "Bash(pip install:*)",
       "Bash(pip3 install:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(mkdir:*)",
+      "Bash(ssh-keygen:*)",
+      "WebSearch",
+      "Bash(cd:*)",
+      "Bash(open:*)",
+      "WebFetch(domain:www.ishares.com)",
+      "WebFetch(domain:en.wikipedia.org)",
+      "WebFetch(domain:topforeignstocks.com)",
+      "WebFetch(domain:www.tradingview.com)",
+      "WebFetch(domain:stockanalysis.com)",
+      "WebFetch(domain:help.yahoo.com)",
+      "WebFetch(domain:simplywall.st)",
+      "WebFetch(domain:finance.yahoo.com)",
+      "Bash(which npm:*)",
+      "Bash(sudo chown:*)",
+      "Bash(sleep:*)",
+      "Bash(curl:*)",
+      "Bash(lsof:*)",
+      "WebFetch(domain:etfdb.com)",
+      "Bash(pkill:*)",
+      "Bash(python -c ' *)",
+      "Bash(npx tsc *)",
+      "Bash(npx vite *)"
     ]
   }
 }

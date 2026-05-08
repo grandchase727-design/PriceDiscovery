@@ -1,5 +1,85 @@
-.scan_cache.pkl
-*.pdf
+# ─── Secrets / credentials ─────────────────────────────────────
+.finnhub_config.json
+.env
+*.key
+credentials.json
+secrets.json
+
+# ─── Python ────────────────────────────────────────────────────
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ─── Data caches (pickle / parquet) ─────────────────────────────
+*.pkl
+*.pickle
+*.parquet
+.scan_cache.pkl
+.scan_cache_ml.pkl
+.fundamentals_cache.pkl
+.breadth_universe_cache.pkl
+
+# ─── Generated state / history JSON ─────────────────────────────
+.ml_optimized_params.json
+.unified_classification.json
+.pipeline_history.json
+.pm_history.json
+
+# ─── ML / analytics generated outputs (CSV / JSON) ──────────────
+ai_perf_*.csv
+ai_perf_*.json
+ai_pred_*.csv
+ai_pred_*.json
+ablation_results.csv
+breadth_monthly.parquet
+regime_dataset*.csv
+regime_labels.csv
+regime_predictions.csv
+regime_conditional_diagnostic.csv
+
+# ─── Logs ──────────────────────────────────────────────────────
+*.log
+.api.log
+.scan.log
+.finnhub_news_fetch.log
+.fundamentals_retry.log
+frontend/.dev.log
+
+# ─── Reports (PDFs auto-generated daily) ────────────────────────
+*.pdf
+reports/
+
+# ─── Frontend (Node / Vite) ─────────────────────────────────────
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/.cache/
+frontend/*.local
+
+# ─── Editor / OS ───────────────────────────────────────────────
 .DS_Store
+*.swp
+*.swo
+.idea/
+.vscode/
+*~
+
+# ─── Claude Code workspace state ────────────────────────────────
+.claude/settings.json
+.claude/scheduled_tasks.lock
+.claude/cache/
+
+# ─── Misc archives / scratch ────────────────────────────────────
+archive/
+question/
+*.zip
+*.tar.gz
