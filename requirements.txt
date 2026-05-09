@@ -1,0 +1,36 @@
+# Direct Python dependencies for Price Discovery.
+# Transitive deps are resolved automatically by pip.
+#
+# Install:  python3.12 -m venv .venv && .venv/bin/pip install -r requirements.txt
+#
+# OS-level prerequisite (macOS, for lightgbm):  brew install libomp
+
+# ── Web API ────────────────────────────────────────────────────────────────
+fastapi==0.136.1
+uvicorn[standard]==0.46.0
+pydantic==2.13.4
+
+# ── Numerical / ML core ────────────────────────────────────────────────────
+numpy==2.4.4
+pandas==3.0.2
+scipy==1.17.1
+scikit-learn==1.8.0
+lightgbm==4.6.0
+optuna==4.8.0
+
+# ── Market data ────────────────────────────────────────────────────────────
+yfinance==1.3.0
+requests==2.33.1
+
+# ── Visualization / reports ────────────────────────────────────────────────
+matplotlib==3.10.9
+plotly==6.7.0
+reportlab==4.5.0
+python-docx==1.2.0
+
+# ── Graph (Pre-Momentum / GraphRAG) ────────────────────────────────────────
+networkx==3.6.1
+python-louvain==0.16
+
+# ── Legacy dashboard ───────────────────────────────────────────────────────
+streamlit==1.57.0

@@ -327,8 +327,17 @@ The sidebar has Sector-based filters (17 sectors) + classification filters + com
 ## Dependencies
 
 ```bash
-pip install numpy pandas yfinance matplotlib networkx python-louvain fastapi uvicorn
+# OS prerequisite (macOS, lightgbm runtime)
+brew install libomp
+
+# Python — pinned versions in requirements.txt
+python3.12 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+
+# Frontend
 cd frontend && npm install
 ```
 
-Minimum Python 3.8. No build step for backend, no tests, no linter config.
+Python 3.12 recommended. No build step for backend.
+Regression tests in `tests/`: golden API baselines (`diff_golden.py`) and
+feature/breadth as-of consistency (`test_no_leakage.py`).
