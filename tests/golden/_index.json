@@ -1,0 +1,67 @@
+{
+  "/api/table": {
+    "status": 200,
+    "bytes": 1100125,
+    "seconds": 0.313
+  },
+  "/api/pre-momentum": {
+    "status": 200,
+    "bytes": 1284357,
+    "seconds": 0.265
+  },
+  "/api/overview": {
+    "status": 200,
+    "bytes": 473226,
+    "seconds": 0.244
+  },
+  "/api/universe": {
+    "status": 200,
+    "bytes": 197826,
+    "seconds": 0.042
+  },
+  "/api/market-regime": {
+    "status": 200,
+    "bytes": 8193,
+    "seconds": 0.177
+  },
+  "/api/category": {
+    "status": 200,
+    "bytes": 351323,
+    "seconds": 0.33
+  },
+  "/api/theme": {
+    "status": 200,
+    "bytes": 516448,
+    "seconds": 0.581
+  },
+  "/api/quant-strategies": {
+    "status": 200,
+    "bytes": 21264,
+    "seconds": 0.285
+  },
+  "/api/factor-efficacy": {
+    "status": 200,
+    "bytes": 397329,
+    "seconds": 0.065
+  },
+  "/api/classification": {
+    "status": 200,
+    "bytes": 80,
+    "seconds": 0.001
+  },
+  "/api/sector-rotation": {
+    "status": 200,
+    "bytes": 8525,
+    "seconds": 0.034
+  },
+  "/api/effectiveness": {
+    "status": 200,
+    "bytes": 3325402,
+    "seconds": 5.048
+  },
+  "/api/meta": {
+    "status": 200,
+    "bytes": 21222,
+    "seconds": 0.065
+  }
+}

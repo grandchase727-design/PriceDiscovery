@@ -1,0 +1,1819 @@
+{
+  "categories": [
+    "Commodities",
+    "Currency_Vol",
+    "EQ_Broad",
+    "EQ_CommServices",
+    "EQ_ConsDisc",
+    "EQ_ConsStaples",
+    "EQ_Energy",
+    "EQ_Factor",
+    "EQ_Financials",
+    "EQ_Healthcare",
+    "EQ_Industrials",
+    "EQ_Materials",
+    "EQ_RealEstate",
+    "EQ_Technology",
+    "EQ_Thematic",
+    "EQ_Utilities",
+    "Emerging_Markets",
+    "FI_Credit",
+    "FI_Inflation",
+    "FI_Intermediate",
+    "FI_International",
+    "FI_Long",
+    "FI_Short",
+    "Intl_Developed",
+    "Korea_Equity",
+    "Multi_Asset",
+    "Real_Assets",
+    "STK_China_ADR",
+    "STK_CommServices",
+    "STK_ConsDisc",
+    "STK_ConsStaples",
+    "STK_Energy",
+    "STK_Europe",
+    "STK_Financials",
+    "STK_Healthcare",
+    "STK_India",
+    "STK_Industrials",
+    "STK_Japan",
+    "STK_Korea",
+    "STK_Materials",
+    "STK_RealEstate",
+    "STK_Technology",
+    "STK_Utilities"
+  ],
+  "category_info": [
+    {
+      "alt_benchmarks": [
+        "DBC",
+        "GSG",
+        "PDBC"
+      ],
+      "asset_type": "ETF",
+      "benchmark": "DBC",
+      "category": "Commodities",
+      "n": 38
+    },
+    {
+      "alt_benchmarks": [
+        "UUP"
+      ],
+      "asset_type": "ETF",
+      "benchmark": "UUP",
+      "category": "Currency_Vol",
+      "n": 7
+    },
+    {
+      "alt_benchmarks": [
+        "SPY",
+        "RSP",
+        "VTI"
+      ],
+      "asset_type": "ETF",
+      "benchmark": "SPY",
+      "category": "EQ_Broad",
+      "n": 16
+    },
+    {
+      "alt_benchmarks": [
+        "XLC",
+        "SPY"
+      ],
+      "asset_type": "ETF",
+      "benchmark": "XLC",
+      "category": "EQ_CommServices",
+      "n": 1
+    },
+    {
+      "alt_benchmarks": [
+        "XLY",
+        "SPY"
+      ],
+      "asset_type": "ETF",
+      "benchmark": "XLY",
+      "category": "EQ_ConsDisc",
+      "n": 3
+    },
+    {
+      "alt_benchmarks": [
+        "XLP",
+        "SPY"
+      ],
+      "asset_type": "ETF",
+      "benchmark": "XLP",
+      "category": "EQ_ConsStaples",
+      "n": 1
+    },
+    {
+      "alt_benchmarks": [
+        "XLE",
+        "SPY"
+      ],
+      "asset_type": "ETF",
+      "benchmark": "XLE",
+      "category": "EQ_Energy",
+      "n": 1
+    },
+    {
+      "alt_benchmarks": [
+        "SPY",
+        "MTUM"
+      ],
+      "asset_type": "ETF",
+      "benchmark": "SPY",
+      "category": "EQ_Factor",
+      "n": 14
+    },
+    {
+      "alt_benchmarks": [
+        "XLF",
+        "KRE"
+      ],
+      "asset_type": "ETF",
+      "benchmark": "XLF",
+      "category": "EQ_Financials",
+      "n": 2
+    },
+    {
+      "alt_benchmarks": [
+        "XLV",
+        "IBB"
+      ],
+      "asset_type": "ETF",
+      "benchmark": "XLV",
+      "category": "EQ_Healthcare",
+      "n": 3
+    },
+    {
+      "alt_benchmarks": [
+        "XLI",
+        "SPY"
+      ],
+      "asset_type": "ETF",
+      "benchmark": "XLI",
+      "category": "EQ_Industrials",
+      "n": 3
+    },
+    {
+      "alt_benchmarks": [
+        "XLB",
+        "SPY"
+      ],
+      "asset_type": "ETF",
+      "benchmark": "XLB",
+      "category": "EQ_Materials",
+      "n": 1
+    },
+    {
+      "alt_benchmarks": [
+        "XLRE",
+        "VNQ"
+      ],
+      "asset_type": "ETF",
+      "benchmark": "XLRE",
+      "category": "EQ_RealEstate",
+      "n": 1
+    },
+    {
+      "alt_benchmarks": [
+        "XLK",
+        "QQQ"
+      ],
+      "asset_type": "ETF",
+      "benchmark": "XLK",
+      "category": "EQ_Technology",
+      "n": 6
+    },
+    {
+      "alt_benchmarks": [
+        "QQQ",
+        "SPY"
+      ],
+      "asset_type": "ETF",
+      "benchmark": "QQQ",
+      "category": "EQ_Thematic",
+      "n": 21
+    },
+    {
+      "alt_benchmarks": [
+        "XLU",
+        "SPY"
+      ],
+      "asset_type": "ETF",
+      "benchmark": "XLU",
+      "category": "EQ_Utilities",
+      "n": 1
+    },
+    {
+      "alt_benchmarks": [
+        "EEM",
+        "VWO",
+        "IEMG"
+      ],
+      "asset_type": "ETF",
+      "benchmark": "EEM",
+      "category": "Emerging_Markets",
+      "n": 20
+    },
+    {
+      "alt_benchmarks": [
+        "HYG",
+        "USHY"
+      ],
+      "asset_type": "ETF",
+      "benchmark": "HYG",
+      "category": "FI_Credit",
+      "n": 7
+    },
+    {
+      "alt_benchmarks": [
+        "TIP",
+        "VTIP"
+      ],
+      "asset_type": "ETF",
+      "benchmark": "TIP",
+      "category": "FI_Inflation",
+      "n": 5
+    },
+    {
+      "alt_benchmarks": [
+        "AGG",
+        "BND"
+      ],
+      "asset_type": "ETF",
+      "benchmark": "AGG",
+      "category": "FI_Intermediate",
+      "n": 8
+    },
+    {
+      "alt_benchmarks": [
+        "BNDX",
+        "EMB"
+      ],
+      "asset_type": "ETF",
+      "benchmark": "BNDX",
+      "category": "FI_International",
+      "n": 8
+    },
+    {
+      "alt_benchmarks": [
+        "TLT",
+        "IEF"
+      ],
+      "asset_type": "ETF",
+      "benchmark": "TLT",
+      "category": "FI_Long",
+      "n": 8
+    },
+    {
+      "alt_benchmarks": [
+        "SHY",
+        "VCSH"
+      ],
+      "asset_type": "ETF",
+      "benchmark": "SHY",
+      "category": "FI_Short",
+      "n": 9
+    },
+    {
+      "alt_benchmarks": [
+        "VEA",
+        "EFA",
+        "SPDW"
+      ],
+      "asset_type": "ETF",
+      "benchmark": "VEA",
+      "category": "Intl_Developed",
+      "n": 18
+    },
+    {
+      "alt_benchmarks": [
+        "069500.KS",
+        "102110.KS"
+      ],
+      "asset_type": "ETF",
+      "benchmark": "069500.KS",
+      "category": "Korea_Equity",
+      "n": 13
+    },
+    {
+      "alt_benchmarks": [
+        "AOR",
+        "AOA"
+      ],
+      "asset_type": "ETF",
+      "benchmark": "AOR",
+      "category": "Multi_Asset",
+      "n": 6
+    },
+    {
+      "alt_benchmarks": [
+        "VNQ",
+        "VNQI"
+      ],
+      "asset_type": "ETF",
+      "benchmark": "VNQ",
+      "category": "Real_Assets",
+      "n": 10
+    },
+    {
+      "alt_benchmarks": [
+        "KWEB",
+        "FXI"
+      ],
+      "asset_type": "Stock",
+      "benchmark": "KWEB",
+      "category": "STK_China_ADR",
+      "n": 20
+    },
+    {
+      "alt_benchmarks": [
+        "XLC",
+        "QQQ"
+      ],
+      "asset_type": "Stock",
+      "benchmark": "XLC",
+      "category": "STK_CommServices",
+      "n": 15
+    },
+    {
+      "alt_benchmarks": [
+        "XLY",
+        "SPY"
+      ],
+      "asset_type": "Stock",
+      "benchmark": "XLY",
+      "category": "STK_ConsDisc",
+      "n": 36
+    },
+    {
+      "alt_benchmarks": [
+        "XLP",
+        "SPY"
+      ],
+      "asset_type": "Stock",
+      "benchmark": "XLP",
+      "category": "STK_ConsStaples",
+      "n": 13
+    },
+    {
+      "alt_benchmarks": [
+        "XLE",
+        "SPY"
+      ],
+      "asset_type": "Stock",
+      "benchmark": "XLE",
+      "category": "STK_Energy",
+      "n": 29
+    },
+    {
+      "alt_benchmarks": [
+        "VGK",
+        "EZU"
+      ],
+      "asset_type": "Stock",
+      "benchmark": "VGK",
+      "category": "STK_Europe",
+      "n": 18
+    },
+    {
+      "alt_benchmarks": [
+        "XLF",
+        "KRE"
+      ],
+      "asset_type": "Stock",
+      "benchmark": "XLF",
+      "category": "STK_Financials",
+      "n": 57
+    },
+    {
+      "alt_benchmarks": [
+        "XLV",
+        "IBB"
+      ],
+      "asset_type": "Stock",
+      "benchmark": "XLV",
+      "category": "STK_Healthcare",
+      "n": 46
+    },
+    {
+      "alt_benchmarks": [
+        "INDA"
+      ],
+      "asset_type": "Stock",
+      "benchmark": "INDA",
+      "category": "STK_India",
+      "n": 7
+    },
+    {
+      "alt_benchmarks": [
+        "XLI",
+        "SPY"
+      ],
+      "asset_type": "Stock",
+      "benchmark": "XLI",
+      "category": "STK_Industrials",
+      "n": 61
+    },
+    {
+      "alt_benchmarks": [
+        "EWJ",
+        "BBJP"
+      ],
+      "asset_type": "Stock",
+      "benchmark": "EWJ",
+      "category": "STK_Japan",
+      "n": 18
+    },
+    {
+      "alt_benchmarks": [
+        "069500.KS",
+        "102110.KS"
+      ],
+      "asset_type": "Stock",
+      "benchmark": "069500.KS",
+      "category": "STK_Korea",
+      "n": 44
+    },
+    {
+      "alt_benchmarks": [
+        "XLB",
+        "SPY"
+      ],
+      "asset_type": "Stock",
+      "benchmark": "XLB",
+      "category": "STK_Materials",
+      "n": 52
+    },
+    {
+      "alt_benchmarks": [
+        "XLRE",
+        "VNQ"
+      ],
+      "asset_type": "Stock",
+      "benchmark": "XLRE",
+      "category": "STK_RealEstate",
+      "n": 5
+    },
+    {
+      "alt_benchmarks": [
+        "XLK",
+        "QQQ"
+      ],
+      "asset_type": "Stock",
+      "benchmark": "XLK",
+      "category": "STK_Technology",
+      "n": 95
+    },
+    {
+      "alt_benchmarks": [
+        "XLU",
+        "SPY"
+      ],
+      "asset_type": "Stock",
+      "benchmark": "XLU",
+      "category": "STK_Utilities",
+      "n": 9
+    }
+  ],
+  "classifications": [
+    "⚠️ WEAKENING",
+    "⬇️ DOWNTREND",
+    "🔴 CYCLE_PEAK",
+    "🔵 FORMATION",
+    "🔵 RECOVERY",
+    "🟠 NEUTRAL",
+    "🟡 CONSOLIDATION",
+    "🟡 OVEREXTENDED",
+    "🟢 CONTINUATION",
+    "🟤 FADING",
+    "🟦 LAGGING_CATCHUP"
+  ],
+  "scan_time": "2026-05-09T15:29:16.011377",
+  "sector_info": [
+    {
+      "n": 141,
+      "n_etf": 18,
+      "n_stock": 123,
+      "sector": "Technology",
+      "subthemes": [
+        "Cloud & Platform",
+        "Consumer Hardware",
+        "Cybersecurity",
+        "Data Center & Networking",
+        "Enterprise Software",
+        "Industrial Technology",
+        "Robotics & AI",
+        "Sector Broad - Tech",
+        "Semiconductor Analog",
+        "Semiconductor Design",
+        "Semiconductor Equipment & EDA",
+        "Semiconductor Foundry",
+        "Semiconductor Memory"
+      ]
+    },
+    {
+      "n": 94,
+      "n_etf": 34,
+      "n_stock": 60,
+      "sector": "Materials",
+      "subthemes": [
+        "Agriculture & Food",
+        "Base Metals & Mining",
+        "Battery & EV Materials",
+        "Broad Commodity",
+        "Chemicals",
+        "Natural Resources",
+        "Precious Metals",
+        "Sector Broad - Materials",
+        "Steel & Metals"
+      ]
+    },
+    {
+      "n": 87,
+      "n_etf": 3,
+      "n_stock": 84,
+      "sector": "Financials",
+      "subthemes": [
+        "Banks",
+        "Conglomerate & Holding",
+        "Consumer Finance",
+        "Financial Data & Analytics",
+        "Fintech & Digital Finance",
+        "Insurance",
+        "Investment Banking & Asset Mgmt",
+        "Payments & Exchanges",
+        "Sector Broad - Financials"
+      ]
+    },
+    {
+      "n": 60,
+      "n_etf": 10,
+      "n_stock": 50,
+      "sector": "Industrials",
+      "subthemes": [
+        "Aerospace & Defense",
+        "Building & Construction",
+        "Environmental & Water",
+        "Industrial Equipment",
+        "Sector Broad - Industrials",
+        "Transport & Logistics"
+      ]
+    },
+    {
+      "n": 59,
+      "n_etf": 2,
+      "n_stock": 57,
+      "sector": "Consumer Discretionary",
+      "subthemes": [
+        "Auto & EV",
+        "Consumer Brands",
+        "E-commerce & Delivery",
+        "Restaurants & Leisure",
+        "Retail",
+        "Sector Broad - ConsDisc"
+      ]
+    },
+    {
+      "n": 59,
+      "n_etf": 5,
+      "n_stock": 54,
+      "sector": "Healthcare",
+      "subthemes": [
+        "Big Pharma",
+        "Biotech",
+        "Healthcare Services",
+        "Life Science Tools",
+        "Medical Devices & Diagnostics",
+        "Sector Broad - Healthcare"
+      ]
+    },
+    {
+      "n": 45,
+      "n_etf": 45,
+      "n_stock": 0,
+      "sector": "Fixed Income",
+      "subthemes": [
+        "Aggregate Bond",
+        "CLO",
+        "EM Bonds",
+        "Floating Rate",
+        "High Yield",
+        "IG Corporate - Intermediate",
+        "IG Corporate - Long",
+        "IG Corporate - Short",
+        "Inflation-Linked",
+        "International Bonds",
+        "MBS",
+        "Preferred",
+        "Senior Loans",
+        "Treasury - Intermediate",
+        "Treasury - Long",
+        "Treasury - Short"
+      ]
+    },
+    {
+      "n": 44,
+      "n_etf": 13,
+      "n_stock": 31,
+      "sector": "Energy",
+      "subthemes": [
+        "Energy Commodities",
+        "Oil & Gas",
+        "Sector Broad - Energy",
+        "Uranium & Nuclear Fuel"
+      ]
+    },
+    {
+      "n": 42,
+      "n_etf": 42,
+      "n_stock": 0,
+      "sector": "International",
+      "subthemes": [
+        "Asia Pacific",
+        "China",
+        "Developed Markets",
+        "EM Broad",
+        "Europe",
+        "India",
+        "Japan",
+        "Korea (Index)",
+        "Latin America",
+        "Middle East",
+        "North America",
+        "Other EM"
+      ]
+    },
+    {
+      "n": 33,
+      "n_etf": 1,
+      "n_stock": 32,
+      "sector": "Communication Services",
+      "subthemes": [
+        "Digital Advertising & Media",
+        "Digital Media & Entertainment",
+        "Sector Broad - CommServices",
+        "Telecom & IT Services"
+      ]
+    },
+    {
+      "n": 32,
+      "n_etf": 32,
+      "n_stock": 0,
+      "sector": "Equity Broad",
+      "subthemes": [
+        "Broad Market",
+        "Disruptive Innovation",
+        "Factor - Dividend",
+        "Factor - Min Vol",
+        "Factor - Momentum",
+        "Factor - Multi",
+        "Factor - Quality",
+        "Factor - Size",
+        "Factor - Value"
+      ]
+    },
+    {
+      "n": 22,
+      "n_etf": 5,
+      "n_stock": 17,
+      "sector": "Utilities",
+      "subthemes": [
+        "Power & Energy Infra",
+        "Sector Broad - Utilities",
+        "Utilities"
+      ]
+    },
+    {
+      "n": 16,
+      "n_etf": 1,
+      "n_stock": 15,
+      "sector": "Consumer Staples",
+      "subthemes": [
+        "Consumer Staples",
+        "Sector Broad - ConsStaples"
+      ]
+    },
+    {
+      "n": 7,
+      "n_etf": 7,
+      "n_stock": 0,
+      "sector": "Macro",
+      "subthemes": [
+        "Currency",
+        "Volatility"
+      ]
+    },
+    {
+      "n": 7,
+      "n_etf": 5,
+      "n_stock": 2,
+      "sector": "Real Estate",
+      "subthemes": [
+        "Real Estate",
+        "Sector Broad - RealEstate"
+      ]
+    },
+    {
+      "n": 6,
+      "n_etf": 6,
+      "n_stock": 0,
+      "sector": "Multi-Asset",
+      "subthemes": [
+        "Asset Allocation"
+      ]
+    },
+    {
+      "n": 2,
+      "n_etf": 2,
+      "n_stock": 0,
+      "sector": "Alternatives",
+      "subthemes": [
+        "Crypto"
+      ]
+    }
+  ],
+  "sectors": [
+    "Alternatives",
+    "Communication Services",
+    "Consumer Discretionary",
+    "Consumer Staples",
+    "Energy",
+    "Equity Broad",
+    "Financials",
+    "Fixed Income",
+    "Healthcare",
+    "Industrials",
+    "International",
+    "Macro",
+    "Materials",
+    "Multi-Asset",
+    "Real Estate",
+    "Technology",
+    "Utilities"
+  ],
+  "subthemes": [
+    "Aerospace & Defense",
+    "Aggregate Bond",
+    "Agriculture & Food",
+    "Asia Pacific",
+    "Asset Allocation",
+    "Auto & EV",
+    "Banks",
+    "Base Metals & Mining",
+    "Battery & EV Materials",
+    "Big Pharma",
+    "Biotech",
+    "Broad Commodity",
+    "Broad Market",
+    "Building & Construction",
+    "CLO",
+    "Chemicals",
+    "China",
+    "Cloud & Platform",
+    "Conglomerate & Holding",
+    "Consumer Brands",
+    "Consumer Finance",
+    "Consumer Hardware",
+    "Consumer Staples",
+    "Crypto",
+    "Currency",
+    "Cybersecurity",
+    "Data Center & Networking",
+    "Developed Markets",
+    "Digital Advertising & Media",
+    "Digital Media & Entertainment",
+    "Disruptive Innovation",
+    "E-commerce & Delivery",
+    "EM Bonds",
+    "EM Broad",
+    "Energy Commodities",
+    "Enterprise Software",
+    "Environmental & Water",
+    "Europe",
+    "Factor - Dividend",
+    "Factor - Min Vol",
+    "Factor - Momentum",
+    "Factor - Multi",
+    "Factor - Quality",
+    "Factor - Size",
+    "Factor - Value",
+    "Financial Data & Analytics",
+    "Fintech & Digital Finance",
+    "Floating Rate",
+    "Healthcare Services",
+    "High Yield",
+    "IG Corporate - Intermediate",
+    "IG Corporate - Long",
+    "IG Corporate - Short",
+    "India",
+    "Industrial Equipment",
+    "Industrial Technology",
+    "Inflation-Linked",
+    "Insurance",
+    "International Bonds",
+    "Investment Banking & Asset Mgmt",
+    "Japan",
+    "Korea (Index)",
+    "Latin America",
+    "Life Science Tools",
+    "MBS",
+    "Medical Devices & Diagnostics",
+    "Middle East",
+    "Natural Resources",
+    "North America",
+    "Oil & Gas",
+    "Other EM",
+    "Payments & Exchanges",
+    "Power & Energy Infra",
+    "Precious Metals",
+    "Preferred",
+    "Real Estate",
+    "Restaurants & Leisure",
+    "Retail",
+    "Robotics & AI",
+    "Sector Broad - CommServices",
+    "Sector Broad - ConsDisc",
+    "Sector Broad - ConsStaples",
+    "Sector Broad - Energy",
+    "Sector Broad - Financials",
+    "Sector Broad - Healthcare",
+    "Sector Broad - Industrials",
+    "Sector Broad - Materials",
+    "Sector Broad - RealEstate",
+    "Sector Broad - Tech",
+    "Sector Broad - Utilities",
+    "Semiconductor Analog",
+    "Semiconductor Design",
+    "Semiconductor Equipment & EDA",
+    "Semiconductor Foundry",
+    "Semiconductor Memory",
+    "Senior Loans",
+    "Steel & Metals",
+    "Telecom & IT Services",
+    "Transport & Logistics",
+    "Treasury - Intermediate",
+    "Treasury - Long",
+    "Treasury - Short",
+    "Uranium & Nuclear Fuel",
+    "Utilities",
+    "Volatility"
+  ],
+  "theme_info": [
+    {
+      "categories": [
+        "EQ_Financials",
+        "Europe",
+        "Financials",
+        "India",
+        "Japan",
+        "Korea"
+      ],
+      "n": 32,
+      "theme": "Banks"
+    },
+    {
+      "categories": [
+        "Commodities",
+        "Energy",
+        "Europe",
+        "Real_Assets"
+      ],
+      "n": 29,
+      "theme": "Oil & Gas"
+    },
+    {
+      "categories": [
+        "Commodities",
+        "Materials"
+      ],
+      "n": 25,
+      "theme": "Precious Metals"
+    },
+    {
+      "categories": [
+        "China_ADR",
+        "Industrials",
+        "RealEstate",
+        "Technology"
+      ],
+      "n": 23,
+      "theme": "Data Center & Networking"
+    },
+    {
+      "categories": [
+        "Industrials",
+        "Technology"
+      ],
+      "n": 23,
+      "theme": "Enterprise Software"
+    },
+    {
+      "categories": [
+        "EQ_Industrials",
+        "Industrials",
+        "Japan",
+        "Korea_Equity",
+        "Real_Assets"
+      ],
+      "n": 20,
+      "theme": "Industrial Equipment"
+    },
+    {
+      "categories": [
+        "EQ_Industrials",
+        "EQ_Thematic",
+        "Industrials",
+        "Japan",
+        "Korea"
+      ],
+      "n": 19,
+      "theme": "Aerospace & Defense"
+    },
+    {
+      "categories": [
+        "EQ_Technology",
+        "EQ_Thematic",
+        "Japan",
+        "Korea",
+        "Korea_Equity",
+        "Technology"
+      ],
+      "n": 19,
+      "theme": "Semiconductor Design"
+    },
+    {
+      "categories": [
+        "EQ_Thematic",
+        "Industrials",
+        "Korea",
+        "Korea_Equity",
+        "Utilities"
+      ],
+      "n": 17,
+      "theme": "Power & Energy Infra"
+    },
+    {
+      "categories": [
+        "China_ADR",
+        "ConsDisc",
+        "India"
+      ],
+      "n": 17,
+      "theme": "Restaurants & Leisure"
+    },
+    {
+      "categories": [
+        "EQ_Broad"
+      ],
+      "n": 16,
+      "theme": "Broad Market"
+    },
+    {
+      "categories": [
+        "China_ADR",
+        "CommServices",
+        "ConsDisc",
+        "EQ_Thematic",
+        "Korea",
+        "Technology"
+      ],
+      "n": 16,
+      "theme": "Cloud & Platform"
+    },
+    {
+      "categories": [
+        "ConsStaples",
+        "Europe",
+        "Korea"
+      ],
+      "n": 15,
+      "theme": "Consumer Staples"
+    },
+    {
+      "categories": [
+        "Commodities",
+        "Materials",
+        "Real_Assets"
+      ],
+      "n": 14,
+      "theme": "Agriculture & Food"
+    },
+    {
+      "categories": [
+        "Commodities",
+        "Korea",
+        "Materials"
+      ],
+      "n": 14,
+      "theme": "Base Metals & Mining"
+    },
+    {
+      "categories": [
+        "EQ_Healthcare",
+        "EQ_Thematic",
+        "Europe",
+        "Healthcare",
+        "Korea"
+      ],
+      "n": 14,
+      "theme": "Biotech"
+    },
+    {
+      "categories": [
+        "Materials"
+      ],
+      "n": 14,
+      "theme": "Chemicals"
+    },
+    {
+      "categories": [
+        "China_ADR",
+        "ConsDisc",
+        "Technology"
+      ],
+      "n": 14,
+      "theme": "E-commerce & Delivery"
+    },
+    {
+      "categories": [
+        "Europe",
+        "Financials",
+        "Japan"
+      ],
+      "n": 14,
+      "theme": "Investment Banking & Asset Mgmt"
+    },
+    {
+      "categories": [
+        "Europe",
+        "Healthcare"
+      ],
+      "n": 14,
+      "theme": "Medical Devices & Diagnostics"
+    },
+    {
+      "categories": [
+        "Europe",
+        "Healthcare",
+        "India",
+        "Japan"
+      ],
+      "n": 13,
+      "theme": "Big Pharma"
+    },
+    {
+      "categories": [
+        "China_ADR",
+        "CommServices",
+        "ConsDisc",
+        "Japan",
+        "Korea"
+      ],
+      "n": 13,
+      "theme": "Digital Media & Entertainment"
+    },
+    {
+      "categories": [
+        "Technology"
+      ],
+      "n": 13,
+      "theme": "Semiconductor Analog"
+    },
+    {
+      "categories": [
+        "Japan",
+        "Korea",
+        "Technology"
+      ],
+      "n": 13,
+      "theme": "Semiconductor Equipment & EDA"
+    },
+    {
+      "categories": [
+        "CommServices",
+        "Europe",
+        "India",
+        "Korea"
+      ],
+      "n": 12,
+      "theme": "Telecom & IT Services"
+    },
+    {
+      "categories": [
+        "China_ADR",
+        "ConsDisc",
+        "EQ_Thematic",
+        "Europe",
+        "Japan",
+        "Korea"
+      ],
+      "n": 11,
+      "theme": "Auto & EV"
+    },
+    {
+      "categories": [
+        "EQ_Thematic",
+        "Korea",
+        "Korea_Equity",
+        "Materials"
+      ],
+      "n": 11,
+      "theme": "Battery & EV Materials"
+    },
+    {
+      "categories": [
+        "EQ_Thematic",
+        "Healthcare"
+      ],
+      "n": 11,
+      "theme": "Healthcare Services"
+    },
+    {
+      "categories": [
+        "Financials",
+        "Korea"
+      ],
+      "n": 11,
+      "theme": "Insurance"
+    },
+    {
+      "categories": [
+        "Commodities",
+        "EQ_Thematic",
+        "Energy",
+        "Materials"
+      ],
+      "n": 11,
+      "theme": "Uranium & Nuclear Fuel"
+    },
+    {
+      "categories": [
+        "EQ_Technology",
+        "Technology"
+      ],
+      "n": 9,
+      "theme": "Cybersecurity"
+    },
+    {
+      "categories": [
+        "Industrials",
+        "Technology"
+      ],
+      "n": 9,
+      "theme": "Industrial Technology"
+    },
+    {
+      "categories": [
+        "ConsDisc",
+        "ConsStaples"
+      ],
+      "n": 9,
+      "theme": "Retail"
+    },
+    {
+      "categories": [
+        "Japan",
+        "Korea",
+        "Materials"
+      ],
+      "n": 9,
+      "theme": "Steel & Metals"
+    },
+    {
+      "categories": [
+        "EQ_ConsDisc",
+        "Industrials",
+        "Korea"
+      ],
+      "n": 8,
+      "theme": "Building & Construction"
+    },
+    {
+      "categories": [
+        "Intl_Developed"
+      ],
+      "n": 8,
+      "theme": "Europe"
+    },
+    {
+      "categories": [
+        "Industrials",
+        "Korea"
+      ],
+      "n": 8,
+      "theme": "Transport & Logistics"
+    },
+    {
+      "categories": [
+        "Financials",
+        "Japan",
+        "Korea"
+      ],
+      "n": 7,
+      "theme": "Conglomerate & Holding"
+    },
+    {
+      "categories": [
+        "ConsDisc",
+        "Europe"
+      ],
+      "n": 7,
+      "theme": "Consumer Brands"
+    },
+    {
+      "categories": [
+        "ConsDisc",
+        "Europe",
+        "Japan",
+        "Korea",
+        "Technology"
+      ],
+      "n": 7,
+      "theme": "Consumer Hardware"
+    },
+    {
+      "categories": [
+        "China_ADR",
+        "CommServices",
+        "Europe",
+        "Technology"
+      ],
+      "n": 7,
+      "theme": "Digital Advertising & Media"
+    },
+    {
+      "categories": [
+        "China_ADR",
+        "EQ_Thematic",
+        "Financials",
+        "Technology"
+      ],
+      "n": 7,
+      "theme": "Fintech & Digital Finance"
+    },
+    {
+      "categories": [
+        "Financials"
+      ],
+      "n": 7,
+      "theme": "Payments & Exchanges"
+    },
+    {
+      "categories": [
+        "Multi_Asset"
+      ],
+      "n": 6,
+      "theme": "Asset Allocation"
+    },
+    {
+      "categories": [
+        "Currency_Vol"
+      ],
+      "n": 6,
+      "theme": "Currency"
+    },
+    {
+      "categories": [
+        "Emerging_Markets",
+        "Korea_Equity"
+      ],
+      "n": 6,
+      "theme": "Korea (Index)"
+    },
+    {
+      "categories": [
+        "Healthcare"
+      ],
+      "n": 6,
+      "theme": "Life Science Tools"
+    },
+    {
+      "categories": [
+        "Emerging_Markets",
+        "Intl_Developed"
+      ],
+      "n": 5,
+      "theme": "Asia Pacific"
+    },
+    {
+      "categories": [
+        "Commodities"
+      ],
+      "n": 5,
+      "theme": "Broad Commodity"
+    },
+    {
+      "categories": [
+        "EQ_Factor",
+        "Korea_Equity"
+      ],
+      "n": 5,
+      "theme": "Factor - Dividend"
+    },
+    {
+      "categories": [
+        "Europe",
+        "Financials",
+        "Industrials"
+      ],
+      "n": 5,
+      "theme": "Financial Data & Analytics"
+    },
+    {
+      "categories": [
+        "FI_Inflation"
+      ],
+      "n": 5,
+      "theme": "Inflation-Linked"
+    },
+    {
+      "categories": [
+        "EQ_RealEstate",
+        "Real_Assets"
+      ],
+      "n": 5,
+      "theme": "Sector Broad - RealEstate"
+    },
+    {
+      "categories": [
+        "FI_Long"
+      ],
+      "n": 5,
+      "theme": "Treasury - Long"
+    },
+    {
+      "categories": [
+        "FI_Short"
+      ],
+      "n": 5,
+      "theme": "Treasury - Short"
+    },
+    {
+      "categories": [
+        "Intl_Developed"
+      ],
+      "n": 4,
+      "theme": "Developed Markets"
+    },
+    {
+      "categories": [
+        "FI_International"
+      ],
+      "n": 4,
+      "theme": "EM Bonds"
+    },
+    {
+      "categories": [
+        "Emerging_Markets"
+      ],
+      "n": 4,
+      "theme": "EM Broad"
+    },
+    {
+      "categories": [
+        "Industrials"
+      ],
+      "n": 4,
+      "theme": "Environmental & Water"
+    },
+    {
+      "categories": [
+        "EQ_Factor"
+      ],
+      "n": 4,
+      "theme": "Factor - Quality"
+    },
+    {
+      "categories": [
+        "FI_Credit"
+      ],
+      "n": 4,
+      "theme": "High Yield"
+    },
+    {
+      "categories": [
+        "FI_International"
+      ],
+      "n": 4,
+      "theme": "International Bonds"
+    },
+    {
+      "categories": [
+        "Emerging_Markets"
+      ],
+      "n": 4,
+      "theme": "Latin America"
+    },
+    {
+      "categories": [
+        "Utilities"
+      ],
+      "n": 4,
+      "theme": "Utilities"
+    },
+    {
+      "categories": [
+        "Emerging_Markets"
+      ],
+      "n": 3,
+      "theme": "China"
+    },
+    {
+      "categories": [
+        "Financials",
+        "Japan"
+      ],
+      "n": 3,
+      "theme": "Consumer Finance"
+    },
+    {
+      "categories": [
+        "Commodities"
+      ],
+      "n": 3,
+      "theme": "Energy Commodities"
+    },
+    {
+      "categories": [
+        "Intl_Developed"
+      ],
+      "n": 3,
+      "theme": "Japan"
+    },
+    {
+      "categories": [
+        "Technology"
+      ],
+      "n": 3,
+      "theme": "Semiconductor Foundry"
+    },
+    {
+      "categories": [
+        "FI_Intermediate",
+        "FI_Long"
+      ],
+      "n": 3,
+      "theme": "Treasury - Intermediate"
+    },
+    {
+      "categories": [
+        "FI_Intermediate"
+      ],
+      "n": 2,
+      "theme": "Aggregate Bond"
+    },
+    {
+      "categories": [
+        "FI_Intermediate",
+        "FI_Short"
+      ],
+      "n": 2,
+      "theme": "CLO"
+    },
+    {
+      "categories": [
+        "Real_Assets"
+      ],
+      "n": 2,
+      "theme": "Crypto"
+    },
+    {
+      "categories": [
+        "EQ_Factor"
+      ],
+      "n": 2,
+      "theme": "Factor - Momentum"
+    },
+    {
+      "categories": [
+        "FI_Short"
+      ],
+      "n": 2,
+      "theme": "Floating Rate"
+    },
+    {
+      "categories": [
+        "FI_Intermediate"
+      ],
+      "n": 2,
+      "theme": "IG Corporate - Intermediate"
+    },
+    {
+      "categories": [
+        "FI_Long"
+      ],
+      "n": 2,
+      "theme": "IG Corporate - Long"
+    },
+    {
+      "categories": [
+        "Emerging_Markets"
+      ],
+      "n": 2,
+      "theme": "Other EM"
+    },
+    {
+      "categories": [
+        "RealEstate"
+      ],
+      "n": 2,
+      "theme": "Real Estate"
+    },
+    {
+      "categories": [
+        "EQ_Technology",
+        "EQ_Thematic"
+      ],
+      "n": 2,
+      "theme": "Robotics & AI"
+    },
+    {
+      "categories": [
+        "EQ_Technology",
+        "Korea_Equity"
+      ],
+      "n": 2,
+      "theme": "Sector Broad - Tech"
+    },
+    {
+      "categories": [
+        "Korea",
+        "Technology"
+      ],
+      "n": 2,
+      "theme": "Semiconductor Memory"
+    },
+    {
+      "categories": [
+        "FI_Credit"
+      ],
+      "n": 2,
+      "theme": "Senior Loans"
+    },
+    {
+      "categories": [
+        "EQ_Thematic"
+      ],
+      "n": 1,
+      "theme": "Disruptive Innovation"
+    },
+    {
+      "categories": [
+        "EQ_Factor"
+      ],
+      "n": 1,
+      "theme": "Factor - Min Vol"
+    },
+    {
+      "categories": [
+        "EQ_Factor"
+      ],
+      "n": 1,
+      "theme": "Factor - Multi"
+    },
+    {
+      "categories": [
+        "EQ_Factor"
+      ],
+      "n": 1,
+      "theme": "Factor - Size"
+    },
+    {
+      "categories": [
+        "EQ_Factor"
+      ],
+      "n": 1,
+      "theme": "Factor - Value"
+    },
+    {
+      "categories": [
+        "FI_Short"
+      ],
+      "n": 1,
+      "theme": "IG Corporate - Short"
+    },
+    {
+      "categories": [
+        "Emerging_Markets"
+      ],
+      "n": 1,
+      "theme": "India"
+    },
+    {
+      "categories": [
+        "FI_Intermediate"
+      ],
+      "n": 1,
+      "theme": "MBS"
+    },
+    {
+      "categories": [
+        "Intl_Developed"
+      ],
+      "n": 1,
+      "theme": "Middle East"
+    },
+    {
+      "categories": [
+        "Commodities"
+      ],
+      "n": 1,
+      "theme": "Natural Resources"
+    },
+    {
+      "categories": [
+        "Intl_Developed"
+      ],
+      "n": 1,
+      "theme": "North America"
+    },
+    {
+      "categories": [
+        "FI_Credit"
+      ],
+      "n": 1,
+      "theme": "Preferred"
+    },
+    {
+      "categories": [
+        "EQ_CommServices"
+      ],
+      "n": 1,
+      "theme": "Sector Broad - CommServices"
+    },
+    {
+      "categories": [
+        "EQ_ConsDisc"
+      ],
+      "n": 1,
+      "theme": "Sector Broad - ConsDisc"
+    },
+    {
+      "categories": [
+        "EQ_ConsStaples"
+      ],
+      "n": 1,
+      "theme": "Sector Broad - ConsStaples"
+    },
+    {
+      "categories": [
+        "EQ_Energy"
+      ],
+      "n": 1,
+      "theme": "Sector Broad - Energy"
+    },
+    {
+      "categories": [
+        "EQ_Financials"
+      ],
+      "n": 1,
+      "theme": "Sector Broad - Financials"
+    },
+    {
+      "categories": [
+        "EQ_Healthcare"
+      ],
+      "n": 1,
+      "theme": "Sector Broad - Healthcare"
+    },
+    {
+      "categories": [
+        "EQ_Industrials"
+      ],
+      "n": 1,
+      "theme": "Sector Broad - Industrials"
+    },
+    {
+      "categories": [
+        "EQ_Materials"
+      ],
+      "n": 1,
+      "theme": "Sector Broad - Materials"
+    },
+    {
+      "categories": [
+        "EQ_Utilities"
+      ],
+      "n": 1,
+      "theme": "Sector Broad - Utilities"
+    },
+    {
+      "categories": [
+        "Currency_Vol"
+      ],
+      "n": 1,
+      "theme": "Volatility"
+    }
+  ],
+  "themes": [
+    "Aerospace & Defense",
+    "Aggregate Bond",
+    "Agriculture & Food",
+    "Asia Pacific",
+    "Asset Allocation",
+    "Auto & EV",
+    "Banks",
+    "Base Metals & Mining",
+    "Battery & EV Materials",
+    "Big Pharma",
+    "Biotech",
+    "Broad Commodity",
+    "Broad Market",
+    "Building & Construction",
+    "CLO",
+    "Chemicals",
+    "China",
+    "Cloud & Platform",
+    "Conglomerate & Holding",
+    "Consumer Brands",
+    "Consumer Finance",
+    "Consumer Hardware",
+    "Consumer Staples",
+    "Crypto",
+    "Currency",
+    "Cybersecurity",
+    "Data Center & Networking",
+    "Developed Markets",
+    "Digital Advertising & Media",
+    "Digital Media & Entertainment",
+    "Disruptive Innovation",
+    "E-commerce & Delivery",
+    "EM Bonds",
+    "EM Broad",
+    "Energy Commodities",
+    "Enterprise Software",
+    "Environmental & Water",
+    "Europe",
+    "Factor - Dividend",
+    "Factor - Min Vol",
+    "Factor - Momentum",
+    "Factor - Multi",
+    "Factor - Quality",
+    "Factor - Size",
+    "Factor - Value",
+    "Financial Data & Analytics",
+    "Fintech & Digital Finance",
+    "Floating Rate",
+    "Healthcare Services",
+    "High Yield",
+    "IG Corporate - Intermediate",
+    "IG Corporate - Long",
+    "IG Corporate - Short",
+    "India",
+    "Industrial Equipment",
+    "Industrial Technology",
+    "Inflation-Linked",
+    "Insurance",
+    "International Bonds",
+    "Investment Banking & Asset Mgmt",
+    "Japan",
+    "Korea (Index)",
+    "Latin America",
+    "Life Science Tools",
+    "MBS",
+    "Medical Devices & Diagnostics",
+    "Middle East",
+    "Natural Resources",
+    "North America",
+    "Oil & Gas",
+    "Other EM",
+    "Payments & Exchanges",
+    "Power & Energy Infra",
+    "Precious Metals",
+    "Preferred",
+    "Real Estate",
+    "Restaurants & Leisure",
+    "Retail",
+    "Robotics & AI",
+    "Sector Broad - CommServices",
+    "Sector Broad - ConsDisc",
+    "Sector Broad - ConsStaples",
+    "Sector Broad - Energy",
+    "Sector Broad - Financials",
+    "Sector Broad - Healthcare",
+    "Sector Broad - Industrials",
+    "Sector Broad - Materials",
+    "Sector Broad - RealEstate",
+    "Sector Broad - Tech",
+    "Sector Broad - Utilities",
+    "Semiconductor Analog",
+    "Semiconductor Design",
+    "Semiconductor Equipment & EDA",
+    "Semiconductor Foundry",
+    "Semiconductor Memory",
+    "Senior Loans",
+    "Steel & Metals",
+    "Telecom & IT Services",
+    "Transport & Logistics",
+    "Treasury - Intermediate",
+    "Treasury - Long",
+    "Treasury - Short",
+    "Uranium & Nuclear Fuel",
+    "Utilities",
+    "Volatility"
+  ],
+  "total_tickers": 756
+}

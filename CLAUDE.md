@@ -14,7 +14,7 @@ Price Discovery is a **multi-asset momentum scanner + investment workflow dashbo
 2. **Pre-Momentum Score (5-agent forward-looking)** — "where momentum WILL BE"
 3. **QVR (Quality + Value + Revision)** — fundamentals dimension, also acts as eligibility filter
 
-Output surfaces: PDF report (`reports/`), React dashboard (FastAPI backend + Vite frontend in `frontend/`), and the legacy Streamlit dashboard (`dashboard.py`).
+Output surfaces: PDF report (`reports/`), React dashboard (FastAPI backend + Vite frontend in `frontend/`), and the legacy Streamlit dashboard (`legacy/dashboard.py`).
 
 ---
 
@@ -51,11 +51,11 @@ npm run build                  # production build → frontend/dist/
 
 ```bash
 # Render the main score-system dependency graph PDF (6 pages, into reports/)
-python3 draw_dependency_graph.py
+python3 reports/scripts/draw_dependency_graph.py
 
 # Render the US Sector Rotation dependency graph PDF (4 pages, into reports/)
 # ★ Re-run this after EVERY change to sector_rotation.py or sector_rotation_backtest.py
-python3 draw_sector_rotation_graph.py
+python3 reports/scripts/draw_sector_rotation_graph.py
 
 # Quick QVR self-test (uses .fundamentals_cache.pkl)
 python3 qvr_agent.py
@@ -72,35 +72,52 @@ diagram and code makes onboarding harder.
 
 | Code change in… | Regenerate PDF |
 |---|---|
-| `price_discovery.py` (scoring axes) / `pre_momentum.py` / `qvr_agent.py` / `api.py` (Eligibility Gate) | `python3 draw_dependency_graph.py` → `reports/score_dependency_graph.pdf` |
-| `sector_rotation.py` / `sector_rotation_backtest.py` | `python3 draw_sector_rotation_graph.py` → `reports/us_sector_rotation_graph.pdf` |
+| `price_discovery.py` (scoring axes) / `pre_momentum.py` / `qvr_agent.py` / `api.py` (Eligibility Gate) | `python3 reports/scripts/draw_dependency_graph.py` → `reports/score_dependency_graph.pdf` |
+| `sector_rotation.py` / `sector_rotation_backtest.py` | `python3 reports/scripts/draw_sector_rotation_graph.py` → `reports/us_sector_rotation_graph.pdf` |
 
 ---
 
 ## Repository layout
 
 ```
-price_discovery.py        — Main scanner: data download, indicators, axes, classification
-pre_momentum.py           — 5-agent Pre-Momentum framework (Micro/Macro/Graph/Catalyst/QVR)
-qvr_agent.py              — Quality-Value-Revision agent (5th PM agent + Eligibility Gate input)
-fundamentals_pipeline.py  — yfinance fundamentals fetcher (writes .fundamentals_cache.pkl)
-finnhub_client.py         — Finnhub REST wrapper
-finnhub_fundamentals.py   — Finnhub enricher (US tickers, in-place cache update)
-graph_engine.py           — GraphRAG knowledge graph + Louvain communities
-hedge_strategies.py       — 8 quant strategies for long/short signals
-quant_strategies.py       — Top-pick generators (per-strategy ranking)
+price_discovery.py        — Main scanner entry: data download, indicators, axes, classification
+api.py                    — FastAPI backend entry; loads cache, computes QVR + Eligibility Gate
 
-api.py                    — FastAPI backend; loads cache, computes QVR + Eligibility Gate
-dashboard.py              — Legacy Streamlit dashboard (kept for compatibility)
-draw_dependency_graph.py  — Renders the 6-page main score-system documentation PDF
-
-sector_rotation.py            — US Sector Rotation Phase 1+2 (tier classification + macro regime overlay)
-sector_rotation_backtest.py   — US Sector Rotation Phase 3 (monthly rebalance backtest, yfinance)
-draw_sector_rotation_graph.py — Renders the 4-page US Sector Rotation documentation PDF
+config/                   — Centralized constants
+  └── scoring.py            — Composite weights, ELIGIBLE_COMPOSITE, ADV_MIN_USD, QVR_GATE
+core/                     — Cross-cutting score primitives
+  └── eligibility.py        — evaluate_eligible() (Layer 5 gate)
+pipelines/                — Data fetchers
+  ├── fundamentals_pipeline.py  — yfinance fundamentals (writes .fundamentals_cache.pkl)
+  ├── finnhub_client.py         — Finnhub REST wrapper
+  └── finnhub_fundamentals.py   — Finnhub enricher (US tickers, in-place cache update)
+agents/                   — Pre-Momentum agents + knowledge graph
+  ├── pre_momentum.py       — 5-agent Pre-Momentum framework (Micro/Macro/Graph/Catalyst/QVR)
+  ├── qvr_agent.py          — Quality-Value-Revision agent
+  └── graph_engine.py       — GraphRAG knowledge graph + Louvain communities
+strategies/               — Hedge / quant / rotation
+  ├── hedge_strategies.py       — 8 quant strategies for long/short signals
+  ├── quant_strategies.py       — Top-pick generators (per-strategy ranking)
+  ├── sector_rotation.py        — US Sector Rotation Phase 1+2
+  ├── sector_rotation_backtest.py — US Sector Rotation Phase 3 (monthly rebalance backtest)
+  └── unified_classifier.py     — Classification validation
+ml/                       — ML pipelines + diagnostics
+  ├── ml_signal_engine.py / score_ml.py / factor_efficacy.py
+  ├── feature_pipeline.py / meta_labeling.py / purged_cv.py
+  ├── ablation_harness.py / optimize_params.py / ai_prediction_cache.py
+  ├── regime_expert_selector.py / regime_conditional_diagnostic.py
+  ├── signal_win_ratio.py / performance_analytics.py
+  └── breadth_pipeline.py / macro_features.py / multi_benchmark_validation.py
 
 frontend/                 — React/Vite dashboard (the primary UI)
-docs/                     — System documentation (this is the long-form reference)
 reports/                  — Daily PDF outputs + dependency graph
+  └── scripts/              — Standalone PDF renderers (draw_*_graph.py)
+tests/                    — Regression harness
+  ├── golden/                — Frozen API response baselines (13 endpoints)
+  ├── golden_endpoints.py / capture_golden.py / diff_golden.py
+  └── test_no_leakage.py     — Feature/breadth as-of consistency tests
+legacy/                   — Streamlit dashboard + one-off simulators
+docs/                     — System documentation (long-form reference)
 ```
 
 Cache files (gitignored, all generated by the daily refresh):

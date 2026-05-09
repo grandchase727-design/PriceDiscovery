@@ -234,8 +234,8 @@ def _load_cache():
     # Then re-applies eligibility: stocks with QVR < 40 are demoted from
     # eligible=True → eligible=False with rejection reason "WeakQVR(<n>)".
     try:
-        from fundamentals_pipeline import load_fundamentals_cache
-        from qvr_agent import QVRAgent
+        from pipelines.fundamentals_pipeline import load_fundamentals_cache
+        from agents.qvr_agent import QVRAgent
         fund_cache = load_fundamentals_cache()
         if fund_cache and fund_cache.get("tickers"):
             qvr_agent = QVRAgent(indices={}, fundamentals_cache=fund_cache)
@@ -264,9 +264,9 @@ def _load_cache():
             df["qvr_eps_surprise_avg"] = qvr_eps_surprise
 
             # ── Eligibility Gate ──
-            # Demote stocks with weak fundamentals (QVR < 40) even if technically
+            # Demote stocks with weak fundamentals (QVR < QVR_GATE) even if technically
             # eligible. ETFs are exempt (no fundamentals available).
-            QVR_GATE = 40.0
+            from config.scoring import QVR_GATE
             gate_mask = (
                 (df["asset_type"] == "Stock")
                 & (df["eligible"] == True)
@@ -976,7 +976,7 @@ def table(
 
     # Enrich with momentum age (bi-weekly retroactive, noise-tolerant)
     try:
-        from pre_momentum import compute_momentum_ages
+        from agents.pre_momentum import compute_momentum_ages
         ve_obs = STATE.get("ve_stats", {}).get("observations", [])
         ages = compute_momentum_ages(STATE.get("results", []), ve_obs)
         for r in records:
@@ -1819,7 +1819,7 @@ def quant_strategies():
     results = STATE.get("results", [])
     if not results:
         return {"strategies": {}}
-    from quant_strategies import compute_all_strategies
+    from strategies.quant_strategies import compute_all_strategies
     return _clean_dict({"strategies": compute_all_strategies(results)})
 
 
@@ -1828,10 +1828,10 @@ def pre_momentum():
     """Pre-Momentum Detection: multi-agent analysis of pre-breakout conditions."""
     if not STATE.get("results"):
         return {"candidates": [], "summary": {}, "methodology": {}}
-    from pre_momentum import run_pre_momentum
+    from agents.pre_momentum import run_pre_momentum
     # Load fundamentals cache (for QVR Agent — 5th agent, fundamentals dimension)
     try:
-        from fundamentals_pipeline import load_fundamentals_cache
+        from pipelines.fundamentals_pipeline import load_fundamentals_cache
         fund_cache = load_fundamentals_cache()
     except Exception:
         fund_cache = None
@@ -1910,7 +1910,7 @@ def classification_validation():
     if not uc:
         return {"error": "Unified classification not loaded."}
     try:
-        from unified_classifier import validate
+        from strategies.unified_classifier import validate
         report = validate(uc)
         return _clean_dict(report)
     except Exception as e:
@@ -2001,7 +2001,7 @@ def ml_table(
 
     # Momentum age (same as /api/table)
     try:
-        from pre_momentum import compute_momentum_ages
+        from agents.pre_momentum import compute_momentum_ages
         ve_obs = STATE.get("ve_stats", {}).get("observations", [])
         ages = compute_momentum_ages(STATE.get("results", []), ve_obs)
         for r in records:
@@ -2028,9 +2028,9 @@ def ml_pre_momentum():
     if not STATE.get("results_ml"):
         return {"error": "ML cache not loaded. Run optimize_params.py + score_ml.py."}
 
-    from pre_momentum import run_pre_momentum
+    from agents.pre_momentum import run_pre_momentum
     try:
-        from fundamentals_pipeline import load_fundamentals_cache
+        from pipelines.fundamentals_pipeline import load_fundamentals_cache
         fund_cache = load_fundamentals_cache()
     except Exception:
         fund_cache = None
@@ -2100,7 +2100,7 @@ def sector_rotation():
     """US Sector Rotation — within-11 SPDR ETF ranking + tier + breadth + pairs."""
     if not STATE.get("results"):
         return {"sectors": [], "summary": {}, "pairs": [], "methodology": {}}
-    from sector_rotation import compute_sector_rotation
+    from strategies.sector_rotation import compute_sector_rotation
     return _clean_dict(compute_sector_rotation(
         results=STATE["results"],
         df=STATE.get("df"),
@@ -2143,7 +2143,7 @@ def sector_rotation_backtest(
     if cached and (time.time() - cached["fetched_at"]) < cache_ttl:
         return _clean_dict(cached["data"])
 
-    from sector_rotation_backtest import run_backtest
+    from strategies.sector_rotation_backtest import run_backtest
     out = run_backtest(
         lookback_years=lookback_years,
         top_n=top_n,

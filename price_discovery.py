@@ -39,14 +39,23 @@ import json
 import pickle
 import os
 
+from config.scoring import (
+    ADV_MIN_USD,
+    ELIGIBLE_COMPOSITE,
+    COMPOSITE_W_TCS,
+    COMPOSITE_W_TFS,
+    COMPOSITE_W_RSS,
+    COMPOSITE_W_URS,
+)
+
 try:
-    from graph_engine import PriceDiscoveryGraph
+    from agents.graph_engine import PriceDiscoveryGraph
     HAS_GRAPH = True
 except ImportError:
     HAS_GRAPH = False
 
 try:
-    from hedge_strategies import (
+    from strategies.hedge_strategies import (
         score_all_strategies, compute_combined_signal, compute_regime,
         compute_category_stats,
     )
@@ -2279,7 +2288,11 @@ class NaiveDiscoveryDetector:
     @staticmethod
     def composite(tcs, tfs, rss, oer, urs=50.0):
         # AQR underreaction (URS) 15% 비중 추가, TCS/TFS/RSS 비례 축소
-        return round(0.30 * tcs + 0.25 * tfs + 0.30 * rss + 0.15 * urs, 1)
+        return round(
+            COMPOSITE_W_TCS * tcs + COMPOSITE_W_TFS * tfs
+            + COMPOSITE_W_RSS * rss + COMPOSITE_W_URS * urs,
+            1,
+        )
 
     # ── O'Neil (CANSLIM) Long / Short Signals ──
     # William O'Neil 방법론 기반 매수/매도 시그널 스코어링 (0-100)
@@ -2560,33 +2573,9 @@ class NaiveDiscoveryDetector:
 # SECTION 4: PORTFOLIO ELIGIBILITY
 ###############################################################################
 
-def evaluate_eligible(analysis, adv_usd, min_adv=5_000_000, comp_threshold=55):
-    """Portfolio eligibility 평가.
-    부적격 클래스: DOWNTREND, EXHAUSTING, FADING, COUNTER_RALLY, CYCLE_PEAK, WEAKENING.
-      - WEAKENING (DOWN, FLAT): 단기 약세 + 장기 횡보 → 매수 진입 위험 (#8 fix).
-      - OVEREXTENDED는 위험 신호이나 차익실현/관망용 — 부적격은 아니나 CLASS_RANK=1.
-    LAGGING_CATCHUP은 적격 (URS 기반 catch-up 매수 후보)."""
-    cls = analysis['classification']
-    comp = analysis['composite']
-    reasons = []
-    if cls == "⬇️ DOWNTREND":
-        reasons.append("Downtrend")
-    if cls == "🟤 EXHAUSTING":
-        reasons.append("Exhausting")
-    if cls == "🟤 FADING":
-        reasons.append("Fading")
-    if cls == "🟣 COUNTER_RALLY":
-        reasons.append("CounterRally")
-    if cls == "🔴 CYCLE_PEAK":
-        reasons.append("CyclePeak")
-    if cls == "⚠️ WEAKENING":
-        reasons.append("Weakening")
-    if comp < comp_threshold:
-        reasons.append("LowScore")
-    if adv_usd < min_adv:
-        reasons.append(f"Liq({adv_usd/1e6:.1f}M)")
-    eligible = len(reasons) == 0
-    return eligible, "/".join(reasons) if reasons else "None"
+# Moved to core/eligibility.py — re-exported here so existing internal callers
+# (e.g. price_discovery.py:run_scan, dashboard) continue to work unchanged.
+from core.eligibility import evaluate_eligible  # noqa: E402,F401
 
 
 ###############################################################################
@@ -2817,7 +2806,7 @@ class SignalValidityEngine:
                     'eligible': a.get('classification') not in (
                         "⬇️ DOWNTREND", "🟤 EXHAUSTING", "🟤 FADING", "🟣 COUNTER_RALLY",
                         "🔴 CYCLE_PEAK", "⚠️ WEAKENING"
-                    ) and a['composite'] >= 55,
+                    ) and a['composite'] >= ELIGIBLE_COMPOSITE,
                     'fwd_return': fwd_ret_var, 'bench_return': b_ret_var,
                     'excess_return': fwd_ret_var - b_ret_var,
                     'fwd_rets': fwd_rets, 'fwd_bench': fwd_bench,
@@ -3975,7 +3964,7 @@ def run_scan(categories=None, lookback_days=365, custom_date=None,
     # ═══════════════════════════════════════════════════════════════════════
     factor_efficacy_data = {}
     try:
-        from factor_efficacy import FactorEfficacyEngine
+        from ml.factor_efficacy import FactorEfficacyEngine
         print(f"\n📊 Phase 8: Factor Efficacy Analysis (Reverse Factor Model)...")
         fe = FactorEfficacyEngine(all_data, detector)
         factor_efficacy_data = fe.run()

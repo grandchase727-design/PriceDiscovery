@@ -1,0 +1,1278 @@
+{
+  "strategies": {
+    "_consensus": [
+      {
+        "avg_score": 553.6,
+        "composite": 57.4,
+        "n_strategies": 3,
+        "name": "Silicon Labs",
+        "ret_1m": 3.46,
+        "sector": "Technology",
+        "signals": [
+          "LONG",
+          "LONG",
+          "LONG"
+        ],
+        "strategies": [
+          "Trend Following",
+          "Multi-Factor",
+          "Inverse Volatility"
+        ],
+        "ticker": "SLAB"
+      },
+      {
+        "avg_score": 309.7,
+        "composite": 63.3,
+        "n_strategies": 3,
+        "name": "Mega Cap Value",
+        "ret_1m": 2.26,
+        "sector": "Broad",
+        "signals": [
+          "OVERWEIGHT",
+          "LONG",
+          "LONG"
+        ],
+        "strategies": [
+          "Sector Rotation",
+          "Trend Following",
+          "Inverse Volatility"
+        ],
+        "ticker": "MGV"
+      },
+      {
+        "avg_score": 1605.6,
+        "composite": 62.9,
+        "n_strategies": 2,
+        "name": "Hologic",
+        "ret_1m": 0.36,
+        "sector": "Healthcare",
+        "signals": [
+          "LONG",
+          "LONG"
+        ],
+        "strategies": [
+          "Trend Following",
+          "Inverse Volatility"
+        ],
+        "ticker": "HOLX"
+      },
+      {
+        "avg_score": 847.7,
+        "composite": 55.4,
+        "n_strategies": 2,
+        "name": "Blackstone Senior Loan",
+        "ret_1m": 1.2,
+        "sector": "FI_Credit",
+        "signals": [
+          "LONG",
+          "LONG"
+        ],
+        "strategies": [
+          "Trend Following",
+          "Inverse Volatility"
+        ],
+        "ticker": "SRLN"
+      },
+      {
+        "avg_score": 774.6,
+        "composite": 59.0,
+        "n_strategies": 2,
+        "name": "BB-B CLO",
+        "ret_1m": 1.64,
+        "sector": "FI_Intermediate",
+        "signals": [
+          "LONG",
+          "LONG"
+        ],
+        "strategies": [
+          "Trend Following",
+          "Inverse Volatility"
+        ],
+        "ticker": "JBBB"
+      },
+      {
+        "avg_score": 600.6,
+        "composite": 55.8,
+        "n_strategies": 2,
+        "name": "Conservative Allocation",
+        "ret_1m": 1.93,
+        "sector": "Multi_Asset",
+        "signals": [
+          "LONG",
+          "LONG"
+        ],
+        "strategies": [
+          "Trend Following",
+          "Inverse Volatility"
+        ],
+        "ticker": "AOK"
+      },
+      {
+        "avg_score": 558.0,
+        "composite": 53.8,
+        "n_strategies": 2,
+        "name": "Agriculture",
+        "ret_1m": 3.46,
+        "sector": "Commodities",
+        "signals": [
+          "LONG",
+          "LONG"
+        ],
+        "strategies": [
+          "Trend Following",
+          "Inverse Volatility"
+        ],
+        "ticker": "DBA"
+      },
+      {
+        "avg_score": 543.0,
+        "composite": 59.0,
+        "n_strategies": 2,
+        "name": "Moderate Allocation",
+        "ret_1m": 2.45,
+        "sector": "Multi_Asset",
+        "signals": [
+          "LONG",
+          "LONG"
+        ],
+        "strategies": [
+          "Trend Following",
+          "Inverse Volatility"
+        ],
+        "ticker": "AOM"
+      },
+      {
+        "avg_score": 526.6,
+        "composite": 59.2,
+        "n_strategies": 2,
+        "name": "Preferred Stock",
+        "ret_1m": 3.0,
+        "sector": "FI_Credit",
+        "signals": [
+          "LONG",
+          "LONG"
+        ],
+        "strategies": [
+          "Trend Following",
+          "Inverse Volatility"
+        ],
+        "ticker": "PFF"
+      },
+      {
+        "avg_score": 461.5,
+        "composite": 58.9,
+        "n_strategies": 2,
+        "name": "Dividend Growth",
+        "ret_1m": 2.2,
+        "sector": "Factor",
+        "signals": [
+          "LONG",
+          "LONG"
+        ],
+        "strategies": [
+          "Trend Following",
+          "Inverse Volatility"
+        ],
+        "ticker": "SCHD"
+      },
+      {
+        "avg_score": 421.3,
+        "composite": 65.4,
+        "n_strategies": 2,
+        "name": "Growth Allocation",
+        "ret_1m": 3.75,
+        "sector": "Multi_Asset",
+        "signals": [
+          "LONG",
+          "LONG"
+        ],
+        "strategies": [
+          "Trend Following",
+          "Inverse Volatility"
+        ],
+        "ticker": "AOR"
+      },
+      {
+        "avg_score": 365.3,
+        "composite": 63.9,
+        "n_strategies": 2,
+        "name": "S&P 500",
+        "ret_1m": 8.22,
+        "sector": "Broad",
+        "signals": [
+          "OVERWEIGHT",
+          "LONG"
+        ],
+        "strategies": [
+          "Sector Rotation",
+          "Trend Following"
+        ],
+        "ticker": "SPY"
+      },
+      {
+        "avg_score": 84.5,
+        "composite": 74.9,
+        "n_strategies": 2,
+        "name": "KODEX 반도체",
+        "ret_1m": 37.85,
+        "sector": "Korea_Equity",
+        "signals": [
+          "LONG",
+          "OVERWEIGHT"
+        ],
+        "strategies": [
+          "Dual Momentum",
+          "Sector Rotation"
+        ],
+        "ticker": "091160.KS"
+      },
+      {
+        "avg_score": 77.8,
+        "composite": 73.9,
+        "n_strategies": 2,
+        "name": "Technology",
+        "ret_1m": 19.76,
+        "sector": "Technology",
+        "signals": [
+          "OVERWEIGHT",
+          "LONG"
+        ],
+        "strategies": [
+          "Sector Rotation",
+          "Multi-Factor"
+        ],
+        "ticker": "XLK"
+      },
+      {
+        "avg_score": 75.6,
+        "composite": 68.5,
+        "n_strategies": 2,
+        "name": "Nasdaq 100",
+        "ret_1m": 14.66,
+        "sector": "Broad",
+        "signals": [
+          "OVERWEIGHT",
+          "LONG"
+        ],
+        "strategies": [
+          "Sector Rotation",
+          "Multi-Factor"
+        ],
+        "ticker": "QQQ"
+      }
+    ],
+    "dual_momentum": {
+      "description": "Antonacci dual momentum: requires both absolute momentum (12-1M return > 0) and relative momentum (RSS >= 80th percentile). Top 10 by RSS. Monthly rebalance.",
+      "metrics": {
+        "avg_ret12m_long": 203.8,
+        "avg_rss_long": 87.4,
+        "n_cash": 159,
+        "n_long": 73,
+        "n_neutral": 524
+      },
+      "name": "Dual Momentum",
+      "picks": [
+        {
+          "composite": 73.3,
+          "name": "SK스퀘어",
+          "reason": "Abs mom: 510.8% | RSS: 96",
+          "ret_1m": 89.97,
+          "score": 96.4,
+          "sector": "Korea",
+          "signal": "LONG",
+          "ticker": "402340.KS"
+        },
+        {
+          "composite": 71.3,
+          "name": "SanDisk",
+          "reason": "Abs mom: 2335.1% | RSS: 95",
+          "ret_1m": 71.59,
+          "score": 95.2,
+          "sector": "Technology",
+          "signal": "LONG",
+          "ticker": "SNDK"
+        },
+        {
+          "composite": 74.5,
+          "name": "SK Hynix",
+          "reason": "Abs mom: 430.1% | RSS: 95",
+          "ret_1m": 63.21,
+          "score": 95.1,
+          "sector": "Korea",
+          "signal": "LONG",
+          "ticker": "000660.KS"
+        },
+        {
+          "composite": 72.3,
+          "name": "South Korea Bull 3X",
+          "reason": "Abs mom: 816.2% | RSS: 95",
+          "ret_1m": 89.74,
+          "score": 94.8,
+          "sector": "Emerging_Markets",
+          "signal": "LONG",
+          "ticker": "KORU"
+        },
+        {
+          "composite": 74.6,
+          "name": "Micron",
+          "reason": "Abs mom: 411.4% | RSS: 95",
+          "ret_1m": 58.98,
+          "score": 94.6,
+          "sector": "Technology",
+          "signal": "LONG",
+          "ticker": "MU"
+        },
+        {
+          "composite": 76.4,
+          "name": "SK",
+          "reason": "Abs mom: 150.2% | RSS: 94",
+          "ret_1m": 60.82,
+          "score": 94.5,
+          "sector": "Korea",
+          "signal": "LONG",
+          "ticker": "034730.KS"
+        },
+        {
+          "composite": 74.9,
+          "name": "KODEX 반도체",
+          "reason": "Abs mom: 214.1% | RSS: 94",
+          "ret_1m": 37.85,
+          "score": 94.0,
+          "sector": "Korea_Equity",
+          "signal": "LONG",
+          "ticker": "091160.KS"
+        },
+        {
+          "composite": 77.8,
+          "name": "Flex",
+          "reason": "Abs mom: 97.7% | RSS: 94",
+          "ret_1m": 81.73,
+          "score": 93.8,
+          "sector": "Technology",
+          "signal": "LONG",
+          "ticker": "FLEX"
+        },
+        {
+          "composite": 73.8,
+          "name": "TIGER 반도체TOP10",
+          "reason": "Abs mom: 230.5% | RSS: 94",
+          "ret_1m": 34.72,
+          "score": 93.7,
+          "sector": "Korea_Equity",
+          "signal": "LONG",
+          "ticker": "396500.KS"
+        },
+        {
+          "composite": 72.0,
+          "name": "AI핵심전력설비",
+          "reason": "Abs mom: 235.2% | RSS: 94",
+          "ret_1m": 89.83,
+          "score": 93.7,
+          "sector": "Korea_Equity",
+          "signal": "LONG",
+          "ticker": "487240.KS"
+        }
+      ],
+      "sector_allocation": {
+        "Emerging_Markets": 10.0,
+        "Korea": 30.0,
+        "Korea_Equity": 30.0,
+        "Technology": 30.0
+      },
+      "signal_summary": {
+        "long": 73,
+        "neutral": 524,
+        "short": 159
+      }
+    },
+    "inverse_vol": {
+      "description": "Simplified risk parity: weight each eligible ticker by 1/realized_vol, normalized to 100%. Lower volatility assets get higher allocation. Top 15 by weight shown.",
+      "metrics": {
+        "avg_vol_eligible": 45.1,
+        "avg_vol_universe": 37.6,
+        "concentration_top10": 23.1,
+        "n_eligible": 292,
+        "n_universe": 756,
+        "top_weight": 8.48
+      },
+      "name": "Inverse Volatility",
+      "picks": [
+        {
+          "composite": 55.0,
+          "name": "AAA CLO",
+          "reason": "Weight: 8.48% | Vol: 1.1% | 1/vol rank",
+          "ret_1m": 0.56,
+          "score": 8.48,
+          "sector": "FI_Short",
+          "signal": "LONG",
+          "ticker": "JAAA"
+        },
+        {
+          "composite": 62.9,
+          "name": "Hologic",
+          "reason": "Weight: 3.65% | Vol: 2.6% | 1/vol rank",
+          "ret_1m": 0.36,
+          "score": 3.65,
+          "sector": "Healthcare",
+          "signal": "LONG",
+          "ticker": "HOLX"
+        },
+        {
+          "composite": 55.4,
+          "name": "Blackstone Senior Loan",
+          "reason": "Weight: 1.95% | Vol: 5.0% | 1/vol rank",
+          "ret_1m": 1.2,
+          "score": 1.95,
+          "sector": "FI_Credit",
+          "signal": "LONG",
+          "ticker": "SRLN"
+        },
+        {
+          "composite": 59.0,
+          "name": "BB-B CLO",
+          "reason": "Weight: 1.87% | Vol: 5.2% | 1/vol rank",
+          "ret_1m": 1.64,
+          "score": 1.87,
+          "sector": "FI_Intermediate",
+          "signal": "LONG",
+          "ticker": "JBBB"
+        },
+        {
+          "composite": 57.4,
+          "name": "Silicon Labs",
+          "reason": "Weight: 1.58% | Vol: 6.1% | 1/vol rank",
+          "ret_1m": 3.46,
+          "score": 1.58,
+          "sector": "Technology",
+          "signal": "LONG",
+          "ticker": "SLAB"
+        },
+        {
+          "composite": 55.8,
+          "name": "Conservative Allocation",
+          "reason": "Weight: 1.25% | Vol: 7.8% | 1/vol rank",
+          "ret_1m": 1.93,
+          "score": 1.25,
+          "sector": "Multi_Asset",
+          "signal": "LONG",
+          "ticker": "AOK"
+        },
+        {
+          "composite": 59.2,
+          "name": "Preferred Stock",
+          "reason": "Weight: 1.17% | Vol: 8.3% | 1/vol rank",
+          "ret_1m": 3.0,
+          "score": 1.17,
+          "sector": "FI_Credit",
+          "signal": "LONG",
+          "ticker": "PFF"
+        },
+        {
+          "composite": 53.8,
+          "name": "Agriculture",
+          "reason": "Weight: 1.10% | Vol: 8.8% | 1/vol rank",
+          "ret_1m": 3.46,
+          "score": 1.1,
+          "sector": "Commodities",
+          "signal": "LONG",
+          "ticker": "DBA"
+        },
+        {
+          "composite": 59.0,
+          "name": "Moderate Allocation",
+          "reason": "Weight: 1.08% | Vol: 8.9% | 1/vol rank",
+          "ret_1m": 2.45,
+          "score": 1.08,
+          "sector": "Multi_Asset",
+          "signal": "LONG",
+          "ticker": "AOM"
+        },
+        {
+          "composite": 58.9,
+          "name": "Dividend Growth",
+          "reason": "Weight: 0.99% | Vol: 9.8% | 1/vol rank",
+          "ret_1m": 2.2,
+          "score": 0.99,
+          "sector": "Factor",
+          "signal": "LONG",
+          "ticker": "SCHD"
+        },
+        {
+          "composite": 63.3,
+          "name": "Mega Cap Value",
+          "reason": "Weight: 0.84% | Vol: 11.6% | 1/vol rank",
+          "ret_1m": 2.26,
+          "score": 0.84,
+          "sector": "Broad",
+          "signal": "LONG",
+          "ticker": "MGV"
+        },
+        {
+          "composite": 59.1,
+          "name": "Large Cap Value",
+          "reason": "Weight: 0.83% | Vol: 11.6% | 1/vol rank",
+          "ret_1m": 1.95,
+          "score": 0.83,
+          "sector": "Broad",
+          "signal": "LONG",
+          "ticker": "VTV"
+        },
+        {
+          "composite": 65.4,
+          "name": "Growth Allocation",
+          "reason": "Weight: 0.81% | Vol: 11.9% | 1/vol rank",
+          "ret_1m": 3.75,
+          "score": 0.81,
+          "sector": "Multi_Asset",
+          "signal": "LONG",
+          "ticker": "AOR"
+        },
+        {
+          "composite": 61.4,
+          "name": "Dividend Appreciation",
+          "reason": "Weight: 0.81% | Vol: 12.0% | 1/vol rank",
+          "ret_1m": 2.78,
+          "score": 0.81,
+          "sector": "Factor",
+          "signal": "LONG",
+          "ticker": "VIG"
+        },
+        {
+          "composite": 58.3,
+          "name": "MLP Energy",
+          "reason": "Weight: 0.79% | Vol: 12.2% | 1/vol rank",
+          "ret_1m": 1.62,
+          "score": 0.79,
+          "sector": "Real_Assets",
+          "signal": "LONG",
+          "ticker": "AMLP"
+        }
+      ],
+      "sector_allocation": {
+        "Broad": 9.5,
+        "China_ADR": 0.6,
+        "CommServices": 0.9,
+        "Commodities": 5.8,
+        "ConsDisc": 1.5,
+        "ConsStaples": 0.9,
+        "Emerging_Markets": 2.6,
+        "Energy": 1.7,
+        "Europe": 1.0,
+        "FI_Credit": 3.1,
+        "FI_Intermediate": 1.9,
+        "FI_Short": 8.5,
+        "Factor": 4.9,
+        "Financials": 4.9,
+        "Healthcare": 5.1,
+        "Industrials": 5.7,
+        "Intl_Developed": 3.3,
+        "Japan": 0.8,
+        "Korea": 4.6,
+        "Korea_Equity": 2.4,
+        "Materials": 3.8,
+        "Multi_Asset": 3.8,
+        "RealEstate": 1.5,
+        "Real_Assets": 2.7,
+        "Technology": 14.4,
+        "Thematic": 4.0
+      },
+      "signal_summary": {
+        "long": 292,
+        "neutral": 464,
+        "short": 0
+      }
+    },
+    "mean_reversion": {
+      "description": "Oversold bounce strategy: RSI < 35 with SMA50 distance < -5%, in pullback/weakening classification with structural support. Ranked by RSI (lower = higher conviction). Max 10 picks.",
+      "metrics": {
+        "avg_rsi_picks": 24.1,
+        "avg_sma50_dist_picks": -6.1,
+        "n_oversold": 17,
+        "n_universe": 756
+      },
+      "name": "Mean Reversion",
+      "picks": [
+        {
+          "composite": 20.1,
+          "name": "GSK plc",
+          "reason": "RSI: 13.7 | SMA50 dist: -8.1% | Class: ⬇️ DOWNTREND",
+          "ret_1m": -11.97,
+          "score": 86.3,
+          "sector": "Europe",
+          "signal": "BUY",
+          "ticker": "GSK"
+        },
+        {
+          "composite": 17.1,
+          "name": "Indonesia",
+          "reason": "RSI: 19.4 | SMA50 dist: -5.7% | Class: ⚠️ WEAKENING",
+          "ret_1m": -4.91,
+          "score": 80.6,
+          "sector": "Emerging_Markets",
+          "signal": "BUY",
+          "ticker": "EIDO"
+        },
+        {
+          "composite": 22.2,
+          "name": "AstraZeneca",
+          "reason": "RSI: 20.5 | SMA50 dist: -5.7% | Class: ⚠️ WEAKENING",
+          "ret_1m": -10.65,
+          "score": 79.5,
+          "sector": "Healthcare",
+          "signal": "BUY",
+          "ticker": "AZN"
+        },
+        {
+          "composite": 20.0,
+          "name": "Parker-Hannifin",
+          "reason": "RSI: 24.4 | SMA50 dist: -5.7% | Class: ⚠️ WEAKENING",
+          "ret_1m": -8.2,
+          "score": 75.6,
+          "sector": "Industrials",
+          "signal": "BUY",
+          "ticker": "PH"
+        },
+        {
+          "composite": 18.4,
+          "name": "Thermo Fisher",
+          "reason": "RSI: 24.7 | SMA50 dist: -5.2% | Class: ⚠️ WEAKENING",
+          "ret_1m": -5.76,
+          "score": 75.3,
+          "sector": "Healthcare",
+          "signal": "BUY",
+          "ticker": "TMO"
+        },
+        {
+          "composite": 11.4,
+          "name": "Home Depot",
+          "reason": "RSI: 25.4 | SMA50 dist: -5.8% | Class: ⚠️ WEAKENING",
+          "ret_1m": -4.02,
+          "score": 74.6,
+          "sector": "ConsDisc",
+          "signal": "BUY",
+          "ticker": "HD"
+        },
+        {
+          "composite": 29.7,
+          "name": "Takeda Pharmaceutical",
+          "reason": "RSI: 27.2 | SMA50 dist: -7.0% | Class: ⬇️ DOWNTREND",
+          "ret_1m": -10.83,
+          "score": 72.8,
+          "sector": "Japan",
+          "signal": "BUY",
+          "ticker": "TAK"
+        },
+        {
+          "composite": 29.4,
+          "name": "Franco-Nevada",
+          "reason": "RSI: 27.9 | SMA50 dist: -6.4% | Class: ⬇️ DOWNTREND",
+          "ret_1m": -14.0,
+          "score": 72.1,
+          "sector": "Materials",
+          "signal": "BUY",
+          "ticker": "FNV"
+        },
+        {
+          "composite": 17.3,
+          "name": "Wells Fargo",
+          "reason": "RSI: 28.9 | SMA50 dist: -5.1% | Class: ⚠️ WEAKENING",
+          "ret_1m": -6.5,
+          "score": 71.1,
+          "sector": "Financials",
+          "signal": "BUY",
+          "ticker": "WFC"
+        },
+        {
+          "composite": 39.0,
+          "name": "한화에어로스페이스",
+          "reason": "RSI: 29.1 | SMA50 dist: -6.9% | Class: ⚠️ WEAKENING",
+          "ret_1m": -11.93,
+          "score": 70.9,
+          "sector": "Korea",
+          "signal": "BUY",
+          "ticker": "012450.KS"
+        }
+      ],
+      "sector_allocation": {
+        "ConsDisc": 10.0,
+        "Emerging_Markets": 10.0,
+        "Europe": 10.0,
+        "Financials": 10.0,
+        "Healthcare": 20.0,
+        "Industrials": 10.0,
+        "Japan": 10.0,
+        "Korea": 10.0,
+        "Materials": 10.0
+      },
+      "signal_summary": {
+        "long": 17,
+        "neutral": 739,
+        "short": 0
+      }
+    },
+    "multi_factor": {
+      "description": "3-factor composite: Momentum (40%, RSS percentile) + Quality (30%, structural_q) + Low Volatility (30%, inverse realized_vol). Top 15 by combined score.",
+      "metrics": {
+        "avg_mf_score_top15": 83.8,
+        "factor_avg": {
+          "low_vol": 50.0,
+          "momentum": 49.9,
+          "quality": 48.5
+        },
+        "n_long": 135,
+        "n_neutral": 464,
+        "n_short": 157
+      },
+      "name": "Multi-Factor",
+      "picks": [
+        {
+          "composite": 57.4,
+          "name": "Silicon Labs",
+          "reason": "Mom: 79 | Qual: 92 | LowVol: 96 (vol=6.1%)",
+          "ret_1m": 3.46,
+          "score": 88.1,
+          "sector": "Technology",
+          "signal": "LONG",
+          "ticker": "SLAB"
+        },
+        {
+          "composite": 66.1,
+          "name": "Royal Bank of Canada",
+          "reason": "Mom: 82 | Qual: 94 | LowVol: 86 (vol=17.9%)",
+          "ret_1m": 7.74,
+          "score": 86.9,
+          "sector": "Financials",
+          "signal": "LONG",
+          "ticker": "RY"
+        },
+        {
+          "composite": 56.4,
+          "name": "Commodity Strategy",
+          "reason": "Mom: 80 | Qual: 96 | LowVol: 86 (vol=18.7%)",
+          "ret_1m": 4.14,
+          "score": 86.5,
+          "sector": "Commodities",
+          "signal": "LONG",
+          "ticker": "FTGC"
+        },
+        {
+          "composite": 66.4,
+          "name": "Value Factor",
+          "reason": "Mom: 92 | Qual: 84 | LowVol: 80 (vol=22.0%)",
+          "ret_1m": 15.27,
+          "score": 86.0,
+          "sector": "Factor",
+          "signal": "LONG",
+          "ticker": "VLUE"
+        },
+        {
+          "composite": 63.4,
+          "name": "Global Asset Allocation",
+          "reason": "Mom: 75 | Qual: 91 | LowVol: 92 (vol=11.6%)",
+          "ret_1m": 2.67,
+          "score": 84.9,
+          "sector": "Multi_Asset",
+          "signal": "LONG",
+          "ticker": "GAA"
+        },
+        {
+          "composite": 74.3,
+          "name": "Israel",
+          "reason": "Mom: 90 | Qual: 96 | LowVol: 66 (vol=26.9%)",
+          "ret_1m": 10.26,
+          "score": 84.7,
+          "sector": "Intl_Developed",
+          "signal": "LONG",
+          "ticker": "EIS"
+        },
+        {
+          "composite": 62.4,
+          "name": "Commodity Index",
+          "reason": "Mom: 83 | Qual: 92 | LowVol: 74 (vol=24.7%)",
+          "ret_1m": 5.92,
+          "score": 83.0,
+          "sector": "Commodities",
+          "signal": "LONG",
+          "ticker": "DBC"
+        },
+        {
+          "composite": 58.5,
+          "name": "Toronto-Dominion Bank",
+          "reason": "Mom: 81 | Qual: 84 | LowVol: 84 (vol=19.9%)",
+          "ret_1m": 9.32,
+          "score": 83.0,
+          "sector": "Financials",
+          "signal": "LONG",
+          "ticker": "TD"
+        },
+        {
+          "composite": 58.4,
+          "name": "Ross Stores",
+          "reason": "Mom: 81 | Qual: 96 | LowVol: 72 (vol=25.4%)",
+          "ret_1m": 0.0,
+          "score": 82.7,
+          "sector": "ConsDisc",
+          "signal": "LONG",
+          "ticker": "ROST"
+        },
+        {
+          "composite": 68.5,
+          "name": "Nasdaq 100",
+          "reason": "Mom: 85 | Qual: 78 | LowVol: 85 (vol=19.7%)",
+          "ret_1m": 14.66,
+          "score": 82.7,
+          "sector": "Broad",
+          "signal": "LONG",
+          "ticker": "QQQ"
+        },
+        {
+          "composite": 57.3,
+          "name": "Optimum Yield Commodity",
+          "reason": "Mom: 82 | Qual: 92 | LowVol: 73 (vol=24.9%)",
+          "ret_1m": 6.11,
+          "score": 82.1,
+          "sector": "Commodities",
+          "signal": "LONG",
+          "ticker": "PDBC"
+        },
+        {
+          "composite": 70.1,
+          "name": "Taiwan",
+          "reason": "Mom: 94 | Qual: 96 | LowVol: 51 (vol=32.8%)",
+          "ret_1m": 23.51,
+          "score": 81.9,
+          "sector": "Emerging_Markets",
+          "signal": "LONG",
+          "ticker": "EWT"
+        },
+        {
+          "composite": 73.9,
+          "name": "Technology",
+          "reason": "Mom: 89 | Qual: 82 | LowVol: 72 (vol=25.1%)",
+          "ret_1m": 19.76,
+          "score": 81.7,
+          "sector": "Technology",
+          "signal": "LONG",
+          "ticker": "XLK"
+        },
+        {
+          "composite": 70.9,
+          "name": "TIGER 미국필라델피아반도체나스닥",
+          "reason": "Mom: 96 | Qual: 96 | LowVol: 47 (vol=34.8%)",
+          "ret_1m": 34.55,
+          "score": 81.4,
+          "sector": "Korea_Equity",
+          "signal": "LONG",
+          "ticker": "381180.KS"
+        },
+        {
+          "composite": 70.0,
+          "name": "Alphabet",
+          "reason": "Mom: 92 | Qual: 99 | LowVol: 48 (vol=34.1%)",
+          "ret_1m": 25.42,
+          "score": 81.0,
+          "sector": "CommServices",
+          "signal": "LONG",
+          "ticker": "GOOGL"
+        }
+      ],
+      "sector_allocation": {
+        "Broad": 6.7,
+        "CommServices": 6.7,
+        "Commodities": 20.0,
+        "ConsDisc": 6.7,
+        "Emerging_Markets": 6.7,
+        "Factor": 6.7,
+        "Financials": 13.3,
+        "Intl_Developed": 6.7,
+        "Korea_Equity": 6.7,
+        "Multi_Asset": 6.7,
+        "Technology": 13.3
+      },
+      "signal_summary": {
+        "long": 135,
+        "neutral": 464,
+        "short": 157
+      }
+    },
+    "sector_rotation": {
+      "description": "Rank all categories by average composite score. Overweight top 3 sectors, underweight bottom 3. Select top 5 tickers per overweight sector.",
+      "metrics": {
+        "bottom_sectors": [
+          {
+            "avg_composite": 28.1,
+            "sector": "FI_Long"
+          },
+          {
+            "avg_composite": 27.1,
+            "sector": "Utilities"
+          },
+          {
+            "avg_composite": 23.8,
+            "sector": "India"
+          }
+        ],
+        "n_categories": 43,
+        "top_sectors": [
+          {
+            "avg_composite": 70.8,
+            "sector": "Korea_Equity"
+          },
+          {
+            "avg_composite": 68.0,
+            "sector": "Technology"
+          },
+          {
+            "avg_composite": 61.6,
+            "sector": "Broad"
+          }
+        ]
+      },
+      "name": "Sector Rotation",
+      "picks": [
+        {
+          "composite": 76.4,
+          "name": "TIGER 코리아TOP10",
+          "reason": "Top sector avg: 70.8 | Cat rank: 1/3",
+          "ret_1m": 28.52,
+          "score": 76.4,
+          "sector": "Korea_Equity",
+          "signal": "OVERWEIGHT",
+          "ticker": "292150.KS"
+        },
+        {
+          "composite": 76.2,
+          "name": "TIGER 200",
+          "reason": "Top sector avg: 70.8 | Cat rank: 1/3",
+          "ret_1m": 30.75,
+          "score": 76.2,
+          "sector": "Korea_Equity",
+          "signal": "OVERWEIGHT",
+          "ticker": "102110.KS"
+        },
+        {
+          "composite": 76.1,
+          "name": "KODEX AI반도체",
+          "reason": "Top sector avg: 70.8 | Cat rank: 1/3",
+          "ret_1m": 33.17,
+          "score": 76.1,
+          "sector": "Korea_Equity",
+          "signal": "OVERWEIGHT",
+          "ticker": "395160.KS"
+        },
+        {
+          "composite": 74.9,
+          "name": "KODEX 반도체",
+          "reason": "Top sector avg: 70.8 | Cat rank: 1/3",
+          "ret_1m": 37.85,
+          "score": 74.9,
+          "sector": "Korea_Equity",
+          "signal": "OVERWEIGHT",
+          "ticker": "091160.KS"
+        },
+        {
+          "composite": 74.7,
+          "name": "KODEX 200",
+          "reason": "Top sector avg: 70.8 | Cat rank: 1/3",
+          "ret_1m": 30.7,
+          "score": 74.7,
+          "sector": "Korea_Equity",
+          "signal": "OVERWEIGHT",
+          "ticker": "069500.KS"
+        },
+        {
+          "composite": 74.2,
+          "name": "Semiconductors",
+          "reason": "Top sector avg: 68.0 | Cat rank: 2/3",
+          "ret_1m": 27.71,
+          "score": 74.2,
+          "sector": "Technology",
+          "signal": "OVERWEIGHT",
+          "ticker": "SMH"
+        },
+        {
+          "composite": 73.9,
+          "name": "Technology",
+          "reason": "Top sector avg: 68.0 | Cat rank: 2/3",
+          "ret_1m": 19.76,
+          "score": 73.9,
+          "sector": "Technology",
+          "signal": "OVERWEIGHT",
+          "ticker": "XLK"
+        },
+        {
+          "composite": 71.6,
+          "name": "Semiconductor Index",
+          "reason": "Top sector avg: 68.0 | Cat rank: 2/3",
+          "ret_1m": 32.93,
+          "score": 71.6,
+          "sector": "Technology",
+          "signal": "OVERWEIGHT",
+          "ticker": "SOXX"
+        },
+        {
+          "composite": 68.5,
+          "name": "Nasdaq 100",
+          "reason": "Top sector avg: 61.6 | Cat rank: 3/3",
+          "ret_1m": 14.66,
+          "score": 68.5,
+          "sector": "Broad",
+          "signal": "OVERWEIGHT",
+          "ticker": "QQQ"
+        },
+        {
+          "composite": 64.0,
+          "name": "Cybersecurity",
+          "reason": "Top sector avg: 68.0 | Cat rank: 2/3",
+          "ret_1m": 11.39,
+          "score": 64.0,
+          "sector": "Technology",
+          "signal": "OVERWEIGHT",
+          "ticker": "CIBR"
+        },
+        {
+          "composite": 63.9,
+          "name": "S&P 500",
+          "reason": "Top sector avg: 61.6 | Cat rank: 3/3",
+          "ret_1m": 8.22,
+          "score": 63.9,
+          "sector": "Broad",
+          "signal": "OVERWEIGHT",
+          "ticker": "SPY"
+        },
+        {
+          "composite": 63.8,
+          "name": "S&P MidCap 400",
+          "reason": "Top sector avg: 61.6 | Cat rank: 3/3",
+          "ret_1m": 4.44,
+          "score": 63.8,
+          "sector": "Broad",
+          "signal": "OVERWEIGHT",
+          "ticker": "IJH"
+        },
+        {
+          "composite": 63.5,
+          "name": "S&P 100 Mega Cap",
+          "reason": "Top sector avg: 61.6 | Cat rank: 3/3",
+          "ret_1m": 10.2,
+          "score": 63.5,
+          "sector": "Broad",
+          "signal": "OVERWEIGHT",
+          "ticker": "OEF"
+        },
+        {
+          "composite": 63.3,
+          "name": "Robotics & AI",
+          "reason": "Top sector avg: 68.0 | Cat rank: 2/3",
+          "ret_1m": 13.41,
+          "score": 63.3,
+          "sector": "Technology",
+          "signal": "OVERWEIGHT",
+          "ticker": "BOTZ"
+        },
+        {
+          "composite": 63.3,
+          "name": "Mega Cap Value",
+          "reason": "Top sector avg: 61.6 | Cat rank: 3/3",
+          "ret_1m": 2.26,
+          "score": 63.3,
+          "sector": "Broad",
+          "signal": "OVERWEIGHT",
+          "ticker": "MGV"
+        }
+      ],
+      "sector_allocation": {
+        "Broad": 33.3,
+        "FI_Long": 0.0,
+        "India": 0.0,
+        "Korea_Equity": 33.3,
+        "Technology": 33.3,
+        "Utilities": 0.0
+      },
+      "signal_summary": {
+        "long": 35,
+        "neutral": 705,
+        "short": 16
+      }
+    },
+    "trend_following": {
+      "description": "CTA-style trend following: enter when above SMA50+SMA200 with positive SMA50 slope and bullish classification. Position sized by inverse volatility. Exit on SMA50 break or slope reversal.",
+      "metrics": {
+        "avg_tcs_long": 94.0,
+        "avg_vol_long": 35.3,
+        "n_long": 70,
+        "n_neutral": 564,
+        "n_short": 122
+      },
+      "name": "Trend Following",
+      "picks": [
+        {
+          "composite": 62.9,
+          "name": "Hologic",
+          "reason": "TCS: 85 | Vol: 2.6% | SMA50+200: Y | GC: Y",
+          "ret_1m": 0.36,
+          "score": 3207.5,
+          "sector": "Healthcare",
+          "signal": "LONG",
+          "ticker": "HOLX"
+        },
+        {
+          "composite": 55.4,
+          "name": "Blackstone Senior Loan",
+          "reason": "TCS: 84 | Vol: 5.0% | SMA50+200: Y | GC: Y",
+          "ret_1m": 1.2,
+          "score": 1693.5,
+          "sector": "FI_Credit",
+          "signal": "LONG",
+          "ticker": "SRLN"
+        },
+        {
+          "composite": 57.4,
+          "name": "Silicon Labs",
+          "reason": "TCS: 96 | Vol: 6.1% | SMA50+200: Y | GC: Y",
+          "ret_1m": 3.46,
+          "score": 1571.2,
+          "sector": "Technology",
+          "signal": "LONG",
+          "ticker": "SLAB"
+        },
+        {
+          "composite": 59.0,
+          "name": "BB-B CLO",
+          "reason": "TCS: 80 | Vol: 5.2% | SMA50+200: Y | GC: Y",
+          "ret_1m": 1.64,
+          "score": 1547.4,
+          "sector": "FI_Intermediate",
+          "signal": "LONG",
+          "ticker": "JBBB"
+        },
+        {
+          "composite": 55.8,
+          "name": "Conservative Allocation",
+          "reason": "TCS: 93 | Vol: 7.8% | SMA50+200: Y | GC: Y",
+          "ret_1m": 1.93,
+          "score": 1200.0,
+          "sector": "Multi_Asset",
+          "signal": "LONG",
+          "ticker": "AOK"
+        },
+        {
+          "composite": 53.8,
+          "name": "Agriculture",
+          "reason": "TCS: 98 | Vol: 8.8% | SMA50+200: Y | GC: Y",
+          "ret_1m": 3.46,
+          "score": 1114.9,
+          "sector": "Commodities",
+          "signal": "LONG",
+          "ticker": "DBA"
+        },
+        {
+          "composite": 59.0,
+          "name": "Moderate Allocation",
+          "reason": "TCS: 97 | Vol: 8.9% | SMA50+200: Y | GC: Y",
+          "ret_1m": 2.45,
+          "score": 1085.0,
+          "sector": "Multi_Asset",
+          "signal": "LONG",
+          "ticker": "AOM"
+        },
+        {
+          "composite": 59.2,
+          "name": "Preferred Stock",
+          "reason": "TCS: 87 | Vol: 8.3% | SMA50+200: Y | GC: Y",
+          "ret_1m": 3.0,
+          "score": 1052.0,
+          "sector": "FI_Credit",
+          "signal": "LONG",
+          "ticker": "PFF"
+        },
+        {
+          "composite": 57.7,
+          "name": "Australian Dollar",
+          "reason": "TCS: 95 | Vol: 9.4% | SMA50+200: Y | GC: Y",
+          "ret_1m": 2.51,
+          "score": 1013.9,
+          "sector": "Currency_Vol",
+          "signal": "LONG",
+          "ticker": "FXA"
+        },
+        {
+          "composite": 58.9,
+          "name": "Dividend Growth",
+          "reason": "TCS: 90 | Vol: 9.8% | SMA50+200: Y | GC: Y",
+          "ret_1m": 2.2,
+          "score": 922.1,
+          "sector": "Factor",
+          "signal": "LONG",
+          "ticker": "SCHD"
+        },
+        {
+          "composite": 63.3,
+          "name": "Mega Cap Value",
+          "reason": "TCS: 100 | Vol: 11.6% | SMA50+200: Y | GC: Y",
+          "ret_1m": 2.26,
+          "score": 865.1,
+          "sector": "Broad",
+          "signal": "LONG",
+          "ticker": "MGV"
+        },
+        {
+          "composite": 65.4,
+          "name": "Growth Allocation",
+          "reason": "TCS: 100 | Vol: 11.9% | SMA50+200: Y | GC: Y",
+          "ret_1m": 3.75,
+          "score": 841.8,
+          "sector": "Multi_Asset",
+          "signal": "LONG",
+          "ticker": "AOR"
+        },
+        {
+          "composite": 58.7,
+          "name": "Russell 1000 Value",
+          "reason": "TCS: 100 | Vol: 13.1% | SMA50+200: Y | GC: Y",
+          "ret_1m": 4.54,
+          "score": 761.6,
+          "sector": "Broad",
+          "signal": "LONG",
+          "ticker": "IWD"
+        },
+        {
+          "composite": 62.3,
+          "name": "Aggressive Allocation",
+          "reason": "TCS: 100 | Vol: 14.9% | SMA50+200: Y | GC: Y",
+          "ret_1m": 4.86,
+          "score": 670.7,
+          "sector": "Multi_Asset",
+          "signal": "LONG",
+          "ticker": "AOA"
+        },
+        {
+          "composite": 63.9,
+          "name": "S&P 500",
+          "reason": "TCS: 100 | Vol: 15.0% | SMA50+200: Y | GC: Y",
+          "ret_1m": 8.22,
+          "score": 666.7,
+          "sector": "Broad",
+          "signal": "LONG",
+          "ticker": "SPY"
+        }
+      ],
+      "sector_allocation": {
+        "Broad": 11.5,
+        "Commodities": 5.7,
+        "Currency_Vol": 5.3,
+        "FI_Credit": 16.1,
+        "FI_Intermediate": 9.7,
+        "Factor": 5.1,
+        "Healthcare": 18.9,
+        "Multi_Asset": 19.6,
+        "Technology": 8.2
+      },
+      "signal_summary": {
+        "long": 70,
+        "neutral": 564,
+        "short": 122
+      }
+    }
+  }
+}

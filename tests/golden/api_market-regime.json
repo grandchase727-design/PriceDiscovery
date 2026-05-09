@@ -1,0 +1,612 @@
+{
+  "agreement_score": 87.5,
+  "breadth": {
+    "avg_composite": 45.0,
+    "avg_long_count": 1.85,
+    "avg_oer": 21.7,
+    "avg_rsi": 51.9,
+    "avg_rss": 49.9,
+    "avg_short_count": 0.79,
+    "avg_tcs": 59.0,
+    "avg_tfs": 23.6,
+    "median_composite": 45.9,
+    "n": 756,
+    "n_bear": 133,
+    "n_bull": 162,
+    "n_neutral": 461,
+    "pct_bear": 17.6,
+    "pct_bull": 21.4,
+    "pct_eligible": 34.5,
+    "pct_neutral": 61.0,
+    "std_composite": 18.4
+  },
+  "classification_dist": [
+    {
+      "classification": "🟠 NEUTRAL",
+      "count": 309,
+      "group": "neutral",
+      "pct": 40.9
+    },
+    {
+      "classification": "🟡 OVEREXTENDED",
+      "count": 127,
+      "group": "neutral",
+      "pct": 16.8
+    },
+    {
+      "classification": "🟢 CONTINUATION",
+      "count": 86,
+      "group": "bullish",
+      "pct": 11.4
+    },
+    {
+      "classification": "⚠️ WEAKENING",
+      "count": 55,
+      "group": "bearish",
+      "pct": 7.3
+    },
+    {
+      "classification": "⬇️ DOWNTREND",
+      "count": 51,
+      "group": "bearish",
+      "pct": 6.7
+    },
+    {
+      "classification": "🟡 CONSOLIDATION",
+      "count": 35,
+      "group": "bullish",
+      "pct": 4.6
+    },
+    {
+      "classification": "🔵 RECOVERY",
+      "count": 26,
+      "group": "bullish",
+      "pct": 3.4
+    },
+    {
+      "classification": "🟦 LAGGING_CATCHUP",
+      "count": 25,
+      "group": "neutral",
+      "pct": 3.3
+    },
+    {
+      "classification": "🟤 FADING",
+      "count": 16,
+      "group": "bearish",
+      "pct": 2.1
+    },
+    {
+      "classification": "🔵 FORMATION",
+      "count": 15,
+      "group": "bullish",
+      "pct": 2.0
+    },
+    {
+      "classification": "🔴 CYCLE_PEAK",
+      "count": 11,
+      "group": "bearish",
+      "pct": 1.5
+    }
+  ],
+  "composite_distribution": {
+    "bins": [
+      0.0,
+      5.0,
+      10.0,
+      15.0,
+      20.0,
+      25.0,
+      30.0,
+      35.0,
+      40.0,
+      45.0,
+      50.0,
+      55.0,
+      60.0,
+      65.0,
+      70.0,
+      75.0,
+      80.0,
+      85.0,
+      90.0,
+      95.0
+    ],
+    "counts": [
+      0,
+      10,
+      29,
+      47,
+      50,
+      53,
+      44,
+      72,
+      56,
+      67,
+      61,
+      72,
+      70,
+      51,
+      58,
+      15,
+      1,
+      0,
+      0,
+      0
+    ],
+    "mean": 45.0,
+    "median": 45.9,
+    "q25": 30.1,
+    "q75": 60.6,
+    "skew": -0.16,
+    "std": 18.4
+  },
+  "regime": "ROTATION",
+  "regime_desc": "섹터/종목 간 극단적 양극화. Composite 분산 높고 Bull/Bear가 혼재.",
+  "regime_history": [
+    {
+      "avg_composite": 48.5,
+      "avg_oer": 20.3,
+      "avg_tcs": 61.5,
+      "avg_tfs": 22.1,
+      "date": "2026-04-27",
+      "n": 756,
+      "pct_bearish": 13.6,
+      "pct_bullish": 27.8,
+      "pct_eligible": 39.4
+    },
+    {
+      "avg_composite": 47.3,
+      "avg_oer": 15.2,
+      "avg_tcs": 59.6,
+      "avg_tfs": 20.2,
+      "date": "2026-04-28",
+      "n": 756,
+      "pct_bearish": 14.9,
+      "pct_bullish": 26.3,
+      "pct_eligible": 36.1
+    },
+    {
+      "avg_composite": 45.7,
+      "avg_oer": 15.7,
+      "avg_tcs": 56.5,
+      "avg_tfs": 19.4,
+      "date": "2026-04-29",
+      "n": 756,
+      "pct_bearish": 17.9,
+      "pct_bullish": 20.8,
+      "pct_eligible": 34.4
+    },
+    {
+      "avg_composite": 49.3,
+      "avg_oer": 19.6,
+      "avg_tcs": 60.2,
+      "avg_tfs": 24.3,
+      "date": "2026-04-30",
+      "n": 756,
+      "pct_bearish": 13.2,
+      "pct_bullish": 27.6,
+      "pct_eligible": 43.7
+    },
+    {
+      "avg_composite": 47.3,
+      "avg_oer": 18.5,
+      "avg_tcs": 57.1,
+      "avg_tfs": 21.1,
+      "date": "2026-05-04",
+      "n": 756,
+      "pct_bearish": 18.0,
+      "pct_bullish": 21.7,
+      "pct_eligible": 38.0
+    },
+    {
+      "avg_composite": 51.8,
+      "avg_oer": 21.5,
+      "avg_tcs": 61.3,
+      "avg_tfs": 26.5,
+      "date": "2026-05-06",
+      "n": 756,
+      "pct_bearish": 13.0,
+      "pct_bullish": 29.0,
+      "pct_eligible": 47.0
+    },
+    {
+      "avg_composite": 48.6,
+      "avg_oer": 17.4,
+      "avg_tcs": 58.6,
+      "avg_tfs": 21.9,
+      "date": "2026-05-07",
+      "n": 756,
+      "pct_bearish": 15.3,
+      "pct_bullish": 25.3,
+      "pct_eligible": 38.8
+    },
+    {
+      "avg_composite": 49.1,
+      "avg_oer": 19.4,
+      "avg_tcs": 59.0,
+      "avg_tfs": 23.6,
+      "date": "2026-05-08",
+      "n": 756,
+      "pct_bearish": 17.6,
+      "pct_bullish": 25.0,
+      "pct_eligible": 40.6
+    }
+  ],
+  "sector_regime": [
+    {
+      "avg_composite": 59.5,
+      "avg_long_count": 3.2,
+      "avg_oer": 14.5,
+      "avg_rss": 57.4,
+      "avg_short_count": 0.2,
+      "avg_tcs": 91.2,
+      "avg_tfs": 41.0,
+      "n": 6,
+      "pct_bearish": 0.0,
+      "pct_bullish": 66.7,
+      "sector": "Multi-Asset"
+    },
+    {
+      "avg_composite": 59.2,
+      "avg_long_count": 2.7,
+      "avg_oer": 27.6,
+      "avg_rss": 60.0,
+      "avg_short_count": 0.1,
+      "avg_tcs": 89.3,
+      "avg_tfs": 32.3,
+      "n": 32,
+      "pct_bearish": 0.0,
+      "pct_bullish": 43.8,
+      "sector": "Equity Broad"
+    },
+    {
+      "avg_composite": 57.3,
+      "avg_long_count": 2.9,
+      "avg_oer": 50.1,
+      "avg_rss": 64.1,
+      "avg_short_count": 0.5,
+      "avg_tcs": 75.5,
+      "avg_tfs": 32.5,
+      "n": 141,
+      "pct_bearish": 7.1,
+      "pct_bullish": 24.8,
+      "sector": "Technology"
+    },
+    {
+      "avg_composite": 53.8,
+      "avg_long_count": 2.4,
+      "avg_oer": 24.1,
+      "avg_rss": 56.7,
+      "avg_short_count": 0.2,
+      "avg_tcs": 72.9,
+      "avg_tfs": 33.8,
+      "n": 42,
+      "pct_bearish": 4.8,
+      "pct_bullish": 21.4,
+      "sector": "International"
+    },
+    {
+      "avg_composite": 53.4,
+      "avg_long_count": 2.6,
+      "avg_oer": 13.6,
+      "avg_rss": 53.2,
+      "avg_short_count": 0.0,
+      "avg_tcs": 88.3,
+      "avg_tfs": 25.1,
+      "n": 7,
+      "pct_bearish": 0.0,
+      "pct_bullish": 0.0,
+      "sector": "Real Estate"
+    },
+    {
+      "avg_composite": 48.5,
+      "avg_long_count": 2.3,
+      "avg_oer": 36.6,
+      "avg_rss": 58.5,
+      "avg_short_count": 0.9,
+      "avg_tcs": 65.8,
+      "avg_tfs": 20.4,
+      "n": 22,
+      "pct_bearish": 27.3,
+      "pct_bullish": 22.7,
+      "sector": "Utilities"
+    },
+    {
+      "avg_composite": 46.7,
+      "avg_long_count": 1.7,
+      "avg_oer": 15.4,
+      "avg_rss": 53.5,
+      "avg_short_count": 0.5,
+      "avg_tcs": 61.7,
+      "avg_tfs": 22.2,
+      "n": 94,
+      "pct_bearish": 14.9,
+      "pct_bullish": 21.3,
+      "sector": "Materials"
+    },
+    {
+      "avg_composite": 45.8,
+      "avg_long_count": 1.3,
+      "avg_oer": 5.2,
+      "avg_rss": 56.6,
+      "avg_short_count": 0.3,
+      "avg_tcs": 57.4,
+      "avg_tfs": 16.5,
+      "n": 44,
+      "pct_bearish": 25.0,
+      "pct_bullish": 20.5,
+      "sector": "Energy"
+    },
+    {
+      "avg_composite": 44.4,
+      "avg_long_count": 1.5,
+      "avg_oer": 15.4,
+      "avg_rss": 44.1,
+      "avg_short_count": 0.4,
+      "avg_tcs": 63.0,
+      "avg_tfs": 27.4,
+      "n": 16,
+      "pct_bearish": 0.0,
+      "pct_bullish": 43.8,
+      "sector": "Consumer Staples"
+    },
+    {
+      "avg_composite": 41.8,
+      "avg_long_count": 1.0,
+      "avg_oer": 12.0,
+      "avg_rss": 46.0,
+      "avg_short_count": 0.0,
+      "avg_tcs": 64.5,
+      "avg_tfs": 18.0,
+      "n": 2,
+      "pct_bearish": 0.0,
+      "pct_bullish": 50.0,
+      "sector": "Alternatives"
+    },
+    {
+      "avg_composite": 41.2,
+      "avg_long_count": 1.7,
+      "avg_oer": 17.0,
+      "avg_rss": 45.4,
+      "avg_short_count": 0.7,
+      "avg_tcs": 54.0,
+      "avg_tfs": 20.9,
+      "n": 87,
+      "pct_bearish": 14.9,
+      "pct_bullish": 24.1,
+      "sector": "Financials"
+    },
+    {
+      "avg_composite": 41.0,
+      "avg_long_count": 2.3,
+      "avg_oer": 16.1,
+      "avg_rss": 43.8,
+      "avg_short_count": 0.0,
+      "avg_tcs": 58.0,
+      "avg_tfs": 27.1,
+      "n": 45,
+      "pct_bearish": 0.0,
+      "pct_bullish": 6.7,
+      "sector": "Fixed Income"
+    },
+    {
+      "avg_composite": 39.6,
+      "avg_long_count": 1.4,
+      "avg_oer": 11.4,
+      "avg_rss": 43.3,
+      "avg_short_count": 1.0,
+      "avg_tcs": 49.6,
+      "avg_tfs": 18.4,
+      "n": 60,
+      "pct_bearish": 31.7,
+      "pct_bullish": 15.0,
+      "sector": "Industrials"
+    },
+    {
+      "avg_composite": 38.2,
+      "avg_long_count": 1.7,
+      "avg_oer": 6.4,
+      "avg_rss": 38.3,
+      "avg_short_count": 0.9,
+      "avg_tcs": 54.9,
+      "avg_tfs": 22.1,
+      "n": 7,
+      "pct_bearish": 14.3,
+      "pct_bullish": 28.6,
+      "sector": "Macro"
+    },
+    {
+      "avg_composite": 36.1,
+      "avg_long_count": 1.1,
+      "avg_oer": 15.2,
+      "avg_rss": 38.7,
+      "avg_short_count": 1.7,
+      "avg_tcs": 41.4,
+      "avg_tfs": 17.9,
+      "n": 33,
+      "pct_bearish": 33.3,
+      "pct_bullish": 30.3,
+      "sector": "Communication Services"
+    },
+    {
+      "avg_composite": 30.1,
+      "avg_long_count": 0.8,
+      "avg_oer": 8.4,
+      "avg_rss": 33.8,
+      "avg_short_count": 2.0,
+      "avg_tcs": 34.2,
+      "avg_tfs": 15.1,
+      "n": 59,
+      "pct_bearish": 37.3,
+      "pct_bullish": 13.6,
+      "sector": "Consumer Discretionary"
+    },
+    {
+      "avg_composite": 29.8,
+      "avg_long_count": 0.8,
+      "avg_oer": 9.5,
+      "avg_rss": 33.8,
+      "avg_short_count": 1.9,
+      "avg_tcs": 32.1,
+      "avg_tfs": 15.1,
+      "n": 59,
+      "pct_bearish": 40.7,
+      "pct_bullish": 8.5,
+      "sector": "Healthcare"
+    }
+  ],
+  "signal_dist": [
+    {
+      "count": 536,
+      "signal": "NEUTRAL"
+    },
+    {
+      "count": 127,
+      "signal": "LONG"
+    },
+    {
+      "count": 66,
+      "signal": "SHORT"
+    },
+    {
+      "count": 19,
+      "signal": "STRONG_LONG"
+    },
+    {
+      "count": 8,
+      "signal": "STRONG_SHORT"
+    }
+  ],
+  "strategy_breadth": [
+    {
+      "label": "O'Neil",
+      "long_avg": 33.6,
+      "long_breadth": 26.3,
+      "net_avg": 11.7,
+      "net_breadth": 9.9,
+      "short_avg": 21.9,
+      "short_breadth": 16.4,
+      "strategy": "oneil"
+    },
+    {
+      "label": "Minervini",
+      "long_avg": 47.9,
+      "long_breadth": 58.1,
+      "net_avg": 26.9,
+      "net_breadth": 39.2,
+      "short_avg": 21.0,
+      "short_breadth": 18.9,
+      "strategy": "minervini"
+    },
+    {
+      "label": "Wyckoff",
+      "long_avg": 28.7,
+      "long_breadth": 16.4,
+      "net_avg": 9.0,
+      "net_breadth": 11.9,
+      "short_avg": 19.7,
+      "short_breadth": 4.5,
+      "strategy": "wyckoff"
+    },
+    {
+      "label": "Ichimoku",
+      "long_avg": 62.6,
+      "long_breadth": 64.4,
+      "net_avg": 32.0,
+      "net_breadth": 36.1,
+      "short_avg": 30.6,
+      "short_breadth": 28.3,
+      "strategy": "ichimoku"
+    },
+    {
+      "label": "Darvas",
+      "long_avg": 41.0,
+      "long_breadth": 36.0,
+      "net_avg": 17.4,
+      "net_breadth": 15.1,
+      "short_avg": 23.6,
+      "short_breadth": 20.9,
+      "strategy": "darvas"
+    },
+    {
+      "label": "Regime",
+      "long_avg": 47.5,
+      "long_breadth": 48.4,
+      "net_avg": 21.5,
+      "net_breadth": 34.8,
+      "short_avg": 26.0,
+      "short_breadth": 13.6,
+      "strategy": "regime"
+    },
+    {
+      "label": "Flow",
+      "long_avg": 25.2,
+      "long_breadth": 17.1,
+      "net_avg": 1.9,
+      "net_breadth": 10.1,
+      "short_avg": 23.3,
+      "short_breadth": 7.0,
+      "strategy": "flow"
+    },
+    {
+      "label": "RelVal",
+      "long_avg": 26.6,
+      "long_breadth": 3.6,
+      "net_avg": 4.5,
+      "net_breadth": -3.9,
+      "short_avg": 22.1,
+      "short_breadth": 7.5,
+      "strategy": "relval"
+    }
+  ],
+  "strategy_groups": [
+    {
+      "desc": "방향성 추세 추종",
+      "group": "Trend-Following",
+      "net_avg": 21.9,
+      "net_breadth": 29.7,
+      "strategies": [
+        "minervini",
+        "regime",
+        "darvas"
+      ]
+    },
+    {
+      "desc": "수급 기반 매집/분산",
+      "group": "Volume/Accumulation",
+      "net_avg": 5.5,
+      "net_breadth": 11.0,
+      "strategies": [
+        "wyckoff",
+        "flow"
+      ]
+    },
+    {
+      "desc": "돌파 기반 신규 추세",
+      "group": "Breakout",
+      "net_avg": 11.7,
+      "net_breadth": 9.9,
+      "strategies": [
+        "oneil"
+      ]
+    },
+    {
+      "desc": "중기 구조적 추세 확인",
+      "group": "Structure",
+      "net_avg": 32.0,
+      "net_breadth": 36.1,
+      "strategies": [
+        "ichimoku"
+      ]
+    },
+    {
+      "desc": "상대가치 평균회귀",
+      "group": "Mean-Reversion",
+      "net_avg": 4.5,
+      "net_breadth": -3.9,
+      "strategies": [
+        "relval"
+      ]
+    }
+  ]
+}
