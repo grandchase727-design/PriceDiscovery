@@ -113,7 +113,7 @@ Pre-Mom = 0.20·Microstructure + 0.15·MacroRegime + 0.20·GraphRelational
 
 **감지 대상**: 돌파 *이전*의 구조적 패턴 — 저변동성 setup, 매집, RSI 압축.
 
-**Sub-signals** (`pre_momentum.py: class MicrostructureAgent`):
+**Sub-signals** (`agents/pre_momentum.py: class MicrostructureAgent`):
 - `volatility_compression`: 저 vol + tight SMA distance + 낮은 OER
 - `accumulation_pattern`: TFS_short × (1 - TCS/100) × Wyckoff (낮은 TCS + 형성 중인 TFS = pre-breakout)
 - `structural_divergence`: structural_q − composite (양수 = quality building before breakout)
@@ -126,7 +126,7 @@ Pre-Mom = 0.20·Microstructure + 0.15·MacroRegime + 0.20·GraphRelational
 
 **감지 대상**: top-down regime fit + sector rotation alignment.
 
-**Sub-signals** (`pre_momentum.py: class MacroRegimeAgent`):
+**Sub-signals** (`agents/pre_momentum.py: class MacroRegimeAgent`):
 - 카테고리 breadth (% of peers eligible)
 - Cross-asset alignment (예: Tech 강세 + Defensive 약세 = risk-on)
 - `avg_composite` of category peers (peer average)
@@ -139,7 +139,7 @@ Pre-Mom = 0.20·Microstructure + 0.15·MacroRegime + 0.20·GraphRelational
 
 **감지 대상**: GraphRAG 지식 그래프의 theme leadership 신호.
 
-**Sub-signals** (`pre_momentum.py: class GraphRelationalAgent`):
+**Sub-signals** (`agents/pre_momentum.py: class GraphRelationalAgent`):
 - `peer_lead`: theme 내 peer 중 composite > 55 비율
 - `theme_breadth`: theme 전체 momentum 확산 정도
 - `leader_lagger_gap`: max(peer composite) − own composite (catch-up 거리)
@@ -151,7 +151,7 @@ Pre-Mom = 0.20·Microstructure + 0.15·MacroRegime + 0.20·GraphRelational
 
 **감지 대상**: catalyst 이벤트의 정량 proxy (free tier에서 직접 news/options 데이터 미사용).
 
-**Sub-signals** (`pre_momentum.py: class CatalystAgent`):
+**Sub-signals** (`agents/pre_momentum.py: class CatalystAgent`):
 - `momentum_acceleration`: rss_short − rss_long (단기 RS 가속)
 - `strategy_agreement`: long_count / total (8 헤지 전략 합의)
 - `score_trajectory`: score_1w > score_1m > score_3m (composite 개선 추세)
@@ -170,6 +170,8 @@ Pre-Mom = 0.20·Microstructure + 0.15·MacroRegime + 0.20·GraphRelational
 ---
 
 ## 3. QVR Agent (Quality + Value + Revision)
+
+구현: `agents/qvr_agent.py:QVRAgent`. 입력 cache: `.fundamentals_cache.pkl`.
 
 ### 산출 공식
 
@@ -310,7 +312,9 @@ short-term direction × long-term direction:
 
 ### 적용 위치
 
-- `api.py:_load_cache()` 내 (cache 로드 직후, df 변환 후 적용)
+- 게이트 primitive: `core/eligibility.py:evaluate_eligible()` (임계값/조건 정의)
+- 임계값 상수: `config/scoring.py` (ELIGIBLE_COMPOSITE=55, ADV_MIN_USD=5e6, QVR_GATE=40)
+- 호출 지점: `api.py:_load_cache()` 내 (cache 로드 직후, df 변환 후 적용)
 - 통과 → `eligible=True` 유지
 - 실패 → `eligible=False`로 강등 + `rejection` 필드에 태그 추가
 

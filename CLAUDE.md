@@ -27,16 +27,18 @@ Output surfaces: PDF report (`reports/`), React dashboard (FastAPI backend + Vit
 python3 price_discovery.py
 
 # 2. Fetch fundamentals (yfinance, ~5 min for 770 tickers)
-python3 fundamentals_pipeline.py
-python3 fundamentals_pipeline.py --retry-failed     # if rate-limited
+python3 pipelines/fundamentals_pipeline.py
+python3 pipelines/fundamentals_pipeline.py --retry-failed     # if rate-limited
 
 # 3. Enrich with Finnhub (US tickers only, ~28 min)
-python3 finnhub_fundamentals.py
+python3 pipelines/finnhub_fundamentals.py
 
 # 4. Restart API to pick up the new cache
 lsof -ti:8000 | xargs kill 2>/dev/null
 python3 -m uvicorn api:app --port 8000 &
 ```
+
+> The pipeline scripts in `pipelines/` self-insert the project root into `sys.path`, so plain `python3 pipelines/<file>.py` works. For modules without that shim (e.g. `strategies/sector_rotation_backtest.py`), use the `-m` module form shown below.
 
 ### Frontend dev
 
@@ -58,10 +60,10 @@ python3 reports/scripts/draw_dependency_graph.py
 python3 reports/scripts/draw_sector_rotation_graph.py
 
 # Quick QVR self-test (uses .fundamentals_cache.pkl)
-python3 qvr_agent.py
+python3 agents/qvr_agent.py
 
-# Sector rotation backtest CLI (offline test)
-python3 sector_rotation_backtest.py
+# Sector rotation backtest CLI (offline test) — module form required
+python3 -m strategies.sector_rotation_backtest
 ```
 
 ### ★ Dependency-graph maintenance rule
@@ -72,8 +74,8 @@ diagram and code makes onboarding harder.
 
 | Code change in… | Regenerate PDF |
 |---|---|
-| `price_discovery.py` (scoring axes) / `pre_momentum.py` / `qvr_agent.py` / `api.py` (Eligibility Gate) | `python3 reports/scripts/draw_dependency_graph.py` → `reports/score_dependency_graph.pdf` |
-| `sector_rotation.py` / `sector_rotation_backtest.py` | `python3 reports/scripts/draw_sector_rotation_graph.py` → `reports/us_sector_rotation_graph.pdf` |
+| `price_discovery.py` (scoring axes) / `agents/pre_momentum.py` / `agents/qvr_agent.py` / `api.py` (Eligibility Gate) | `python3 reports/scripts/draw_dependency_graph.py` → `reports/score_dependency_graph.pdf` |
+| `strategies/sector_rotation.py` / `strategies/sector_rotation_backtest.py` | `python3 reports/scripts/draw_sector_rotation_graph.py` → `reports/us_sector_rotation_graph.pdf` |
 
 ---
 
@@ -190,11 +192,11 @@ Overrides: 🟡 OVEREXTENDED (OER ≥ 60 on bullish), 🔵 FORMATION (rapid shor
 ETFs and stocks now share the **same SubTheme namespace** — graph propagation, peer aggregation, and cross-sectional ranking work uniformly across asset types.
 
 Universe definitions live in:
-- `GLOBAL_ETF_UNIVERSE` (price_discovery.py:176) — ETF tickers grouped by Category
-- `STOCK_UNIVERSE` (price_discovery.py:210) — Stock tickers grouped by Category
-- `STOCK_THEMES` + `STOCK_THEMES_CONSOLIDATED` (price_discovery.py:622-1106) — Stock SubTheme map
-- `ETF_SUBTHEMES` (price_discovery.py:1108+) — ETF SubTheme map (unified with stock themes)
-- `SUBTHEME_TO_SECTOR` (api.py:27+) — SubTheme → Sector lookup
+- `GLOBAL_ETF_UNIVERSE` (price_discovery.py:185) — ETF tickers grouped by Category
+- `STOCK_UNIVERSE` (price_discovery.py:219) — Stock tickers grouped by Category
+- `STOCK_THEMES` + `STOCK_THEMES_CONSOLIDATED` (price_discovery.py:631-1114) — Stock SubTheme map
+- `ETF_SUBTHEMES` (price_discovery.py:1123+) — ETF SubTheme map (unified with stock themes)
+- `SUBTHEME_TO_SECTOR` (api.py:29+) — SubTheme → Sector lookup
 
 ### Adding tickers
 
@@ -239,9 +241,9 @@ The api.py loader then:
 - **`NaiveDiscoveryDetector`** (price_discovery.py): dual-timeframe scoring — `compute_raw()` → `score_tcs_short/long()`, `score_tfs_short/long()`, `score_oer()`, `score_urs()` → `classify()` (3×3 matrix). Cross-sectional `compute_percentile_ranks()` produces `rss_short/long` + URS sub-signals.
 - **`SignalValidityEngine`** (price_discovery.py): backtests signal quality over 12 evaluation points × 63 trading days; produces bucket/class/per-ticker hit rates.
 - **`VizEngine`** (price_discovery.py): all PDF report pages. Dark-theme matplotlib.
-- **`PriceDiscoveryGraph`** (graph_engine.py): builds knowledge graph from results, runs Louvain community detection, generates theme propagation / ETF-stock divergence / leader-lagger insights. Multi-hop: `query_impact_radius()`, `query_theme_status()`, `query_formation_pipeline()`.
-- **`PreMomentumOrchestrator`** (pre_momentum.py): runs 5 agents (Micro/Macro/Graph/Catalyst/QVR), filters universe to pre-momentum candidates, computes pre_momentum_score + agreement_ratio.
-- **`QVRAgent`** (qvr_agent.py): cross-sectional percentile rank of Q (margin/ROE), V (inverse PE/PEG/PB), R (EPS revision + bullish_change_3m + EPS surprise). Fed by both yfinance and Finnhub fundamentals.
+- **`PriceDiscoveryGraph`** (agents/graph_engine.py): builds knowledge graph from results, runs Louvain community detection, generates theme propagation / ETF-stock divergence / leader-lagger insights. Multi-hop: `query_impact_radius()`, `query_theme_status()`, `query_formation_pipeline()`.
+- **`PreMomentumOrchestrator`** (agents/pre_momentum.py): runs 5 agents (Micro/Macro/Graph/Catalyst/QVR), filters universe to pre-momentum candidates, computes pre_momentum_score + agreement_ratio.
+- **`QVRAgent`** (agents/qvr_agent.py): cross-sectional percentile rank of Q (margin/ROE), V (inverse PE/PEG/PB), R (EPS revision + bullish_change_3m + EPS surprise). Fed by both yfinance and Finnhub fundamentals.
 
 ---
 
@@ -251,12 +253,12 @@ Two implementations live side-by-side. They share the same scoring math but answ
 
 ### A. In-repo — daily cross-sectional pick list
 
-`strategy_sector_rotation()` in [`quant_strategies.py`](quant_strategies.py:124) runs alongside the other 8 quant strategies on every scan:
+`strategy_sector_rotation()` in [`strategies/quant_strategies.py`](strategies/quant_strategies.py#L124) runs alongside the other 8 quant strategies on every scan:
 
 - Groups all 770 scored tickers by `category`, computes per-category mean Composite
 - Top 3 categories → OVERWEIGHT; bottom 3 (when ≥6 categories) → UNDERWEIGHT
 - Picks top 5 tickers within each overweight category by Composite
-- Surfaces in `/api/strategies` and the React dashboard's strategy cards
+- Surfaces in `/api/quant-strategies` and the React dashboard's strategy cards
 
 This is a **point-in-time signal** — refreshed each scan, no time series, no backtest.
 
@@ -289,24 +291,19 @@ Applies the same Momentum Composite formula to **11 SPDR-equivalent sector ETFs 
 ### When to update which
 
 - Touching the **scoring math** (TCS/TFS/RSS/URS/Composite/Classification): update `price_discovery.py` here first — it's the source of truth. Then port the change to `daimon/strategy/us_sector_rotation/scoring.py`.
-- Touching **how categories are aggregated for the daily pick list**: `quant_strategies.py:strategy_sector_rotation` only.
+- Touching **how categories are aggregated for the daily pick list**: `strategies/quant_strategies.py:strategy_sector_rotation` only.
 - Touching **rotation logic, rebalance cadence, backtest universe**: `daimon/strategy/us_sector_rotation/{backtest.py, experiment.py}` only — does not affect this repo.
 
-### Surfacing in the React dashboard
+### Surfacing in the React dashboard (now wired)
 
-To pipe daimon's monthly backtest results into the React dashboard here, the FastAPI backend (`api.py`) needs to load the daimon parquets and expose them as a new endpoint (e.g. `/api/sector-rotation`). Suggested shape:
+The FastAPI backend exposes two endpoints that read daimon's parquets / JSON:
 
-```json
-{
-  "as_of": "YYYY-MM-DD",
-  "picks": ["SC_US_TECH", "SC_US_HEALTH", ...],
-  "scores": [{"code": "...", "label": "...", "composite": ..., "classification": "...", ...}],
-  "backtest": {"cum_strategy": [...], "cum_benchmark": [...], "dates": [...]},
-  "metrics": {"strategy": {...}, "benchmark": {...}}
-}
-```
+| Endpoint | Source file | Returns |
+|---|---|---|
+| `GET /api/sector-rotation` (api.py:2098) | `latest_signal.json` + `sector_scores.parquet` | top-N picks + full 11-sector score table at the latest date |
+| `GET /api/sector-rotation/backtest` (api.py:2111) | `monthly_backtest.parquet` + `summary_metrics.json` | month-by-month cumulative return series + Sharpe/CAGR/MDD vs S&P500 |
 
-The frontend can then add a new tab (or extend the existing strategy view) to render top-N picks, 11-sector score table, and the monthly cumulative-return chart vs S&P500.
+These are consumed by the dashboard's strategy view to render top-N picks and the monthly cumulative-return chart.
 
 ---
 

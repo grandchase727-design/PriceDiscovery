@@ -36,20 +36,31 @@ Price Discovery 시스템의 전체 아키텍처를 5-layer dependency 모델로
 
 ### 백엔드 (Python)
 
+2026-05 reorg 이후 패키지 구조 — 루트에는 `price_discovery.py` + `api.py` 두 entry만 남고 나머지는 책임별 패키지로 이동했습니다.
+
 | 파일 | 역할 | 주요 엔트리 |
 |---|---|---|
 | `price_discovery.py` | 메인 스캐너 — 데이터 다운로드 → 4축 산출 → classification → cache 저장 | `run_scan()`, `class NaiveDiscoveryDetector` |
-| `pre_momentum.py` | Pre-Momentum 5-agent orchestrator | `class PreMomentumOrchestrator`, `class CatalystAgent` 등 |
-| `qvr_agent.py` | QVR (Quality + Value + Revision) agent — Pre-Mom 5번째 + Eligibility Gate input | `class QVRAgent` |
-| `fundamentals_pipeline.py` | yfinance fundamentals fetcher (병렬, retry-on-rate-limit) | `run_pipeline()`, `retry_failed()` |
-| `finnhub_client.py` | Finnhub REST wrapper (rate-limit 자동 throttle) | `class FinnhubClient` |
-| `finnhub_fundamentals.py` | Finnhub로 기존 cache enrich (US ticker만) | `enrich_cache()` |
-| `graph_engine.py` | GraphRAG knowledge graph + Louvain community + insights | `class PriceDiscoveryGraph` |
-| `hedge_strategies.py` | 8개 헤지 전략 (O'Neil, Minervini, Wyckoff, Ichimoku, Darvas, Regime, Flow, RelVal) | `score_all_strategies()`, `compute_combined_signal()` |
-| `quant_strategies.py` | Top-pick generators (per-strategy ranking) | `compute_all_strategies()` |
-| `factor_efficacy.py` | Reverse Factor Model — factor backtest (5 methodologies) | `compute_factor_efficacy()` |
-| `api.py` | FastAPI backend — cache loader, QVR computation, Eligibility Gate, 30+ endpoints | `app`, `_load_cache()` |
-| `dashboard.py` | 레거시 Streamlit dashboard (호환용) | `main()` |
+| `api.py` | FastAPI backend — cache loader, QVR 산출, Eligibility Gate, 36+ endpoints | `app`, `_load_cache()` |
+| `config/scoring.py` | 중앙 상수 (Composite weight, ELIGIBLE_COMPOSITE, ADV_MIN_USD, QVR_GATE) | 모듈 상수 |
+| `core/eligibility.py` | Layer 5 Eligibility Gate primitive | `evaluate_eligible()` |
+| `agents/pre_momentum.py` | Pre-Momentum 5-agent orchestrator | `class PreMomentumOrchestrator`, `class CatalystAgent` 등 |
+| `agents/qvr_agent.py` | QVR (Quality + Value + Revision) agent — Pre-Mom 5번째 + Eligibility Gate input | `class QVRAgent` |
+| `agents/graph_engine.py` | GraphRAG knowledge graph + Louvain community + insights | `class PriceDiscoveryGraph` |
+| `pipelines/fundamentals_pipeline.py` | yfinance fundamentals fetcher (병렬, retry-on-rate-limit) | `run_pipeline()`, `retry_failed()` |
+| `pipelines/finnhub_client.py` | Finnhub REST wrapper (rate-limit 자동 throttle) | `class FinnhubClient` |
+| `pipelines/finnhub_fundamentals.py` | Finnhub로 기존 cache enrich (US ticker만) | `enrich_cache()` |
+| `strategies/hedge_strategies.py` | 8개 헤지 전략 (O'Neil, Minervini, Wyckoff, Ichimoku, Darvas, Regime, Flow, RelVal) | `score_all_strategies()`, `compute_combined_signal()` |
+| `strategies/quant_strategies.py` | Top-pick generators (per-strategy ranking) | `compute_all_strategies()`, `strategy_sector_rotation()` |
+| `strategies/sector_rotation.py` | US Sector Rotation Phase 1+2 (cross-sectional) | `compute_sector_signal()` |
+| `strategies/sector_rotation_backtest.py` | Phase 3 — 월별 rebalance 백테스트 | `run_backtest()` (CLI: `python3 -m strategies.sector_rotation_backtest`) |
+| `strategies/unified_classifier.py` | Classification validation | `validate_classification()` |
+| `ml/factor_efficacy.py` | Reverse Factor Model — factor backtest (5 methodologies) | `compute_factor_efficacy()` |
+| `ml/ml_signal_engine.py` | ML 신호 엔진 entry — feature → meta-label → MoE | `MLSignalEngine` |
+| `ml/score_ml.py` | ML 스코어링 (production cache writer) | `score_universe()` |
+| `ml/regime_expert_selector.py` | Mixture-of-Experts — regime별 expert 가중 | `RegimeExpertSelector` |
+| `ml/purged_cv.py` / `meta_labeling.py` / `ablation_harness.py` / `breadth_pipeline.py` 등 | 진단·CV·feature 파이프라인 (López de Prado 방법론) | `PurgedKFold`, `MetaLabeler` 등 |
+| `legacy/dashboard.py` | 레거시 Streamlit dashboard (호환용, 신규 개발 X) | `main()` |
 
 ### 프론트엔드 (React/Vite)
 
@@ -81,18 +92,18 @@ frontend/
 | 파일 | 생성 주체 | 내용 |
 |---|---|---|
 | `.scan_cache.pkl` | `price_discovery.py` | 770 ticker × ~80 fields (composite, classification, hedge strategies, history, ve_observations 등) |
-| `.fundamentals_cache.pkl` | `fundamentals_pipeline.py` + `finnhub_fundamentals.py` | yfinance fundamentals + Finnhub enrichment (info, estimates, revisions, recommendations, finnhub_metrics, finnhub_derived 등) |
+| `.fundamentals_cache.pkl` | `pipelines/fundamentals_pipeline.py` + `pipelines/finnhub_fundamentals.py` | yfinance fundamentals + Finnhub enrichment (info, estimates, revisions, recommendations, finnhub_metrics, finnhub_derived 등) |
 | `.finnhub_config.json` | 사용자 직접 작성 | Finnhub API key |
-| `.pm_history.json` | `pre_momentum.py` | Pre-Mom 7-day history (per ticker stage tracking) |
+| `.pm_history.json` | `agents/pre_momentum.py` | Pre-Mom 7-day history (per ticker stage tracking) |
 | `.api.log` | `uvicorn` runtime | API server 로그 |
 
 ## 데이터 흐름 (런타임)
 
 ```
 [일 1회 batch refresh]
-    price_discovery.py ───────────► .scan_cache.pkl
-    fundamentals_pipeline.py ────► .fundamentals_cache.pkl
-    finnhub_fundamentals.py ─────► .fundamentals_cache.pkl (in-place enrich)
+    price_discovery.py ────────────────────► .scan_cache.pkl
+    pipelines/fundamentals_pipeline.py ────► .fundamentals_cache.pkl
+    pipelines/finnhub_fundamentals.py ─────► .fundamentals_cache.pkl (in-place enrich)
 
 [API 시작 시]
     api.py:_load_cache() ─────────► STATE["df"] (memory)

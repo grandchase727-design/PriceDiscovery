@@ -32,18 +32,18 @@ Finnhub 무료 tier는 한국 .KS ticker 차단 → yfinance만 사용. 결과:
 └─────────────────────────────────────────────────────────┘
                        ↓
 ┌─────────────────────────────────────────────────────────┐
-│  STEP 2 — yfinance fundamentals (fundamentals_pipeline,  │
-│           ~5분)                                          │
+│  STEP 2 — yfinance fundamentals                          │
+│           (pipelines/fundamentals_pipeline.py, ~5분)     │
 │  ────────────────────────────────────────────────       │
 │  770 ticker × 4 endpoint (info, estimates, revisions,   │
 │  recommendations) 병렬 fetch                             │
 │  → .fundamentals_cache.pkl 저장                         │
-│  → rate-limited 시 retry-failed 옵션 제공               │
+│  → rate-limited 시 --retry-failed 옵션 제공             │
 └─────────────────────────────────────────────────────────┘
                        ↓
 ┌─────────────────────────────────────────────────────────┐
-│  STEP 3 — Finnhub enrichment (finnhub_fundamentals.py,  │
-│           ~28분)                                         │
+│  STEP 3 — Finnhub enrichment                             │
+│           (pipelines/finnhub_fundamentals.py, ~28분)     │
 │  ────────────────────────────────────────────────       │
 │  US ticker (~620) × 4 endpoint (profile, metric,        │
 │  recommendation, earnings, news) fetch                   │
@@ -71,26 +71,28 @@ python3 price_discovery.py
 # 결과: reports/Omega(PD_v5_STK)_YYYYMMDD.pdf, .scan_cache.pkl
 
 # 2. yfinance fundamentals
-python3 fundamentals_pipeline.py
+python3 pipelines/fundamentals_pipeline.py
 # rate-limited 시:
-python3 fundamentals_pipeline.py --retry-failed --retry-cooldown 300
+python3 pipelines/fundamentals_pipeline.py --retry-failed --retry-cooldown 300
 
 # 3. Finnhub 보강 (US 종목만)
-python3 finnhub_fundamentals.py
+python3 pipelines/finnhub_fundamentals.py
 
 # 4. API 재시작
 lsof -ti:8000 | xargs kill 2>/dev/null
 nohup python3 -m uvicorn api:app --port 8000 > .api.log 2>&1 &
 ```
 
+> `pipelines/*` 스크립트는 파일 상단에서 `sys.path.insert(0, _PROJECT_ROOT)` 를 호출하므로 bare path 실행이 가능. `cwd`는 프로젝트 루트여야 함 (cache 파일이 루트에 저장됨).
+
 ### Cron 설정 예시 (매일 새벽 5시)
 
 ```cron
 # US 마감 후 (KST 기준 새벽)
-0 5 * * 1-5  cd /path/to/price\ discovery && python3 price_discovery.py >> .scan.log 2>&1
-30 5 * * 1-5 cd /path/to/price\ discovery && python3 fundamentals_pipeline.py --max-age-h 12 >> .fund.log 2>&1
-40 5 * * 1-5 cd /path/to/price\ discovery && python3 finnhub_fundamentals.py >> .finnhub.log 2>&1
-20 6 * * 1-5 cd /path/to/price\ discovery && systemctl restart price-discovery-api
+0 5 * * 1-5  cd /path/to/PriceDiscovery && python3 price_discovery.py >> .scan.log 2>&1
+30 5 * * 1-5 cd /path/to/PriceDiscovery && python3 pipelines/fundamentals_pipeline.py --max-age-h 12 >> .fund.log 2>&1
+40 5 * * 1-5 cd /path/to/PriceDiscovery && python3 pipelines/finnhub_fundamentals.py >> .finnhub.log 2>&1
+20 6 * * 1-5 cd /path/to/PriceDiscovery && systemctl restart price-discovery-api
 ```
 
 ## 3. Cache 구조
@@ -160,7 +162,7 @@ nohup python3 -m uvicorn api:app --port 8000 > .api.log 2>&1 &
 }
 ```
 
-### `.fundamentals_cache.pkl` (fundamentals_pipeline + finnhub_fundamentals 생성)
+### `.fundamentals_cache.pkl` (`pipelines/fundamentals_pipeline.py` + `pipelines/finnhub_fundamentals.py` 생성)
 
 ```python
 {
@@ -267,7 +269,7 @@ nohup python3 -m uvicorn api:app --port 8000 > .api.log 2>&1 &
 }
 ```
 
-## 4. yfinance fetcher 상세 (`fundamentals_pipeline.py`)
+## 4. yfinance fetcher 상세 (`pipelines/fundamentals_pipeline.py`)
 
 ### 동작
 
@@ -304,7 +306,7 @@ yfinance 자체는 rate limit 명시 없으나, sustained high-volume 시 IP-bas
 
 이들은 universe에서 제거하거나 무시.
 
-## 5. Finnhub fetcher 상세 (`finnhub_fundamentals.py`)
+## 5. Finnhub fetcher 상세 (`pipelines/finnhub_fundamentals.py`)
 
 ### 전제
 
@@ -333,11 +335,11 @@ yfinance 자체는 rate limit 명시 없으나, sustained high-volume 시 IP-bas
 
 ### Rate limit 자동 처리
 
-`finnhub_client.py:FinnhubClient` 가 X-Ratelimit-Remaining 헤더 모니터링 후 자동 sleep. 60 calls/min 한도 안에서 동작.
+`pipelines/finnhub_client.py:FinnhubClient` 가 X-Ratelimit-Remaining 헤더 모니터링 후 자동 sleep. 60 calls/min 한도 안에서 동작.
 
 770 × 4 endpoint = 약 3000 req → 실측 ~28분 (workers=4).
 
-## 6. GraphRAG (`graph_engine.py`)
+## 6. GraphRAG (`agents/graph_engine.py`)
 
 ### 입력
 
@@ -370,7 +372,7 @@ yfinance 자체는 rate limit 명시 없으나, sustained high-volume 시 IP-bas
 }
 ```
 
-이 graph 데이터는 `pre_momentum.py:GraphRelationalAgent`에서 사용됨.
+이 graph 데이터는 `agents/pre_momentum.py:GraphRelationalAgent`에서 사용됨.
 
 ## 7. Cache 무결성 점검
 
@@ -407,6 +409,7 @@ print(f"only in fund: {fc_tickers - sc_tickers}")
 | 문제 | 조치 |
 |---|---|
 | API 시작 안 됨 — `_load_cache` failure | `.scan_cache.pkl` 손상 확인. 재생성: `python3 price_discovery.py` |
-| QVR 모두 50 (neutral) | `.fundamentals_cache.pkl` 누락. 재생성: `python3 fundamentals_pipeline.py` |
-| Finnhub 신호 (bullish_change_3m) None | Finnhub 없음. `python3 finnhub_fundamentals.py` 실행 |
-| Eligibility Gate 강등 안 됨 | api.py 재시작 (cache 변경 후 reload 필요) |
+| QVR 모두 50 (neutral) | `.fundamentals_cache.pkl` 누락. 재생성: `python3 pipelines/fundamentals_pipeline.py` |
+| Finnhub 신호 (bullish_change_3m) None | Finnhub 없음. `python3 pipelines/finnhub_fundamentals.py` 실행 |
+| Eligibility Gate 강등 안 됨 | API 재시작 (`POST /api/reload` 또는 uvicorn 재기동) — cache 변경 후 reload 필요 |
+| `ModuleNotFoundError: config` (sector_rotation_backtest) | bare path가 아닌 module 형식으로: `python3 -m strategies.sector_rotation_backtest` |
