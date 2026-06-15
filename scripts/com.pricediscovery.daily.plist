@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.pricediscovery.daily</string>
+
+    <!-- Run daily at 07:00 KST (assumes Mac timezone = Asia/Seoul) -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>7</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+
+    <!-- Run program -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/bin/python3</string>
+        <string>/Users/parrot/Desktop/price discovery/scripts/daily_pipeline.py</string>
+    </array>
+
+    <!-- Working directory -->
+    <key>WorkingDirectory</key>
+    <string>/Users/parrot/Desktop/price discovery</string>
+
+    <!-- Stdout/stderr logs -->
+    <key>StandardOutPath</key>
+    <string>/tmp/daily_pipeline_stdout.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/daily_pipeline_stderr.log</string>
+
+    <!-- Run even if machine was asleep -->
+    <key>RunAtLoad</key>
+    <false/>
+
+    <!-- Don't restart on crash -->
+    <key>KeepAlive</key>
+    <false/>
+
+    <!-- Environment -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin</string>
+        <key>HOME</key>
+        <string>/Users/parrot</string>
+    </dict>
+</dict>
+</plist>

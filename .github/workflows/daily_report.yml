@@ -1,0 +1,94 @@
+name: Daily Price Discovery Report
+
+# 매일 한국시간 07:30 KST = UTC 22:30 (전날 기준)
+# 로컬 Mac launchd가 07:00 KST에 fresh swarm을 실행하고 PDF를 commit + push 하면
+# 이 workflow가 07:30에 GitHub에서 최신 PDF를 가져와 Telegram으로 전송함
+# (Mac이 꺼져있어도 이전에 commit된 가장 최신 PDF가 발송됨)
+on:
+  schedule:
+    - cron: '30 22 * * *'   # 매일 22:30 UTC = 07:30 KST
+  workflow_dispatch:        # 수동 trigger 가능
+
+jobs:
+  send-telegram-report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository (latest)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Find latest PDF report
+        id: find_pdf
+        run: |
+          # reports/ 디렉토리에서 가장 최신 PDF 찾기
+          mkdir -p reports
+          LATEST_PDF=$(ls -t reports/price_discovery_daily_*.pdf 2>/dev/null | head -1 || echo "")
+          if [ -z "$LATEST_PDF" ]; then
+            echo "⚠ No PDF found in reports/"
+            echo "pdf_found=false" >> $GITHUB_OUTPUT
+          else
+            echo "✓ Found: $LATEST_PDF"
+            echo "pdf_path=$LATEST_PDF" >> $GITHUB_OUTPUT
+            echo "pdf_found=true" >> $GITHUB_OUTPUT
+
+            # PDF의 commit 날짜 추출 (오늘 것인지 stale 인지 판단)
+            PDF_DATE=$(git log -1 --format="%cd" --date=format:"%Y-%m-%d" -- "$LATEST_PDF")
+            TODAY=$(date -u -d '9 hours' +%Y-%m-%d)  # KST = UTC + 9
+            echo "pdf_date=$PDF_DATE" >> $GITHUB_OUTPUT
+            echo "today=$TODAY" >> $GITHUB_OUTPUT
+            if [ "$PDF_DATE" = "$TODAY" ]; then
+              echo "is_fresh=true" >> $GITHUB_OUTPUT
+            else
+              echo "is_fresh=false" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+      - name: Skip if no PDF (no Mac run yet)
+        if: steps.find_pdf.outputs.pdf_found == 'false'
+        run: |
+          echo "⚠ No PDF available. Mac may not have run swarm yet."
+          echo "First daily_pipeline.py run on Mac will commit PDF for future workflows."
+          exit 0
+
+      - name: Send Telegram (fresh data from Mac)
+        if: steps.find_pdf.outputs.pdf_found == 'true' && steps.find_pdf.outputs.is_fresh == 'true'
+        env:
+          TELEGRAM_TOKEN:   ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          PDF_PATH:         ${{ steps.find_pdf.outputs.pdf_path }}
+        run: |
+          echo "Sending fresh PDF from today: $PDF_PATH"
+          # 로컬 Mac이 이미 같은 PDF를 보냈을 가능성 → skip
+          # (Mac이 켜져있어 launchd가 실행되었다는 가정)
+          echo "⚠ Skipping: Mac already sent today's report at 07:00 KST"
+          echo "(GitHub Action serves as backup when Mac is off)"
+
+      - name: Send Telegram (stale fallback when Mac was off)
+        if: steps.find_pdf.outputs.pdf_found == 'true' && steps.find_pdf.outputs.is_fresh == 'false'
+        env:
+          TELEGRAM_TOKEN:   ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          PDF_PATH:         ${{ steps.find_pdf.outputs.pdf_path }}
+          PDF_DATE:         ${{ steps.find_pdf.outputs.pdf_date }}
+          TODAY:            ${{ steps.find_pdf.outputs.today }}
+        run: |
+          echo "Mac was off — sending most recent available PDF: $PDF_PATH"
+          # Send PDF with "stale" notice
+          CAPTION="📊 <b>Price Discovery Daily Report</b>
+          📅 $TODAY (KST)
+
+          ⚠ <b>Mac이 꺼져있어 새 분석을 실행하지 못했습니다.</b>
+          가장 최근 분석 결과 PDF를 발송합니다.
+
+          📄 PDF 분석 일자: <b>$PDF_DATE</b>
+          (Mac을 켜두시면 매일 fresh 데이터로 분석됩니다)"
+
+          curl -s -F "chat_id=${TELEGRAM_CHAT_ID}" \
+               -F "document=@${PDF_PATH}" \
+               -F "caption=${CAPTION}" \
+               -F "parse_mode=HTML" \
+               "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendDocument" \
+               | python3 -c "import sys,json; d=json.load(sys.stdin); print('OK' if d.get('ok') else 'FAIL: '+str(d))"

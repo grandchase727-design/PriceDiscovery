@@ -1,0 +1,9 @@
+{
+  "_comment": "Copy this file to .email_config.json and fill in your Gmail App Password",
+  "_instructions": "Generate Gmail App Password at: https://myaccount.google.com/apppasswords",
+  "smtp_host": "smtp.gmail.com",
+  "smtp_port": 587,
+  "from_email": "grandchase727@gmail.com",
+  "from_password": "PASTE_16_CHAR_GMAIL_APP_PASSWORD_HERE",
+  "to_email": "grandchase727@gmail.com"
+}

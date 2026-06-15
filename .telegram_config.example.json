@@ -1,0 +1,13 @@
+{
+  "_comment": "Copy to .telegram_config.json and fill in bot_token + chat_id",
+  "_setup": [
+    "1) Open Telegram, search @BotFather",
+    "2) /newbot → choose bot name → BotFather gives you BOT_TOKEN",
+    "3) Send any message to your new bot",
+    "4) Visit: https://api.telegram.org/bot<BOT_TOKEN>/getUpdates",
+    "5) Find your chat_id (numeric value under 'message.chat.id')",
+    "6) Save bot_token + chat_id below"
+  ],
+  "bot_token": "0000000000:AAAAAAAA-BBBBBBB-CCCCCCC-DDDDDDDDDDD",
+  "chat_id": "0000000000"
+}

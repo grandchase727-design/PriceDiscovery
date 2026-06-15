@@ -55,7 +55,9 @@ frontend/.dev.log
 
 # ─── Reports (PDFs auto-generated daily) ────────────────────────
 *.pdf
-reports/
+reports/*
+!reports/*.pdf
+!reports/.gitkeep
 
 # ─── Frontend (Node / Vite) ─────────────────────────────────────
 node_modules/
@@ -83,3 +85,26 @@ archive/
 question/
 *.zip
 *.tar.gz
+
+# Daily pipeline + email credentials
+.email_config.json
+.telegram_config.json
+/tmp/daily_pipeline_*
+/tmp/price_discovery_daily_*
+
+# Local cache files (NOT in repo — too large or sensitive)
+.scan_cache.pkl
+.fundamentals_cache.pkl
+.finnhub_config.json
+.backtest_price_cache.pkl
+.etf_holdings_cache.json
+.market_leaders_swarm_cache.json
+.position_state.json
+.final_list_commentary_cache.json
+.pm_picks_history.json
+.trading_signals_history.json
+.unified_classification.json
+.ytd_returns.json
+
+# Report PDFs ARE committed (for GitHub Actions to send when Mac is off)
+!reports/*.pdf
