@@ -62,7 +62,7 @@ const CATEGORY_ORDER = [
 const SUPER_CATEGORIES: { label: string; color: string; categories: string[] }[] = [
   {
     label: "Momentum",
-    color: "#22c55e",
+    color: "#0A7D3F",
     categories: [
       "Momentum (Foundational)", "Momentum (Multi-Asset)", "Momentum (Cross-Asset)",
       "Momentum (Robustness)", "Momentum (52-Week High)", "Momentum (Risk Management)",
@@ -70,7 +70,7 @@ const SUPER_CATEGORIES: { label: string; color: string; categories: string[] }[]
   },
   {
     label: "Behavioral Finance",
-    color: "#8b5cf6",
+    color: "#7D5BA6",
     categories: [
       "Behavioral (Underreaction)", "Behavioral (Information Diffusion)",
       "Behavioral (Overconfidence)", "Behavioral (Overreaction)",
@@ -78,7 +78,7 @@ const SUPER_CATEGORIES: { label: string; color: string; categories: string[] }[]
   },
   {
     label: "Factor Models",
-    color: "#3b82f6",
+    color: "#0F5499",
     categories: [
       "Factor Model (Foundational)", "Factor Model (Methodology)",
       "Factor Model (Momentum Factor)", "Factor Model (Quality)", "Factor Model (BAB)",
@@ -86,12 +86,12 @@ const SUPER_CATEGORIES: { label: string; color: string; categories: string[] }[]
   },
   {
     label: "Technical Analysis",
-    color: "#f59e0b",
+    color: "#B85C00",
     categories: ["Technical Analysis (Foundational)", "Technical Analysis (MA Rules)"],
   },
   {
     label: "Volatility & Risk",
-    color: "#ef4444",
+    color: "#CC0000",
     categories: ["Volatility (Foundational)", "Risk-Adjusted Performance", "Option Theory (Reference)"],
   },
 ];
@@ -108,21 +108,21 @@ function pdfUrl(filename: string): string {
 
 function RefCard({ ref }: { ref: RefItem }) {
   return (
-    <div className="bg-[#111827] border border-gray-800 rounded-lg p-3 hover:border-gray-700 transition-colors">
+    <div className="bg-[#FFFFFF] border border-[#E6D9CE] rounded-lg p-3 hover:border-[#E6D9CE] transition-colors">
       <div className="flex items-start justify-between gap-3 mb-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-2 mb-1">
-            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-gray-800/60 text-cyan-400 shrink-0">
+            <span className="text-[12px] font-mono px-1.5 py-0.5 rounded bg-[#F2E5D7]/60 text-[#0F5499] shrink-0">
               [{ref.id}]
             </span>
-            <span className="text-[12px] font-bold text-cyan-300 leading-snug">
+            <span className="text-[14px] font-bold text-[#0D7680] leading-snug">
               {ref.title}
             </span>
           </div>
-          <div className="text-[11px] text-gray-400 italic">
+          <div className="text-[13px] text-[#66605C] italic">
             {ref.authors} ({ref.year})
           </div>
-          <div className="text-[10px] text-gray-500 mt-0.5">{ref.venue}</div>
+          <div className="text-[12px] text-[#857F7A] mt-0.5">{ref.venue}</div>
         </div>
         <div className="shrink-0 flex flex-col items-end gap-1">
           {ref.available ? (
@@ -130,18 +130,18 @@ function RefCard({ ref }: { ref: RefItem }) {
               href={pdfUrl(ref.filename)}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[10px] px-2 py-1 rounded bg-cyan-900/40 text-cyan-300 hover:bg-cyan-800/60 font-semibold whitespace-nowrap"
+              className="text-[12px] px-2 py-1 rounded bg-[#E3EEF5]/40 text-[#0D7680] hover:bg-[#E3EEF5]/60 font-semibold whitespace-nowrap"
               title={`${ref.size_kb} KB`}
             >
               📄 View PDF
             </a>
           ) : (
-            <span className="text-[10px] px-2 py-1 rounded bg-gray-800 text-gray-600">unavailable</span>
+            <span className="text-[12px] px-2 py-1 rounded bg-[#F2E5D7] text-[#857F7A]">unavailable</span>
           )}
           <a
             href={pdfUrl(ref.filename)}
             download={ref.filename}
-            className="text-[9px] text-gray-500 hover:text-gray-300"
+            className="text-[11px] text-[#857F7A] hover:text-[#33302E]"
           >
             ↓ download
           </a>
@@ -149,14 +149,14 @@ function RefCard({ ref }: { ref: RefItem }) {
       </div>
 
       {ref.applies_to.length > 0 && (
-        <div className="mt-2 pt-2 border-t border-gray-800/60">
-          <div className="text-[10px] text-gray-500 font-semibold mb-1 uppercase tracking-wide">
+        <div className="mt-2 pt-2 border-t border-[#E6D9CE]/60">
+          <div className="text-[12px] text-[#857F7A] font-semibold mb-1 uppercase tracking-wide">
             Applies to
           </div>
           <ul className="space-y-0.5">
             {ref.applies_to.map((item, i) => (
-              <li key={i} className="text-[10.5px] text-gray-400 flex gap-1.5">
-                <span className="text-gray-600 shrink-0">•</span>
+              <li key={i} className="text-[10.5px] text-[#66605C] flex gap-1.5">
+                <span className="text-[#857F7A] shrink-0">•</span>
                 <span>{item}</span>
               </li>
             ))}
@@ -169,27 +169,27 @@ function RefCard({ ref }: { ref: RefItem }) {
 
 function CitationOnlyCard({ item }: { item: CitationOnlyItem }) {
   return (
-    <div className="bg-[#0d1117] border border-gray-800/60 rounded-lg p-3 border-dashed">
-      <div className="text-[12px] font-bold text-gray-300 leading-snug mb-1">
+    <div className="bg-[#FBEEE3] border border-[#E6D9CE]/60 rounded-lg p-3 border-dashed">
+      <div className="text-[14px] font-bold text-[#33302E] leading-snug mb-1">
         {item.title}
       </div>
-      <div className="text-[11px] text-gray-500 italic mb-1">
+      <div className="text-[13px] text-[#857F7A] italic mb-1">
         {item.authors} ({item.year})
       </div>
-      <div className="text-[10px] text-gray-600 mb-2">{item.venue}</div>
+      <div className="text-[12px] text-[#857F7A] mb-2">{item.venue}</div>
       {item.url && item.url !== "—" && (
-        <div className="text-[10.5px] text-cyan-400 break-all mb-2">
+        <div className="text-[10.5px] text-[#0F5499] break-all mb-2">
           <a href={item.url} target="_blank" rel="noopener noreferrer" className="hover:underline">
             🔗 {item.url}
           </a>
         </div>
       )}
-      <div className="text-[10.5px] text-gray-400">
-        <span className="text-gray-500 font-semibold">Applies: </span>
+      <div className="text-[10.5px] text-[#66605C]">
+        <span className="text-[#857F7A] font-semibold">Applies: </span>
         {item.applies_to}
       </div>
       {item.note && (
-        <div className="text-[10px] text-orange-400/70 italic mt-1.5">
+        <div className="text-[12px] text-[#C2701C]/70 italic mt-1.5">
           ⚠ {item.note}
         </div>
       )}
@@ -243,10 +243,10 @@ export function ReferenceTab() {
     });
   };
 
-  if (loading) return <div className="text-gray-500 p-8">Loading references...</div>;
-  if (!data) return <div className="text-gray-500 p-8">No data</div>;
+  if (loading) return <div className="text-[#857F7A] p-8">Loading references...</div>;
+  if (!data) return <div className="text-[#857F7A] p-8">No data</div>;
   if ("error" in (data as any)) {
-    return <div className="text-red-400 p-8">Error: {(data as any).error}</div>;
+    return <div className="text-[#CC0000] p-8">Error: {(data as any).error}</div>;
   }
 
   const totalDownloaded = data.downloaded.length;
@@ -256,8 +256,8 @@ export function ReferenceTab() {
     <div className="space-y-5">
       {/* Header */}
       <div>
-        <h2 className="text-lg font-bold text-gray-200">Academic References</h2>
-        <p className="text-xs text-gray-500 mt-1">
+        <h2 className="text-[20px] font-bold text-[#33302E]">Academic References</h2>
+        <p className="text-[14px] text-[#857F7A] mt-1">
           Price Discovery 시스템에 사용된 모든 정량 로직의 학술적 근거.
           총 {totalDownloaded}개 논문 다운로드 ({totalAvailable}개 사용 가능) + {data.citation_only.length}개 citation-only.
         </p>
@@ -270,7 +270,7 @@ export function ReferenceTab() {
             href={pdfUrl(data.bibliography.filename)}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs px-3 py-2 rounded bg-cyan-700 hover:bg-cyan-600 text-white font-semibold"
+            className="text-[14px] px-3 py-2 rounded bg-[#E3EEF5] hover:bg-[#0F5499] text-white font-semibold"
           >
             📚 Bibliography 종합 PDF 보기
           </a>
@@ -281,18 +281,18 @@ export function ReferenceTab() {
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           placeholder="🔍 검색 (제목/저자/연도/적용처...)"
-          className="flex-1 min-w-[280px] px-3 py-2 text-xs bg-[#1f2937] border border-gray-700 rounded text-gray-200 placeholder-gray-500 focus:outline-none focus:border-cyan-600"
+          className="flex-1 min-w-[280px] px-3 py-2 text-[14px] bg-[#F2E5D7] border border-[#E6D9CE] rounded text-[#33302E] placeholder-gray-500 focus:outline-none focus:border-[#9CC3D5]"
         />
 
         <button
           onClick={() => setExpandedSuper(new Set(SUPER_CATEGORIES.map((s) => s.label)))}
-          className="text-[10px] px-2 py-1 rounded border border-gray-700 text-gray-500 hover:text-gray-300"
+          className="text-[12px] px-2 py-1 rounded border border-[#E6D9CE] text-[#857F7A] hover:text-[#33302E]"
         >
           Expand All
         </button>
         <button
           onClick={() => setExpandedSuper(new Set())}
-          className="text-[10px] px-2 py-1 rounded border border-gray-700 text-gray-500 hover:text-gray-300"
+          className="text-[12px] px-2 py-1 rounded border border-[#E6D9CE] text-[#857F7A] hover:text-[#33302E]"
         >
           Collapse All
         </button>
@@ -312,31 +312,31 @@ export function ReferenceTab() {
         const isOpen = expandedSuper.has(sc.label);
 
         return (
-          <div key={sc.label} className="border border-gray-800 rounded-lg overflow-hidden">
+          <div key={sc.label} className="border border-[#E6D9CE] rounded-lg overflow-hidden">
             <button
               onClick={() => toggleSuper(sc.label)}
-              className="w-full px-4 py-3 text-left bg-[#111827] hover:bg-[#1f2937] flex items-center justify-between"
+              className="w-full px-4 py-3 text-left bg-[#FFFFFF] hover:bg-[#F2E5D7] flex items-center justify-between"
               style={{ borderLeft: `3px solid ${sc.color}` }}
             >
               <div className="flex items-center gap-3">
-                <span className="text-sm font-bold" style={{ color: sc.color }}>
+                <span className="text-[16px] font-bold" style={{ color: sc.color }}>
                   {sc.label}
                 </span>
-                <span className="text-[10px] text-gray-500">
+                <span className="text-[12px] text-[#857F7A]">
                   {refs.length} {refs.length === 1 ? "paper" : "papers"}
                 </span>
               </div>
-              <span className="text-gray-500 text-xs">{isOpen ? "▼" : "▶"}</span>
+              <span className="text-[#857F7A] text-[14px]">{isOpen ? "▼" : "▶"}</span>
             </button>
 
             {isOpen && (
-              <div className="bg-[#0d1117] p-3 space-y-3">
+              <div className="bg-[#FBEEE3] p-3 space-y-3">
                 {sc.categories.map((cat) => {
                   const catRefs = (byCategory[cat] || []).filter(filterFn);
                   if (catRefs.length === 0) return null;
                   return (
                     <div key={cat}>
-                      <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-2 px-1">
+                      <div className="text-[12px] font-semibold text-[#857F7A] uppercase tracking-wider mb-2 px-1">
                         {cat}
                       </div>
                       <div className="grid grid-cols-1 xl:grid-cols-2 gap-2">
@@ -355,14 +355,14 @@ export function ReferenceTab() {
 
       {/* Citation-only section */}
       {data.citation_only.length > 0 && (
-        <div className="border border-gray-800 rounded-lg overflow-hidden">
-          <div className="px-4 py-3 bg-[#111827]" style={{ borderLeft: "3px solid #999" }}>
-            <span className="text-sm font-bold text-gray-400">Citation-Only References</span>
-            <span className="text-[10px] text-gray-500 ml-2">
+        <div className="border border-[#E6D9CE] rounded-lg overflow-hidden">
+          <div className="px-4 py-3 bg-[#FFFFFF]" style={{ borderLeft: "3px solid #999" }}>
+            <span className="text-[16px] font-bold text-[#66605C]">Citation-Only References</span>
+            <span className="text-[12px] text-[#857F7A] ml-2">
               {data.citation_only.length} (paywall, blocked, or book)
             </span>
           </div>
-          <div className="bg-[#0d1117] p-3 grid grid-cols-1 xl:grid-cols-2 gap-2">
+          <div className="bg-[#FBEEE3] p-3 grid grid-cols-1 xl:grid-cols-2 gap-2">
             {data.citation_only.map((c, i) => (
               <CitationOnlyCard key={i} item={c} />
             ))}
@@ -371,9 +371,9 @@ export function ReferenceTab() {
       )}
 
       {/* Footer info */}
-      <div className="bg-[#111827] border border-gray-800 rounded-lg p-3">
-        <p className="text-[11px] text-gray-500">
-          파일 위치: <code className="text-[10px] bg-gray-800 px-1 py-0.5 rounded text-gray-400">
+      <div className="bg-[#FFFFFF] border border-[#E6D9CE] rounded-lg p-3">
+        <p className="text-[13px] text-[#857F7A]">
+          파일 위치: <code className="text-[12px] bg-[#F2E5D7] px-1 py-0.5 rounded text-[#66605C]">
             docs/references/
           </code>
           &nbsp;&nbsp;|&nbsp;&nbsp; PDF 형식 표준 학술 인용 가능. 다운로드 후 Endnote/Mendeley/Zotero 등으로 import.

@@ -12,7 +12,7 @@ from collections import Counter, defaultdict
 from fastapi import FastAPI, Query, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 # ── Import from scanner ──
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -85,12 +85,50 @@ SUBTHEME_TO_SECTOR = {
     "Factor - Value": "Equity Broad", "Factor - Size": "Equity Broad",
     "Factor - Dividend": "Equity Broad", "Factor - Multi": "Equity Broad",
     "Disruptive Innovation": "Equity Broad",
-    # ── International (regional) ──
-    "Developed Markets": "International", "Europe": "International",
-    "Japan": "International", "Asia Pacific": "International",
+    # ── International — Broad multi-country (sector-diversified, 그대로 International) ──
+    "Developed Markets": "International", "EM Broad": "International",
+    "Europe Broad": "International",
+    # ── International — Country-level → GICS dominant sector ──
+    # 단일국가 ETF를 dominant sector로 매핑하여 Cyclical/Defensive 회전 매트릭스 참여 가능.
+    # (theme 필드는 국가명 그대로 유지 — granularity 보존)
+    #
+    # Europe (Developed)
+    "Europe - Germany": "Industrials",          # Siemens / BMW / VW / BASF
+    "Europe - UK": "Energy",                    # Shell / BP dominant
+    "Europe - France": "Consumer Discretionary",# LVMH / Hermes / L'Oreal (luxury)
+    "Europe - Switzerland": "Healthcare",       # Roche / Novartis / Nestle
+    "Europe - Spain": "Financials",             # Santander / BBVA / Telefonica
+    "Europe - Italy": "Financials",             # Banks + Enel
+    # Europe (EM)
+    "Europe - Poland": "Financials",            # banks dominant
+    "Europe - Greece": "Financials",            # Eurobank / NBG
+    # Asia / Pacific
+    "Japan": "Industrials",                     # Toyota / Sony / Honda heavy industrial mix
+    "Korea (Index)": "Technology",              # Samsung / SK Hynix tech dominance
+    "China": "Communication Services",          # Tencent / Alibaba / Meituan
+    "India": "Financials",                      # HDFC / Reliance financials
+    "Asia Pacific - Australia": "Materials",    # BHP / Rio Tinto
+    "Asia Pacific - Taiwan": "Technology",      # TSMC dominance
+    "Asia Pacific - Hong Kong": "Financials",   # HSBC / AIA
+    "Asia Pacific - Singapore": "Financials",   # DBS / OCBC / UOB
+    "Asia Pacific - Thailand": "Financials",    # bank-heavy
+    "Asia Pacific - Vietnam": "Financials",
+    "Asia Pacific - Indonesia": "Financials",
+    # Latin America
+    "Latin America - Brazil": "Materials",      # Vale + Petrobras
+    "Latin America - Mexico": "Consumer Staples",  # FEMSA + Walmex
+    "Latin America - Colombia": "Financials",
+    "Latin America - Chile": "Materials",       # copper
+    # EMEA
+    "EMEA - Turkey": "Financials",
+    "EMEA - South Africa": "Materials",         # mining heavy
+    "EMEA - Egypt": "Financials",
+    # Other
+    "Middle East - Israel": "Technology",       # Check Point / NICE / CyberArk
+    "North America - Canada": "Financials",     # RBC / TD / Scotia (banks dominant)
+    # ── Backward-compat fallbacks (이전 theme명 호환, 사용 안 되지만 안전망) ──
+    "Europe": "International", "Asia Pacific": "International",
     "North America": "International", "Middle East": "International",
-    "EM Broad": "International", "China": "International",
-    "Korea (Index)": "International", "India": "International",
     "Latin America": "International", "Other EM": "International",
     # ── Fixed Income ──
     "Treasury - Short": "Fixed Income", "Treasury - Intermediate": "Fixed Income",
@@ -229,6 +267,31 @@ def _load_cache():
     # ── Unified Sector — pure SubTheme→Sector lookup (Option B) ──
     df["sector"] = df["theme"].map(SUBTHEME_TO_SECTOR).fillna("Other")
 
+    # ── Option C — strict Pre-Momentum / Momentum separation ──
+    # Demote ambiguous classifications (NEUTRAL/CONSOLIDATION/RECOVERY/PULLBACK)
+    # from Momentum-eligible. These belong to Pre-Momentum stage by definition.
+    # Runs UNCONDITIONALLY (before QVR gate) so behavior is consistent whether
+    # or not the fundamentals cache is available.
+    PM_ONLY_CLASSES = {
+        "🟠 NEUTRAL", "🟡 CONSOLIDATION", "🔵 RECOVERY", "🔶 PULLBACK",
+    }
+    if "eligible" in df.columns and "classification" in df.columns:
+        pm_mask = df["eligible"].fillna(False) & df["classification"].isin(PM_ONLY_CLASSES)
+        n_pm_demoted = int(pm_mask.sum())
+        if n_pm_demoted > 0:
+            df.loc[pm_mask, "eligible"] = False
+
+            def _add_pm_reject(row):
+                base = row.get("rejection") or ""
+                # E.g. "🟠 NEUTRAL" → "NEUTRAL(PM)"
+                cls_text = (row.get("classification") or "").split(" ", 1)[-1] or "Ambig"
+                tag = f"{cls_text}(PM)"
+                if base in ("", "None"):
+                    return tag
+                return f"{base}/{tag}"
+            df.loc[pm_mask, "rejection"] = df.loc[pm_mask].apply(_add_pm_reject, axis=1)
+            print(f"[pm-gate] demoted {n_pm_demoted} ambiguous-classification tickers from Momentum (Option C)")
+
     # ── QVR (Quality-Value-Revision) overlay + eligibility gate (Option A) ──
     # Loads .fundamentals_cache.pkl and scores every stock. ETFs get neutral 50.
     # Then re-applies eligibility: stocks with QVR < 40 are demoted from
@@ -263,7 +326,7 @@ def _load_cache():
             df["qvr_eps_beat_rate"] = qvr_eps_beat
             df["qvr_eps_surprise_avg"] = qvr_eps_surprise
 
-            # ── Eligibility Gate ──
+            # ── QVR Eligibility Gate ──
             # Demote stocks with weak fundamentals (QVR < 40) even if technically
             # eligible. ETFs are exempt (no fundamentals available).
             QVR_GATE = 40.0
@@ -346,6 +409,7 @@ def _load_cache():
                 uc_rows.append({
                     "ticker": tk,
                     "gics_sector": c.get("gics_sector"),
+                    "gics_industry_group": c.get("gics_industry_group"),
                     "gics_industry": c.get("gics_industry"),
                     "country": c.get("country"),
                     "cap_tier": c.get("cap_tier"),
@@ -360,6 +424,71 @@ def _load_cache():
             STATE["unified_classification"] = {}
     else:
         STATE["unified_classification"] = {}
+
+    # ── Category normalization (post-Phase Y) ──
+    # 1. Drop "STK_" prefix from individual stock categories (display parity with ETFs)
+    # 2. Re-map international stocks (STK_Korea/Japan/China_ADR/Europe/India) to
+    #    the SAME sector categories as US stocks via GICS lookup, so a Korean Tech
+    #    stock (e.g., 005930.KS Samsung) sits in "Technology" alongside NVDA/AAPL.
+    _normalize_categories(STATE["df"], STATE.get("unified_classification", {}))
+
+    # ── Phase 1: Macro-context tags (cyclical/style/region) + Phase 1.5 industry refinement ──
+    # 종목별 거시 맥락을 부착하여 downstream(SVE 분해, Pre-Mom, Hedge strategy 등)이 활용.
+    _apply_macro_context_tags(STATE["df"])
+
+    # ── Phase 1G: Inject macro tags into ve_observations (for regime-segmented hit rates) ──
+    _inject_tags_into_observations(STATE["df"], STATE.get("ve_stats", {}).get("observations", []))
+
+    # ── Phase 1.0 also: Inject tags into STATE["results"] (used by Pre-Mom agent) ──
+    _inject_tags_into_results(STATE["df"], STATE.get("results", []))
+
+    # ── Phase 2D + 3B: Cross-sectional regime detection + per-ticker rotation scores + ──
+    # ──                  regime-aware CYCLE_PEAK upgrade for over-extended misaligned tickers ──
+    REGIME = _detect_market_regime(STATE["df"])
+    STATE["regime"] = REGIME
+    _compute_rotation_scores(STATE["df"], REGIME)
+    _phase3b_regime_classify_override(STATE["df"], REGIME)
+
+    # ── Hybrid Phase A + B: ETF bottom-up sidecar metrics + divergence flags ──
+    _compute_etf_hybrid_sidecar(STATE["df"])
+
+    # ── Hybrid Phase D (Pre-Mom integration): per-ticker parent_etf_signal ──
+    # 각 stock에 대해 "어떤 ETF의 top holding인가" 역색인 후
+    # 부모 ETF들의 divergence_flag를 가중 평균하여 forward-looking signal 산출.
+    _compute_parent_etf_signal(STATE["df"], STATE.get("results", []))
+
+    # ── Anti-Lag Phase 1: Pre-Momentum direct entry (PROVISIONAL eligibility) ──
+    # Pre-Mom Score ≥ 70 + agreement_ratio ≥ 0.6 + bullish PM classification 종목을
+    # Momentum 탭에 PROVISIONAL 태그로 surface — Lag 10-15일 단축 효과.
+    _compute_provisional_eligibility(STATE["df"], STATE.get("results", []),
+                                       STATE.get("graph"), STATE.get("history"),
+                                       STATE.get("ve_stats", {}).get("observations", []))
+
+    # ── Sector-Segmented Price Discovery (New2) ──
+    # 섹터별로 독립적으로 top-N 종목 선별. universe-wide ranking과 별개로
+    # 각 섹터 내 best-in-sector를 강제로 surface. Lag보단 diversification 효과.
+    _compute_sector_segmented_picks(STATE["df"], top_per_sector=5, min_composite=40.0)
+
+    # ── YTD return enrichment ──
+    # Cache may not have ret_ytd (legacy scans). Load .ytd_returns.json
+    # (produced by compute_ytd.py) and merge into df, preferring values from
+    # the scan cache when present.
+    ytd_path = ".ytd_returns.json"
+    df = STATE["df"]
+    if "ret_ytd" not in df.columns:
+        df["ret_ytd"] = None
+    if os.path.exists(ytd_path):
+        try:
+            with open(ytd_path) as f:
+                yj = json.load(f)
+            ytd_map = yj.get("tickers", {})
+            mask = df["ret_ytd"].isna()
+            df.loc[mask, "ret_ytd"] = df.loc[mask, "ticker"].map(ytd_map)
+            n_filled = int((~df["ret_ytd"].isna()).sum())
+            print(f"[ytd] loaded YTD returns · {n_filled}/{len(df)} tickers populated")
+        except Exception as _ytd_err:
+            print(f"[ytd] load failed: {_ytd_err}")
+    STATE["df"] = df
 
     # ── ML cache (parallel results re-scored with optimized Composite weights) ──
     ml_path = ".scan_cache_ml.pkl"
@@ -394,6 +523,1019 @@ def _load_cache():
 def startup():
     if not _load_cache():
         print("⚠️ No cache found. Run price_discovery.py first.")
+
+
+# ───────────────────────────────────────────────────────────────
+# Phase 1: Macro-context tags (cyclical/style/region/industry refinement)
+# ───────────────────────────────────────────────────────────────
+
+CYCLICAL_SECTORS_SET = {
+    "Technology", "Communication Services", "Consumer Discretionary",
+    "Industrials", "Materials", "Energy", "Financials", "Real Estate",
+}
+DEFENSIVE_SECTORS_SET = {"Consumer Staples", "Utilities", "Healthcare"}
+GROWTH_SECTORS_SET = {"Technology", "Communication Services", "Consumer Discretionary"}
+VALUE_SECTORS_SET = {
+    "Financials", "Energy", "Materials", "Utilities", "Real Estate", "Consumer Staples",
+}
+
+
+def _detect_region(ticker: str, theme: str) -> str:
+    """Frontend `detectRegion`과 동일 매커니즘 — ticker suffix + theme prefix matching."""
+    t = ticker or ""
+    th = theme or ""
+    if t.endswith(".KS"):
+        return "Korea"
+    if t.endswith(".T"):
+        return "Japan"
+    if th.startswith("Europe -") or th == "Europe Broad" or th == "Europe":
+        return "Europe"
+    if th == "Japan":
+        return "Japan"
+    if th == "Korea (Index)":
+        return "Korea"
+    if th == "China":
+        return "China"
+    if th == "India" or th.startswith("Asia Pacific -") or th == "Asia Pacific":
+        return "Other Asia"
+    if th.startswith("Latin America"):
+        return "LatAm"
+    if th.startswith("EMEA") or th == "Other EM" or th.startswith("Middle East"):
+        return "EMEA"
+    if th.startswith("North America - Canada"):
+        return "Canada"
+    if th in ("Developed Markets", "EM Broad"):
+        return "Global Broad"
+    return "US"
+
+
+def _refine_style_by_industry(sector: str, industry, industry_group, base_style: str) -> str:
+    """Phase 1.5 — industry-level 세분화로 style_tilt 보정.
+
+    Healthcare/Biotech → growth (Healthcare 기본 balanced를 override)
+    Energy/Uranium·Solar → growth (Energy 기본 value를 override)
+    Comm Services/Telecom → value (Comm Services 기본 growth를 override)
+    Real Estate REITs → value (already value)
+    """
+    # NaN-safe coercion (pandas merge로 None/NaN 들어올 수 있음)
+    ind = str(industry) if industry is not None and (isinstance(industry, str) or industry == industry) else ""
+    ig = str(industry_group) if industry_group is not None and (isinstance(industry_group, str) or industry_group == industry_group) else ""
+    if not ind: ind = ""
+    if not ig: ig = ""
+    # Biotech, Uranium, Solar → growth
+    if "Biotech" in ind or "Uranium" in ind or "Solar" in ind:
+        return "growth"
+    # Telecom Services → value
+    if "Telecom Services" in ind or "Telecommunication Services" in ig:
+        return "value"
+    return base_style
+
+
+def _refine_cyclical_by_industry(sector: str, industry, base_tag: str) -> str:
+    """Phase 1.5 — industry 단위에서 cyclical/defensive 재분류.
+
+    Healthcare 하위:
+      - Biotech → cyclical (high-beta growth, not defensive)
+      - Pharma / Medical Devices → defensive (유지)
+    Communication Services 하위:
+      - Telecom Services → defensive (Verizon, T 같은 dividend-heavy)
+      - Internet/Media → cyclical (유지)
+    """
+    # NaN-safe
+    ind = str(industry) if industry is not None and (isinstance(industry, str) or industry == industry) else ""
+    if not ind: ind = ""
+    if "Biotech" in ind:
+        return "cyclical"
+    if "Telecom Services" in ind:
+        return "defensive"
+    return base_tag
+
+
+def _apply_macro_context_tags(df) -> None:
+    """In-place: add `cyclical_tag`, `style_tilt`, `region`, plus industry-refined variants.
+
+    Output columns:
+      - cyclical_tag      : 'cyclical' | 'defensive' | 'broad'
+      - style_tilt        : 'growth' | 'value' | 'balanced'
+      - region            : 'US' | 'Korea' | 'Japan' | 'China' | 'Europe' | ...
+      - industry_group    : alias of gics_industry_group (or 'Unknown')
+    """
+    if df is None or df.empty:
+        return
+    if "sector" not in df.columns:
+        df["sector"] = "Other"
+    if "theme" not in df.columns:
+        df["theme"] = "-"
+
+    # Base sector-level tags
+    df["cyclical_tag"] = df["sector"].apply(
+        lambda s: "cyclical" if s in CYCLICAL_SECTORS_SET
+        else "defensive" if s in DEFENSIVE_SECTORS_SET
+        else "broad"
+    )
+    df["style_tilt"] = df["sector"].apply(
+        lambda s: "growth" if s in GROWTH_SECTORS_SET
+        else "value" if s in VALUE_SECTORS_SET
+        else "balanced"
+    )
+
+    # Industry-level refinement (Phase 1.5)
+    if "gics_industry" in df.columns or "gics_industry_group" in df.columns:
+        df["style_tilt"] = df.apply(
+            lambda r: _refine_style_by_industry(
+                r.get("sector", ""),
+                r.get("gics_industry", "") or "",
+                r.get("gics_industry_group", "") or "",
+                r["style_tilt"],
+            ), axis=1,
+        )
+        df["cyclical_tag"] = df.apply(
+            lambda r: _refine_cyclical_by_industry(
+                r.get("sector", ""),
+                r.get("gics_industry", "") or "",
+                r["cyclical_tag"],
+            ), axis=1,
+        )
+
+    # Region
+    df["region"] = df.apply(
+        lambda r: _detect_region(r.get("ticker", "") or "", r.get("theme", "") or ""),
+        axis=1,
+    )
+
+    # industry_group alias (Unknown fallback)
+    if "gics_industry_group" in df.columns:
+        df["industry_group"] = df["gics_industry_group"].fillna("Unknown")
+    else:
+        df["industry_group"] = "Unknown"
+
+    # Console summary
+    try:
+        n_total = len(df)
+        n_cyc = int((df["cyclical_tag"] == "cyclical").sum())
+        n_def = int((df["cyclical_tag"] == "defensive").sum())
+        n_growth = int((df["style_tilt"] == "growth").sum())
+        n_value = int((df["style_tilt"] == "value").sum())
+        n_regions = df["region"].nunique()
+        print(f"[macro-tags] {n_total} tickers · cyc={n_cyc} def={n_def} · "
+              f"growth={n_growth} value={n_value} · regions={n_regions}")
+    except Exception:
+        pass
+
+
+def _inject_tags_into_results(df, results) -> None:
+    """Phase 1: STATE['results'] (Pre-Mom 입력) 의 각 dict에 macro tags 부착.
+
+    pre_momentum.py 의 MacroRegimeAgent 가 cyclical_tag/style_tilt/region 활용 가능.
+    """
+    if df is None or df.empty or not results:
+        return
+    try:
+        tag_map: Dict[str, Dict[str, str]] = {}
+        for _, row in df.iterrows():
+            tk = row.get("ticker", "")
+            if tk:
+                tag_map[tk] = {
+                    "cyclical_tag": row.get("cyclical_tag", "broad"),
+                    "style_tilt": row.get("style_tilt", "balanced"),
+                    "region": row.get("region", "US"),
+                    "industry_group": row.get("industry_group", "Unknown"),
+                }
+        for r in results:
+            if not isinstance(r, dict):
+                continue
+            tk = r.get("ticker", "")
+            if tk in tag_map:
+                r.update(tag_map[tk])
+    except Exception as e:
+        print(f"[macro-tags] inject_results failed: {e}")
+
+
+def _detect_market_regime(df) -> dict:
+    """Cross-sectional regime detection — used by Phase 2D rotation scoring + Phase 3B override.
+
+    Returns dict with:
+      - cyclical_dom / defensive_dom : bool
+      - growth_dom / value_dom       : bool
+      - top_region / bot_region      : str
+      - region_comp_map              : dict[region → avg composite]
+      - sector_avg                   : dict[sector → avg composite]
+      - cd_gap / gv_gap              : float (cyclical - defensive, growth - value composite diff)
+    """
+    regime = {
+        "cyclical_dom": False, "defensive_dom": False,
+        "growth_dom": False, "value_dom": False,
+        "top_region": "US", "bot_region": "US",
+        "region_comp_map": {}, "sector_avg": {},
+        "cd_gap": 0.0, "gv_gap": 0.0,
+    }
+    if df is None or df.empty:
+        return regime
+    try:
+        if "cyclical_tag" not in df.columns or "composite" not in df.columns:
+            return regime
+        comp = pd.to_numeric(df["composite"], errors="coerce")
+        cyc_mask = df["cyclical_tag"] == "cyclical"
+        def_mask = df["cyclical_tag"] == "defensive"
+        cyc_avg = float(comp[cyc_mask].mean()) if cyc_mask.any() else 50.0
+        def_avg = float(comp[def_mask].mean()) if def_mask.any() else 50.0
+        regime["cd_gap"] = round(cyc_avg - def_avg, 2)
+        regime["cyclical_dom"] = (cyc_avg - def_avg) > 3.0
+        regime["defensive_dom"] = (def_avg - cyc_avg) > 3.0
+
+        grw_mask = df["style_tilt"] == "growth"
+        val_mask = df["style_tilt"] == "value"
+        grw_avg = float(comp[grw_mask].mean()) if grw_mask.any() else 50.0
+        val_avg = float(comp[val_mask].mean()) if val_mask.any() else 50.0
+        regime["gv_gap"] = round(grw_avg - val_avg, 2)
+        regime["growth_dom"] = (grw_avg - val_avg) > 3.0
+        regime["value_dom"] = (val_avg - grw_avg) > 3.0
+
+        # Region leadership
+        if "region" in df.columns:
+            region_comp = df.groupby("region", observed=True)["composite"].mean().to_dict()
+            regime["region_comp_map"] = {k: round(float(v), 1) for k, v in region_comp.items() if pd.notna(v)}
+            if region_comp:
+                sorted_r = sorted(region_comp.items(), key=lambda kv: -kv[1])
+                regime["top_region"] = sorted_r[0][0]
+                regime["bot_region"] = sorted_r[-1][0]
+
+        # Sector averages
+        if "sector" in df.columns:
+            sec_comp = df.groupby("sector", observed=True)["composite"].mean().to_dict()
+            regime["sector_avg"] = {k: round(float(v), 1) for k, v in sec_comp.items() if pd.notna(v)}
+
+        print(f"[regime] cd_gap={regime['cd_gap']} (cyc_dom={regime['cyclical_dom']} def_dom={regime['defensive_dom']}) · "
+              f"gv_gap={regime['gv_gap']} (grw_dom={regime['growth_dom']} val_dom={regime['value_dom']}) · "
+              f"top_region={regime['top_region']} bot_region={regime['bot_region']}")
+    except Exception as e:
+        print(f"[regime] detect failed: {e}")
+    return regime
+
+
+def _compute_rotation_scores(df, regime: dict) -> None:
+    """Phase 2D — per-ticker rotation_long / rotation_short scores (0-100).
+
+    Long: 종목이 현 regime의 강세 그룹(cyclical/growth/top-region)에 정렬되면 점수↑
+    Short: 종목이 약세 그룹(defensive/value 안티-regime, bot-region)에 정렬되면 점수↑
+    """
+    if df is None or df.empty:
+        return
+    if "cyclical_tag" not in df.columns or "composite" not in df.columns:
+        df["rotation_long"] = 0.0
+        df["rotation_short"] = 0.0
+        return
+
+    cyc_dom = regime.get("cyclical_dom", False)
+    def_dom = regime.get("defensive_dom", False)
+    grw_dom = regime.get("growth_dom", False)
+    val_dom = regime.get("value_dom", False)
+    top_region = regime.get("top_region", "US")
+    bot_region = regime.get("bot_region", "US")
+
+    def _long(row):
+        s = 0.0
+        # Risk alignment
+        if cyc_dom and row.get("cyclical_tag") == "cyclical":
+            s += 25
+        elif def_dom and row.get("cyclical_tag") == "defensive":
+            s += 25
+        elif row.get("cyclical_tag") == "broad":
+            s += 10
+        # Style alignment
+        if grw_dom and row.get("style_tilt") == "growth":
+            s += 25
+        elif val_dom and row.get("style_tilt") == "value":
+            s += 25
+        elif row.get("style_tilt") == "balanced":
+            s += 10
+        # Region alignment
+        rg = row.get("region", "US")
+        if rg == top_region:
+            s += 30
+        elif rg == bot_region:
+            s += 0
+        else:
+            s += 15
+        # Composite tilt
+        comp = float(row.get("composite") or 50)
+        s += max(0.0, min(20.0, (comp - 50.0) * 0.4))
+        return max(0.0, min(100.0, round(s, 1)))
+
+    def _short(row):
+        s = 0.0
+        # Misalignment penalties (translate to short signal)
+        if cyc_dom and row.get("cyclical_tag") == "defensive":
+            s += 20
+        elif def_dom and row.get("cyclical_tag") == "cyclical":
+            s += 20
+        if grw_dom and row.get("style_tilt") == "value":
+            s += 20
+        elif val_dom and row.get("style_tilt") == "growth":
+            s += 20
+        rg = row.get("region", "US")
+        if rg == bot_region:
+            s += 25
+        # Composite penalty
+        comp = float(row.get("composite") or 50)
+        s += max(0.0, min(35.0, (50.0 - comp) * 0.7))
+        return max(0.0, min(100.0, round(s, 1)))
+
+    df["rotation_long"] = df.apply(_long, axis=1)
+    df["rotation_short"] = df.apply(_short, axis=1)
+    try:
+        avg_l = float(df["rotation_long"].mean())
+        avg_s = float(df["rotation_short"].mean())
+        print(f"[rotation] avg long={avg_l:.1f}, short={avg_s:.1f}")
+    except Exception:
+        pass
+
+
+def _phase3b_regime_classify_override(df, regime: dict) -> None:
+    """Phase 3B — Regime-aware CYCLE_PEAK 조기 승격 (api.py post-load 단계).
+
+    조건:
+      A) (Risk-Off regime) AND (ticker cyclical) AND (OVEREXTENDED) AND (OER ≥ 70)
+         → CYCLE_PEAK 으로 승격 (시장 환경이 cyclical 종목에 불리한 상황의 과열)
+      B) (Risk-On regime) AND (ticker defensive) AND (OVEREXTENDED) AND (OER ≥ 70)
+         → CYCLE_PEAK (anomaly — defensive leadership이 risk-on에 등장 → 곧 fade)
+
+    Scan-time classification은 유지하고 served data만 업데이트.
+    `classification_raw` 컬럼에 원본 보존.
+    """
+    if df is None or df.empty:
+        return
+    if "classification" not in df.columns or "cyclical_tag" not in df.columns or "oer" not in df.columns:
+        return
+    try:
+        df["classification_raw"] = df["classification"]  # 원본 보존
+        cyc_dom = regime.get("cyclical_dom", False)
+        def_dom = regime.get("defensive_dom", False)
+
+        def _maybe_override(row):
+            cls = row.get("classification", "")
+            if cls != "🟡 OVEREXTENDED":
+                return cls
+            oer = float(row.get("oer") or 0)
+            tag = row.get("cyclical_tag", "broad")
+            # Risk-Off + Cyclical 종목 + 과열
+            if def_dom and tag == "cyclical" and oer >= 70:
+                return "🔴 CYCLE_PEAK"
+            # Risk-On + Defensive 종목 + 과열 (anomaly)
+            if cyc_dom and tag == "defensive" and oer >= 70:
+                return "🔴 CYCLE_PEAK"
+            return cls
+
+        new_cls = df.apply(_maybe_override, axis=1)
+        n_changed = int((new_cls != df["classification"]).sum())
+        if n_changed > 0:
+            df["classification"] = new_cls
+            print(f"[phase3b] Regime-aware CYCLE_PEAK override: {n_changed} tickers upgraded "
+                  f"(def_dom={def_dom}, cyc_dom={cyc_dom})")
+    except Exception as e:
+        print(f"[phase3b] override failed: {e}")
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# Hybrid Bottom-up — ETF sidecar metrics + divergence flags (Phase A + B)
+# ═════════════════════════════════════════════════════════════════════════════
+
+_ETF_HOLDINGS_CACHE_PATH = ".etf_holdings_cache.json"
+
+# Bullish/Excluded classification sets — used for breadth metrics.
+_BULLISH_CLS = {
+    "🟢 CONTINUATION", "🔵 FORMATION", "🟦 LAGGING_CATCHUP",
+    "🔵 RECOVERY", "🟡 OVEREXTENDED",
+}
+_MOMENTUM_STAGE_CLS = {
+    "🟢 CONTINUATION", "🔵 FORMATION", "🟦 LAGGING_CATCHUP", "🟡 OVEREXTENDED",
+}
+
+
+def _load_etf_holdings() -> dict:
+    """Load ETF holdings cache (built by etf_holdings_pipeline.py).
+    Returns {ticker: {holdings: [{ticker, name, weight}, ...], ...}}."""
+    if not os.path.exists(_ETF_HOLDINGS_CACHE_PATH):
+        return {}
+    try:
+        with open(_ETF_HOLDINGS_CACHE_PATH) as f:
+            payload = json.load(f) or {}
+        return payload.get("etfs", {}) or {}
+    except Exception as e:
+        print(f"[etf-hybrid] holdings load failed: {e}")
+        return {}
+
+
+def _compute_etf_hybrid_sidecar(df) -> None:
+    """For each ETF with cached holdings, compute bottom-up sidecar metrics:
+
+    - constituent_breadth_mom  : % of available constituents in momentum stage (0-100)
+    - constituent_weighted_comp: cap-weighted avg constituent Composite (using top-10 weights)
+    - constituent_coverage     : % of constituent weight that exists in our scan universe
+    - constituent_concentration: HHI-like sum of squared weights (top-N) — concentration index
+    - constituent_leader_gap   : max constituent Composite minus ETF own Composite
+    - divergence_flag          : HEALTHY_TREND | NARROW_RALLY | STEALTH_STRENGTH | WRAPPER_DRAG | NEUTRAL
+    """
+    if df is None or df.empty:
+        return
+    holdings_map = _load_etf_holdings()
+    if not holdings_map:
+        # Initialize empty columns (downstream code-safe)
+        for col in ("constituent_breadth_mom", "constituent_weighted_comp",
+                    "constituent_coverage", "constituent_concentration",
+                    "constituent_leader_gap", "divergence_flag"):
+            df[col] = None
+        print(f"[etf-hybrid] cache empty — skipping sidecar")
+        return
+
+    # Build ticker → row lookup for fast constituent access
+    ticker_to_row = {}
+    for _, row in df.iterrows():
+        tk = row.get("ticker", "")
+        if tk:
+            ticker_to_row[tk] = {
+                "composite": row.get("composite"),
+                "classification": row.get("classification", ""),
+            }
+
+    # Per-ETF metrics
+    metrics: Dict[str, Dict] = {}
+    n_etfs_processed = 0
+    for etf_ticker, holdings_info in holdings_map.items():
+        holdings = holdings_info.get("holdings", []) or []
+        if not holdings:
+            continue
+        # Aggregate constituent stats (only those in our universe)
+        sum_weight_in_universe = 0.0
+        weighted_comp_num = 0.0
+        n_mom = 0
+        n_in_universe = 0
+        max_comp = -1.0
+        concentration = 0.0
+        for h in holdings:
+            tk = h.get("ticker", "")
+            w = float(h.get("weight", 0) or 0)
+            concentration += w * w   # HHI-like
+            if tk in ticker_to_row:
+                row = ticker_to_row[tk]
+                comp = row["composite"]
+                if comp is None or (isinstance(comp, float) and comp != comp):
+                    continue
+                comp = float(comp)
+                sum_weight_in_universe += w
+                weighted_comp_num += w * comp
+                n_in_universe += 1
+                if row["classification"] in _MOMENTUM_STAGE_CLS:
+                    n_mom += 1
+                if comp > max_comp:
+                    max_comp = comp
+        if n_in_universe == 0:
+            continue
+        weighted_comp = weighted_comp_num / sum_weight_in_universe if sum_weight_in_universe > 0 else 0.0
+        breadth_mom = (n_mom / n_in_universe) * 100 if n_in_universe > 0 else 0.0
+        total_weight = sum(h.get("weight", 0) or 0 for h in holdings)
+        coverage = (sum_weight_in_universe / total_weight) * 100 if total_weight > 0 else 0.0
+
+        # ETF's own composite for divergence comparison
+        etf_row = ticker_to_row.get(etf_ticker)
+        etf_comp = float(etf_row["composite"]) if etf_row and etf_row["composite"] is not None else 50.0
+
+        leader_gap = max_comp - etf_comp if max_comp >= 0 else 0.0
+
+        metrics[etf_ticker] = {
+            "constituent_breadth_mom": round(breadth_mom, 1),
+            "constituent_weighted_comp": round(weighted_comp, 1),
+            "constituent_coverage": round(coverage, 1),
+            "constituent_concentration": round(concentration, 4),
+            "constituent_leader_gap": round(leader_gap, 1),
+            "_etf_comp": etf_comp,
+            "_n_in_universe": n_in_universe,
+        }
+        n_etfs_processed += 1
+
+    # Phase B — Divergence flags (4-quadrant)
+    # Healthy Trend  : ETF strong (Comp >=60) + breadth_mom >=70%  → 광범위 leadership
+    # Narrow Rally   : ETF strong + breadth_mom <40%               → 소수 mega-cap 견인, concentration risk
+    # Stealth Strength: ETF flat (Comp <55)  + breadth_mom >60%    → 구성종목 강세, ETF lagging → 곧 breakout 가능
+    # Wrapper Drag   : ETF weak (Comp <50)   + breadth_mom >50%    → 구성종목은 OK, ETF만 FX/leverage drag
+    for tk, m in metrics.items():
+        ec = m["_etf_comp"]
+        bm = m["constituent_breadth_mom"]
+        if ec >= 60 and bm >= 70:
+            flag = "HEALTHY_TREND"
+        elif ec >= 60 and bm < 40:
+            flag = "NARROW_RALLY"
+        elif ec < 55 and bm >= 60:
+            flag = "STEALTH_STRENGTH"
+        elif ec < 50 and bm >= 50:
+            flag = "WRAPPER_DRAG"
+        else:
+            flag = "NEUTRAL"
+        m["divergence_flag"] = flag
+
+    # Inject into df
+    def _get(t, key):
+        m = metrics.get(t)
+        return m.get(key) if m else None
+
+    for col in ("constituent_breadth_mom", "constituent_weighted_comp",
+                "constituent_coverage", "constituent_concentration",
+                "constituent_leader_gap", "divergence_flag"):
+        df[col] = df["ticker"].apply(lambda t: _get(t, col))
+
+    # Console summary
+    try:
+        flag_counts: Dict[str, int] = {}
+        for tk, m in metrics.items():
+            f = m.get("divergence_flag", "NEUTRAL")
+            flag_counts[f] = flag_counts.get(f, 0) + 1
+        flag_str = ", ".join(f"{k}={v}" for k, v in sorted(flag_counts.items(), key=lambda x: -x[1]))
+        print(f"[etf-hybrid] {n_etfs_processed} ETFs processed · flags: {flag_str}")
+    except Exception:
+        pass
+
+
+def _compute_provisional_eligibility(df, results, graph, history, ve_obs) -> None:
+    """Anti-Lag Phase 1 — Pre-Momentum 종목의 Momentum 탭 조기 surface.
+
+    Pre-Momentum 시스템이 forward-looking 신호를 제공하나 현재는 별도 탭에 격리됨.
+    아래 조건 모두 충족 시 Momentum 탭에 PROVISIONAL 태그로 노출:
+      - pre_momentum_score ≥ 45  (실제 distribution: max ~52, top 10-15% range)
+      - agreement_ratio ≥ 0.6 (STRONG = 3+ agents firing)
+      - PM-stage classification (NEUTRAL/CONSOLIDATION/RECOVERY/PULLBACK) OR
+        bullish-but-low-Composite (FORMATION/CONTINUATION but Composite < 55)
+
+    이 작업으로 lag 단축 10-15일 기대.
+
+    출력 컬럼:
+      - pre_momentum_score   : 0-100
+      - pm_agreement_ratio    : 0-1
+      - pm_conviction         : STRONG / MODERATE / WEAK / NONE
+      - pm_timeline           : "1-2 weeks" / "2-4 weeks" / ...
+      - provisional_eligible  : bool — PM 조건 충족 + bullish setup
+      - eligibility_tier      : 'EligibleMomentum' / 'ProvisionalPM' / 'PreMomentum' / 'Excluded'
+    """
+    if df is None or df.empty or not results:
+        return
+    try:
+        from pre_momentum import run_pre_momentum
+    except Exception as e:
+        print(f"[phase1-antilag] pre_momentum import failed: {e}")
+        return
+
+    try:
+        # Build pre_momentum input cache
+        try:
+            from fundamentals_pipeline import load_fundamentals_cache
+            fund_cache = load_fundamentals_cache()
+        except Exception:
+            fund_cache = None
+        pm_cache = {
+            "results": results,
+            "graph": graph,
+            "history": history,
+            "ve_observations": ve_obs,
+            "fundamentals": fund_cache,
+        }
+        pm_output = run_pre_momentum(pm_cache)
+        candidates = pm_output.get("candidates", []) or []
+
+        # Build ticker → PM data lookup
+        pm_map: Dict[str, Dict] = {}
+        for c in candidates:
+            if isinstance(c, dict):
+                tk = c.get("ticker", "")
+                if tk:
+                    pm_map[tk] = {
+                        "pre_momentum_score": float(c.get("pre_momentum_score", 0) or 0),
+                        "pm_agreement_ratio": float(c.get("agreement_ratio", 0) or 0),
+                        "pm_conviction": c.get("conviction") or _agreement_to_conviction(c.get("agreement_ratio", 0)),
+                        "pm_timeline": c.get("expected_timeline") or "",
+                    }
+
+        # Inject columns
+        df["pre_momentum_score"] = df["ticker"].apply(lambda t: pm_map.get(t, {}).get("pre_momentum_score"))
+        df["pm_agreement_ratio"] = df["ticker"].apply(lambda t: pm_map.get(t, {}).get("pm_agreement_ratio"))
+        df["pm_conviction"] = df["ticker"].apply(lambda t: pm_map.get(t, {}).get("pm_conviction"))
+        df["pm_timeline"] = df["ticker"].apply(lambda t: pm_map.get(t, {}).get("pm_timeline"))
+
+        # Bullish PM classes — those qualifying for provisional entry
+        # (already filtered upstream by run_pre_momentum, but double-guard here)
+        _BULL_PM_CLS = {
+            "🟠 NEUTRAL", "🟡 CONSOLIDATION", "🔵 RECOVERY", "🔶 PULLBACK",
+            "🔵 FORMATION", "🟢 CONTINUATION", "🟦 LAGGING_CATCHUP",
+        }
+        # Per-row provisional check (NaN-safe)
+        def _is_provisional(row):
+            cls = row.get("classification", "")
+            if cls not in _BULL_PM_CLS:
+                return False
+            pm = row.get("pre_momentum_score")
+            ar = row.get("pm_agreement_ratio")
+            if pm is None or ar is None:
+                return False
+            try:
+                pm_v = float(pm)
+                ar_v = float(ar)
+                # NaN check (NaN != NaN)
+                if pm_v != pm_v or ar_v != ar_v:
+                    return False
+                if pm_v < 45.0 or ar_v < 0.6:
+                    return False
+            except Exception:
+                return False
+            # 이미 eligible=True 인 종목은 별도 표시 불필요 (Momentum 탭에서 표시됨)
+            if bool(row.get("eligible")):
+                return False
+            return True
+
+        df["provisional_eligible"] = df.apply(_is_provisional, axis=1)
+
+        # Eligibility tier (mutually exclusive 4-tier)
+        def _tier(row):
+            if bool(row.get("eligible")):
+                return "EligibleMomentum"
+            if bool(row.get("provisional_eligible")):
+                return "ProvisionalPM"
+            cls = row.get("classification", "")
+            # PM stage classes — watchlist only
+            if cls in ("🟠 NEUTRAL", "🟡 CONSOLIDATION", "🔵 RECOVERY", "🔶 PULLBACK"):
+                return "PreMomentum"
+            return "Excluded"
+        df["eligibility_tier"] = df.apply(_tier, axis=1)
+
+        # Also inject into STATE["results"] for downstream consumers (Pre-Mom agent etc.)
+        score_map: Dict[str, Dict] = {}
+        for _, row in df.iterrows():
+            tk = row.get("ticker", "")
+            if tk:
+                score_map[tk] = {
+                    "pre_momentum_score": row.get("pre_momentum_score"),
+                    "pm_agreement_ratio": row.get("pm_agreement_ratio"),
+                    "pm_conviction": row.get("pm_conviction"),
+                    "provisional_eligible": bool(row.get("provisional_eligible")),
+                    "eligibility_tier": row.get("eligibility_tier"),
+                }
+        for r in results:
+            if isinstance(r, dict):
+                tk = r.get("ticker", "")
+                if tk in score_map:
+                    r.update({k: v for k, v in score_map[tk].items() if v is not None})
+
+        n_prov = int(df["provisional_eligible"].fillna(False).sum())
+        n_elig = int(df["eligible"].fillna(False).sum())
+        n_pre = int((df["eligibility_tier"] == "PreMomentum").sum())
+        n_exc = int((df["eligibility_tier"] == "Excluded").sum())
+        print(f"[phase1-antilag] tiers · EligibleMomentum={n_elig} · ProvisionalPM={n_prov} · "
+              f"PreMomentum={n_pre} · Excluded={n_exc}")
+    except Exception as e:
+        print(f"[phase1-antilag] failed: {e}")
+        df["provisional_eligible"] = False
+        df["eligibility_tier"] = df.get("eligible").apply(
+            lambda x: "EligibleMomentum" if x else "Excluded"
+        ) if "eligible" in df.columns else "Excluded"
+
+
+def _compute_sector_segmented_picks(df, top_per_sector: int = 3, min_composite: float = 40.0) -> None:
+    """Sector-Segmented Price Discovery — 각 섹터별로 top-N picks 선별.
+
+    Universe-wide ranking과는 독립적으로 작동:
+      - 각 섹터 내에서 bullish classification + composite ≥ min_composite
+      - composite 기준 내림차순 정렬 → top-N 종목 sector_segmented_eligible=True
+      - Sector rank/percentile, eligibility_tier_v2 컬럼 부착
+
+    효과:
+      - Lag 단축은 미미 (composite 기반 ranking은 동일)
+      - 그러나 diversification 강화 (모든 sector에서 최소 N개 보장)
+      - Universe top-N에서는 누락된 sector-best 종목 포착 (e.g., Defensive sector의 top picks)
+
+    출력 컬럼:
+      - sector_segmented_eligible : bool
+      - sector_rank               : int (1 = best in sector)
+      - sector_pct_rank           : float (0-100)
+      - sector_top_n              : int (해당 sector 내 candidates 수)
+      - eligibility_tier_v2       : 'BothEligible' / 'UniverseOnly' / 'SectorOnly' / 'Neither'
+    """
+    if df is None or df.empty:
+        return
+    if "sector" not in df.columns or "composite" not in df.columns:
+        return
+
+    BULLISH_CLS = {
+        "🟢 CONTINUATION", "🔵 FORMATION", "🟦 LAGGING_CATCHUP",
+        "🔵 RECOVERY", "🟡 OVEREXTENDED",
+    }
+    # Skip non-equity sectors where momentum-style scoring is less meaningful
+    SKIP_SECTORS = {"Fixed Income", "Macro", "Multi-Asset", "Alternatives"}
+
+    # Initialize columns
+    df["sector_segmented_eligible"] = False
+    df["sector_rank"] = None
+    df["sector_pct_rank"] = None
+    df["sector_top_n"] = None
+
+    n_sectors_processed = 0
+    n_picks_total = 0
+
+    for sec, group in df.groupby("sector", observed=True):
+        if not isinstance(sec, str) or not sec or sec in SKIP_SECTORS:
+            continue
+        # Candidates: bullish classification + min composite + valid data
+        comp_num = pd.to_numeric(group["composite"], errors="coerce")
+        mask = (
+            group["classification"].isin(BULLISH_CLS)
+            & comp_num.notna()
+            & (comp_num >= min_composite)
+        )
+        candidates = group[mask].copy()
+        candidates["__comp_num"] = pd.to_numeric(candidates["composite"], errors="coerce")
+        if candidates.empty:
+            continue
+
+        # Sort by composite descending within sector
+        candidates = candidates.sort_values("__comp_num", ascending=False)
+        n_candidates = len(candidates)
+
+        for rank, (idx, _) in enumerate(candidates.iterrows(), 1):
+            df.at[idx, "sector_rank"] = int(rank)
+            df.at[idx, "sector_pct_rank"] = round((1 - (rank - 1) / max(1, n_candidates)) * 100, 1)
+            df.at[idx, "sector_top_n"] = int(n_candidates)
+            if rank <= top_per_sector:
+                df.at[idx, "sector_segmented_eligible"] = True
+                n_picks_total += 1
+
+        n_sectors_processed += 1
+
+    # Eligibility tier v2 (mutually exclusive)
+    def _tier_v2(row):
+        u_elig = bool(row.get("eligible"))
+        s_elig = bool(row.get("sector_segmented_eligible"))
+        if u_elig and s_elig: return "BothEligible"
+        if u_elig:            return "UniverseOnly"
+        if s_elig:            return "SectorOnly"
+        return "Neither"
+    df["eligibility_tier_v2"] = df.apply(_tier_v2, axis=1)
+
+    try:
+        from collections import Counter
+        tier_counts = Counter(df["eligibility_tier_v2"].fillna("Neither"))
+        print(f"[sector-segmented] {n_sectors_processed} sectors · top-{top_per_sector} per sector · "
+              f"total picks={n_picks_total} · tiers v2: "
+              f"BothEligible={tier_counts.get('BothEligible', 0)}, "
+              f"UniverseOnly={tier_counts.get('UniverseOnly', 0)}, "
+              f"SectorOnly={tier_counts.get('SectorOnly', 0)}, "
+              f"Neither={tier_counts.get('Neither', 0)}")
+    except Exception:
+        pass
+
+
+def _agreement_to_conviction(ratio) -> str:
+    try:
+        v = float(ratio or 0)
+    except Exception:
+        return "NONE"
+    if v >= 0.6: return "STRONG"
+    if v >= 0.4: return "MODERATE"
+    if v > 0:    return "WEAK"
+    return "NONE"
+
+
+def _compute_parent_etf_signal(df, results) -> None:
+    """Phase D — 각 ticker에 parent_etf_signal 부착 (Pre-Mom MacroRegimeAgent 활용).
+
+    Stock 입장: 자신을 top-holding으로 보유한 ETF들의 divergence_flag 가중 평균.
+    ETF 입장: 자신의 constituent_breadth_mom (이미 계산됨)을 직접 사용.
+
+    Signal contribution by flag (forward-looking 가치 순):
+      STEALTH_STRENGTH   +30 : 구성종목 강세, ETF 아직 횡보 → breakout 예고 (가장 강함)
+      HEALTHY_TREND      +20 : 광범위 leadership 형성
+      WRAPPER_DRAG       +15 : 구성종목 OK, ETF만 drag
+      NARROW_RALLY        +5 : 이미 강세이나 concentration risk
+      NEUTRAL             0
+    """
+    if df is None or df.empty:
+        return
+    holdings_map = _load_etf_holdings()
+    if not holdings_map:
+        df["parent_etf_signal"] = None
+        return
+
+    FLAG_CONTRIB = {
+        "STEALTH_STRENGTH": 30.0,
+        "HEALTHY_TREND": 20.0,
+        "WRAPPER_DRAG": 15.0,
+        "NARROW_RALLY": 5.0,
+        "NEUTRAL": 0.0,
+    }
+
+    # Build df-level flag/coverage lookup for ETFs
+    etf_flag: Dict[str, str] = {}
+    etf_cov: Dict[str, float] = {}
+    for _, row in df.iterrows():
+        if row.get("asset_type") == "ETF":
+            tk = row.get("ticker", "")
+            f = row.get("divergence_flag")
+            c = row.get("constituent_coverage")
+            if tk and f is not None:
+                etf_flag[tk] = str(f)
+                etf_cov[tk] = float(c) if c is not None and (isinstance(c,(int,float)) and c == c) else 0.0
+
+    # Build reverse index: stock_ticker -> [(parent_etf, weight, flag, coverage)]
+    reverse_idx: Dict[str, list] = {}
+    for etf_tk, info in holdings_map.items():
+        flag = etf_flag.get(etf_tk, "NEUTRAL")
+        cov = etf_cov.get(etf_tk, 0.0)
+        if cov < 30:    # 신뢰도 낮은 ETF는 reverse propagation에서 제외
+            continue
+        for h in info.get("holdings", []) or []:
+            stk = h.get("ticker", "")
+            w = float(h.get("weight", 0) or 0)
+            if stk and w > 0:
+                reverse_idx.setdefault(stk, []).append((etf_tk, w, flag, cov))
+
+    # Compute per-ticker signal (50 = neutral baseline)
+    def _compute(row):
+        tk = row.get("ticker", "")
+        asset = row.get("asset_type", "")
+        # ETF: use own breadth as signal (already 0-100)
+        if asset == "ETF":
+            bm = row.get("constituent_breadth_mom")
+            if bm is None or (isinstance(bm,float) and bm != bm):
+                return None
+            return round(float(bm), 1)
+        # Stock: aggregate parent ETF signals
+        parents = reverse_idx.get(tk, [])
+        if not parents:
+            return None
+        # Weighted aggregation: weight by ETF holding weight × coverage_pct/100
+        sig_num = 0.0
+        wt_sum = 0.0
+        for _, w, flag, cov in parents:
+            ww = w * (cov / 100.0)
+            sig_num += (50.0 + FLAG_CONTRIB.get(flag, 0.0)) * ww
+            wt_sum += ww
+        if wt_sum <= 0:
+            return None
+        return round(min(100.0, max(0.0, sig_num / wt_sum)), 1)
+
+    df["parent_etf_signal"] = df.apply(_compute, axis=1)
+
+    # Inject into STATE["results"] for Pre-Mom agent access
+    if results:
+        sig_map: Dict[str, float] = {}
+        for _, row in df.iterrows():
+            tk = row.get("ticker", "")
+            sig = row.get("parent_etf_signal")
+            if tk and sig is not None:
+                sig_map[tk] = float(sig)
+        n_inj = 0
+        for r in results:
+            if isinstance(r, dict):
+                tk = r.get("ticker", "")
+                if tk in sig_map:
+                    r["parent_etf_signal"] = sig_map[tk]
+                    n_inj += 1
+        try:
+            stocks_with_signal = sum(1 for _, row in df.iterrows()
+                                       if row.get("asset_type") == "Stock"
+                                       and row.get("parent_etf_signal") is not None)
+            etfs_with_signal = sum(1 for _, row in df.iterrows()
+                                     if row.get("asset_type") == "ETF"
+                                     and row.get("parent_etf_signal") is not None)
+            print(f"[etf-hybrid] parent_etf_signal · stocks={stocks_with_signal}, ETFs={etfs_with_signal}, injected={n_inj}")
+        except Exception:
+            pass
+
+
+def _inject_tags_into_observations(df, observations) -> None:
+    """Phase 1G — ve_observations 각 entry에 ticker의 macro tags 첨부.
+
+    SVE의 hit rate를 cyclical_tag / style_tilt / region 으로 segment 분석할 수 있도록.
+    """
+    if df is None or df.empty or not observations:
+        return
+    try:
+        # Build ticker -> tags lookup
+        tag_map: Dict[str, Dict[str, str]] = {}
+        for _, row in df.iterrows():
+            tk = row.get("ticker", "")
+            if tk:
+                tag_map[tk] = {
+                    "cyclical_tag": row.get("cyclical_tag", "broad"),
+                    "style_tilt": row.get("style_tilt", "balanced"),
+                    "region": row.get("region", "US"),
+                    "industry_group": row.get("industry_group", "Unknown"),
+                }
+        n_patched = 0
+        for obs in observations:
+            if not isinstance(obs, dict):
+                continue
+            tk = obs.get("ticker", "")
+            if tk in tag_map:
+                obs.update(tag_map[tk])
+                n_patched += 1
+        print(f"[macro-tags] injected into {n_patched}/{len(observations)} ve_observations")
+    except Exception as e:
+        print(f"[macro-tags] inject failed: {e}")
+
+
+# ───────────────────────────────────────────────────────────────
+# Category normalization helpers
+# ───────────────────────────────────────────────────────────────
+
+# GICS sector → STK-style suffix (matches existing STOCK_UNIVERSE category names
+# minus "STK_" prefix), so KR/JP/CN/EU/IN stocks slot into the same buckets as US.
+GICS_SECTOR_TO_CAT_SUFFIX: Dict[str, str] = {
+    "Information Technology":   "Technology",
+    "Health Care":              "Healthcare",
+    "Financials":               "Financials",
+    "Consumer Discretionary":   "ConsDisc",
+    "Consumer Staples":         "ConsStaples",
+    "Industrials":              "Industrials",
+    "Communication Services":   "CommServices",
+    "Energy":                   "Energy",
+    "Materials":                "Materials",
+    "Utilities":                "Utilities",
+    "Real Estate":              "RealEstate",
+}
+
+# International stock category prefixes that should be remapped via GICS lookup.
+INTL_STOCK_CATEGORIES = {"STK_Korea", "STK_Japan", "STK_China_ADR",
+                          "STK_Europe", "STK_India"}
+
+# Korea_Equity ETF → unified sector mapping (manual curation).
+# Removes the "Korea Equity" silo by absorbing each Korean ETF into the
+# appropriate sector bucket alongside US/global stocks and ETFs.
+KOREA_ETF_TO_SECTOR: Dict[str, str] = {
+    # Broad-market Korean index ETFs
+    "292150.KS": "Broad",       # TIGER 코리아TOP10
+    "102110.KS": "Broad",       # TIGER 200 (KOSPI 200)
+    "069500.KS": "Broad",       # KODEX 200 (KOSPI 200)
+    "229200.KS": "Broad",       # KODEX 코스닥150
+    # Technology / Semiconductors (KR + US-tracking)
+    "395160.KS": "Technology",  # KODEX AI반도체
+    "091160.KS": "Technology",  # KODEX 반도체
+    "396500.KS": "Technology",  # TIGER 반도체TOP10
+    "381180.KS": "Technology",  # TIGER 미국필라델피아반도체나스닥
+    "381170.KS": "Technology",  # TIGER 미국테크TOP10
+    # Factor (dividend / low-vol / value style)
+    "161510.KS": "Factor",      # PLUS 고배당주
+    # Industrials (battery / shipbuilding / electrical equipment)
+    "487240.KS": "Industrials", # AI핵심전력설비
+    "305720.KS": "Industrials", # KODEX 2차전지
+    "466920.KS": "Industrials", # SOL 조선TOP3플러스
+}
+
+
+def _normalize_categories(df: "pd.DataFrame", uc: dict) -> None:
+    """In-place: rewrite df['category'] so that
+       (a) all STK_ prefixes are dropped, and
+       (b) international stock categories (STK_Korea etc.) are remapped
+           to the GICS-derived sector category (Technology / Healthcare / ...).
+    Original raw category preserved as df['category_raw'] for reference.
+    """
+    if df is None or df.empty or "category" not in df.columns:
+        return
+
+    tickers_data = uc.get("tickers", {}) if isinstance(uc, dict) else {}
+
+    df["category_raw"] = df["category"]
+
+    def _normalize(row):
+        cat = row.get("category", "") or ""
+        tk = row.get("ticker", "")
+        # 0. Korea_Equity ETF → unified sector via manual mapping (removes the
+        #    "Korea Equity" silo by absorbing each Korean ETF into the
+        #    appropriate sector bucket).
+        if cat == "Korea_Equity":
+            mapped = KOREA_ETF_TO_SECTOR.get(tk)
+            if mapped:
+                return mapped
+            return "Broad"  # fallback for unmapped Korean equity ETFs
+        # 1. ETF EQ_X → X — sector ETFs (EQ_Technology / EQ_Healthcare / etc.)
+        #    merge into the SAME sector buckets as their stock counterparts.
+        #    Non-sector EQ_ entries (EQ_Broad / EQ_Factor / EQ_Thematic) lose prefix.
+        if cat.startswith("EQ_"):
+            cat = cat[3:]
+        # 2. ETF FI_X → "Bond X" — uniform "Bond ..." naming across fixed income
+        elif cat.startswith("FI_"):
+            cat = "Bond " + cat[3:]
+        # 3. STK_X → X (with intl remap for Korea/Japan/China_ADR/Europe/India)
+        elif cat.startswith("STK_"):
+            if cat in INTL_STOCK_CATEGORIES:
+                tk = row.get("ticker", "")
+                gics = (tickers_data.get(tk, {}) or {}).get("gics_sector")
+                suffix = GICS_SECTOR_TO_CAT_SUFFIX.get(gics)
+                if suffix:
+                    return suffix
+                cat = cat[4:]
+            else:
+                cat = cat[4:]
+        # 4. Final cleanup: replace ANY remaining underscores with spaces so all
+        #    categories share a uniform display style (no mixed snake_case).
+        return cat.replace("_", " ")
+
+    df["category"] = df.apply(_normalize, axis=1)
 
 
 def _filter_df(
@@ -431,25 +1573,39 @@ def meta():
     if df is None:
         return {"error": "No data loaded"}
 
-    # Category → benchmark mapping with ticker counts
+    # Category → benchmark mapping with ticker counts.
+    # df["category"] is now the NORMALIZED label (e.g., "Technology"); benchmark
+    # dicts in price_discovery.py are still keyed by raw STK_ prefix, so we
+    # consult category_raw for the lookup.
     all_bench = {**CATEGORY_BENCHMARK, **STOCK_BENCHMARK}
     cat_info = []
     for cat in sorted(df["category"].unique()):
-        n = int((df["category"] == cat).sum())
-        asset = "Stock" if cat.startswith("STK_") else "ETF"
-        bench = all_bench.get(cat, "SPY")
-        alt = CATEGORY_BENCHMARK_ALT.get(cat, [bench])
+        sub = df[df["category"] == cat]
+        n = int(len(sub))
+        asset = sub["asset_type"].iloc[0] if "asset_type" in sub.columns else (
+            "Stock" if not cat.startswith(("EQ_", "FI", "Comm", "Curr", "Multi",
+                                          "Real", "Korea_", "Emerging", "Intl_"))
+            else "ETF"
+        )
+        # Benchmark lookup via raw category (ETF cats are unchanged; STK_X stays usable)
+        raw_cats = sub["category_raw"].unique().tolist() if "category_raw" in sub.columns else [cat]
+        bench = next((all_bench[rc] for rc in raw_cats if rc in all_bench), "SPY")
+        alt_list: List[str] = []
+        for rc in raw_cats:
+            if rc in CATEGORY_BENCHMARK_ALT:
+                alt_list.extend(CATEGORY_BENCHMARK_ALT[rc])
+        alt = list(dict.fromkeys(alt_list)) if alt_list else [bench]
         cat_info.append({"category": cat, "n": n, "asset_type": asset,
                          "benchmark": bench, "alt_benchmarks": alt})
 
-    # Theme summary
+    # Theme summary — categories already normalized; no STK_ stripping needed
     themed = df[df["theme"] != "-"]
     theme_info = []
     if not themed.empty:
         for theme, grp in themed.groupby("theme"):
             theme_info.append({
                 "theme": theme, "n": len(grp),
-                "categories": sorted(set(c.replace("STK_", "") for c in grp["category"])),
+                "categories": sorted(set(grp["category"])),
             })
         theme_info.sort(key=lambda x: -x["n"])
 
@@ -541,12 +1697,23 @@ def run_scan_api(
                         last_lines.append(line)
                         if len(last_lines) > 50:
                             last_lines.pop(0)
-                        # Heuristic phase tracking
+                        # Heuristic phase tracking — order matters (later matches override
+                        # earlier ones within same log line). Scan order:
+                        #   Phase 1 → 2 → 3 → 4 → MASTER SUMMARY → Phase 7 → Phase 6 →
+                        #   KEY INSIGHTS → Phase 8 → Cache saved
                         for kw, ph in [
-                            ("Phase 1", "Indicators"), ("Phase 2", "Ranking"),
-                            ("Phase 3", "Validity"), ("Phase 4", "Scoring"),
-                            ("Cache saved", "Done"), ("Downloading", "Downloading"),
-                            ("MASTER SUMMARY", "Output"),
+                            ("Downloading", "Downloading"),
+                            ("Phase 1", "Indicators"),
+                            ("Phase 2", "Ranking"),
+                            ("Phase 3", "Validity"),
+                            ("Phase 4", "Scoring"),
+                            ("MASTER SUMMARY", "Summary"),     # intermediate, NOT final
+                            ("Phase 7", "Backtest"),           # ~50 weekly snapshots
+                            ("Phase 6", "GraphRAG"),
+                            ("KEY INSIGHTS", "Insights"),
+                            ("Phase 8", "FactorEfficacy"),    # 12 eval points
+                            ("Generating PDF", "Output"),     # PDF rendering
+                            ("Cache saved", "Done"),
                         ]:
                             if kw in line:
                                 _SCAN_STATUS["phase"] = ph
@@ -948,6 +2115,18 @@ def table(
     fdf = _filter_df(categories, classifications, eligible_only, comp_min, comp_max,
                      sectors=sectors, subthemes=subthemes)
     cols = ["ticker", "name", "category", "sector", "asset_type", "theme", "theme_detail",
+            "cyclical_tag", "style_tilt", "region", "industry_group",
+            "rotation_long", "rotation_short",
+            # Hybrid Bottom-up (Phase A + B) — ETF constituent sidecar
+            "constituent_breadth_mom", "constituent_weighted_comp",
+            "constituent_coverage", "constituent_concentration",
+            "constituent_leader_gap", "divergence_flag",
+            # Anti-Lag Phase 1 — Pre-Momentum direct entry
+            "pre_momentum_score", "pm_agreement_ratio", "pm_conviction",
+            "pm_timeline", "provisional_eligible", "eligibility_tier",
+            # Sector-Segmented Price Discovery (New2)
+            "sector_segmented_eligible", "sector_rank", "sector_pct_rank",
+            "sector_top_n", "eligibility_tier_v2",
             "composite", "tcs", "tfs", "oer", "rss",
             "tcs_short", "tcs_long", "tfs_short", "tfs_long", "rss_short", "rss_long",
             "qvr_score", "qvr_q", "qvr_v", "qvr_r",
@@ -968,8 +2147,8 @@ def table(
             "ret_36_12m", "reversal_pctile",
             "val_prob", "val_persist", "val_conf",
             "score_1w", "ret_1w", "score_1m", "ret_1m", "score_3m", "ret_3m",
-            # Multi-horizon returns + 3Y volatility
-            "ret_1d", "ret_5d", "ret_21d", "ret_63d", "ret_126d", "ret_252d",
+            # Multi-horizon returns + YTD + 3Y volatility
+            "ret_1d", "ret_5d", "ret_21d", "ret_63d", "ret_126d", "ret_ytd", "ret_252d",
             "ret_3y_ann", "ret_5y_ann", "vol_3y_ann"]
     cols = [c for c in cols if c in fdf.columns]
     records = fdf[cols].round(2).to_dict(orient="records")
@@ -1002,11 +2181,16 @@ def universe(
                      sectors=sectors, subthemes=subthemes)
     if fdf.empty:
         return {"rows": []}
-    cols = ["ticker", "name", "category", "theme", "mktcap_B",
-            "ret_1d", "ret_5d", "ret_21d", "ret_63d", "ret_126d", "ret_252d",
+    cols = ["ticker", "name", "asset_type", "category", "theme", "mktcap_B",
+            "ret_1d", "ret_5d", "ret_21d", "ret_63d", "ret_126d", "ret_ytd", "ret_252d",
             "ret_3y_ann", "ret_5y_ann", "vol_3y_ann"]
     cols = [c for c in cols if c in fdf.columns]
-    records = fdf[cols].round(2).to_dict(orient="records")
+    # Round only numeric columns (asset_type is a string)
+    numeric_cols = [c for c in cols if c not in ("ticker", "name", "asset_type", "category", "theme")]
+    out = fdf[cols].copy()
+    if numeric_cols:
+        out[numeric_cols] = out[numeric_cols].round(2)
+    records = out.to_dict(orient="records")
     return _clean_dict({"rows": records})
 
 
@@ -1404,7 +2588,7 @@ def theme_analysis(
         avg_ret_1w=("ret_1w", "mean"),
         avg_ret_1m=("ret_1m", "mean"),
         avg_ret_3m=("ret_3m", "mean"),
-        categories=("category", lambda x: ", ".join(sorted(set(c.replace("STK_", "") for c in x)))),
+        categories=("category", lambda x: ", ".join(sorted(set(x)))),
     ).round(1).reset_index()
     agg["eligible"] = agg["eligible"].astype(int)
     agg = agg[agg["n"] >= min_n].sort_values("avg_comp", ascending=False)
@@ -1870,7 +3054,7 @@ def factor_efficacy():
 
 @app.get("/api/classification")
 def classification_meta():
-    """Unified classification metadata + per-ticker GICS/cap-tier."""
+    """Unified classification metadata + per-ticker GICS/cap-tier + hierarchy table."""
     uc = STATE.get("unified_classification", {})
     if not uc:
         return {"available": False,
@@ -1878,17 +3062,77 @@ def classification_meta():
     tickers = uc.get("tickers", {})
     # Aggregate distribution stats
     by_gics: Dict[str, int] = {}
+    by_industry_group: Dict[str, int] = {}
     by_cap: Dict[str, int] = {}
     by_country: Dict[str, int] = {}
-    for c in tickers.values():
+    # Hierarchy rollup: Sector → Industry Group → Industry → tickers
+    hierarchy: Dict[str, Dict[str, Dict[str, List[Dict]]]] = {}
+
+    for tk, c in tickers.items():
         if not c.get("ok"):
             continue
         sec = c.get("gics_sector") or "Unknown"
+        grp = c.get("gics_industry_group") or "Unknown"
+        ind = c.get("gics_industry") or "Unknown"
         cap = c.get("cap_tier") or "Unknown"
         country = c.get("country") or "?"
         by_gics[sec] = by_gics.get(sec, 0) + 1
+        by_industry_group[grp] = by_industry_group.get(grp, 0) + 1
         by_cap[cap] = by_cap.get(cap, 0) + 1
         by_country[country] = by_country.get(country, 0) + 1
+
+        # Build hierarchy (only for stocks — ones with gics_sector)
+        if sec == "Unknown":
+            continue
+        sector_dict = hierarchy.setdefault(sec, {})
+        group_dict = sector_dict.setdefault(grp, {})
+        ind_list = group_dict.setdefault(ind, [])
+        ind_list.append({
+            "ticker": tk,
+            "name": c.get("name") or tk,
+            "country": country,
+            "cap_tier": cap,
+            "mktcap_usd_b": c.get("mktcap_usd_b"),
+        })
+
+    # Flatten hierarchy into table rows for easy frontend rendering.
+    # Each row: sector / industry_group / industry / n_stocks / sample_tickers / total_mktcap_b
+    table_rows: List[Dict] = []
+    for sec, groups in hierarchy.items():
+        for grp, industries in groups.items():
+            for ind, stocks in industries.items():
+                stocks_sorted = sorted(stocks, key=lambda s: -(s.get("mktcap_usd_b") or 0))
+                total_cap = sum(s.get("mktcap_usd_b") or 0 for s in stocks_sorted)
+                sample = [s["ticker"] for s in stocks_sorted[:5]]
+                table_rows.append({
+                    "sector": sec,
+                    "industry_group": grp,
+                    "industry": ind,
+                    "n_stocks": len(stocks),
+                    "total_mktcap_b": round(total_cap, 1),
+                    "sample_tickers": sample,
+                    "tickers": stocks_sorted,
+                })
+    # Sort: by sector → industry_group → n_stocks desc
+    table_rows.sort(key=lambda r: (r["sector"], r["industry_group"], -r["n_stocks"]))
+
+    # Universe Category distribution — derived from the NORMALIZED df["category"]
+    # (matches what the Universe sub-tab shows). Lets the Classification view stay
+    # consistent with the rest of the dashboard.
+    by_universe_cat: Dict[str, int] = {}
+    df = STATE.get("df")
+    if df is not None and not df.empty and "category" in df.columns:
+        for cat, n in df["category"].value_counts().items():
+            by_universe_cat[str(cat)] = int(n)
+
+    # Theme distribution (top-30 SubThemes — what Universe shows in 'theme' column)
+    by_theme: Dict[str, int] = {}
+    if df is not None and not df.empty and "theme" in df.columns:
+        for theme, n in df["theme"].value_counts().items():
+            if theme == "-" or not theme:
+                continue
+            by_theme[str(theme)] = int(n)
+
     return _clean_dict({
         "available": True,
         "as_of": uc.get("as_of"),
@@ -1896,10 +3140,14 @@ def classification_meta():
         "n_success": uc.get("n_success"),
         "n_failure": uc.get("n_failure"),
         "distribution": {
+            "by_universe_category": by_universe_cat,    # ← matches Universe tab
+            "by_universe_theme": by_theme,              # ← matches Universe tab
             "by_gics_sector": by_gics,
+            "by_gics_industry_group": by_industry_group,
             "by_cap_tier": by_cap,
             "by_country": by_country,
         },
+        "hierarchy_table": table_rows,
     })
 
 
@@ -1984,6 +3232,18 @@ def ml_table(
     fdf["rejection"] = fdf["rejection_ml"].fillna("")
 
     cols = ["ticker", "name", "category", "sector", "asset_type", "theme", "theme_detail",
+            "cyclical_tag", "style_tilt", "region", "industry_group",
+            "rotation_long", "rotation_short",
+            # Hybrid Bottom-up (Phase A + B) — ETF constituent sidecar
+            "constituent_breadth_mom", "constituent_weighted_comp",
+            "constituent_coverage", "constituent_concentration",
+            "constituent_leader_gap", "divergence_flag",
+            # Anti-Lag Phase 1 — Pre-Momentum direct entry
+            "pre_momentum_score", "pm_agreement_ratio", "pm_conviction",
+            "pm_timeline", "provisional_eligible", "eligibility_tier",
+            # Sector-Segmented Price Discovery (New2)
+            "sector_segmented_eligible", "sector_rank", "sector_pct_rank",
+            "sector_top_n", "eligibility_tier_v2",
             "composite", "tcs", "tfs", "oer", "rss",
             "tcs_short", "tcs_long", "tfs_short", "tfs_long", "rss_short", "rss_long",
             "qvr_score", "qvr_q", "qvr_v", "qvr_r",
@@ -2182,16 +3442,35 @@ def classification_history():
         if dt and cls:
             date_class_counts[dt][cls] += 1
 
-    # 2. Add current scan as latest data point
+    # 2. Add current scan as the last "today" column.
+    #    SVE는 매 2주 금요일을 anchor 로 ~24개 bi-weekly snapshots 생성.
+    #    scan_time(today) 추가 → "Friday + today" 표시.
+    #    단, last ve_obs와 scan_time이 매우 가까우면 (< MIN_VISUAL_GAP days)
+    #    heatmap cell width가 좁아져 annotation overlap 발생 → 그 경우 REPLACE.
+    MIN_VISUAL_GAP = 3
     if results:
-        scan_time = STATE.get("scan_time", "")[:10] or "current"
+        from datetime import datetime as _dt
+        scan_time_raw = STATE.get("scan_time", "") or ""
+        scan_time = scan_time_raw[:10] or _dt.utcnow().strftime("%Y-%m-%d")
+
+        existing_dates = sorted(date_class_counts.keys())
+        if existing_dates:
+            try:
+                last = _dt.strptime(existing_dates[-1][:10], "%Y-%m-%d")
+                cur = _dt.strptime(scan_time[:10], "%Y-%m-%d")
+                if 0 < (cur - last).days < MIN_VISUAL_GAP and existing_dates[-1] != scan_time:
+                    # 너무 가까움 — last ve_obs slot 비우고 scan_time으로 대체
+                    date_class_counts.pop(existing_dates[-1], None)
+            except Exception:
+                pass
+
         for r in results:
             cls = r.get("classification", "")
             if cls:
                 date_class_counts[scan_time][cls] += 1
 
-    # 3. Sort dates, keep last 6 (roughly 3 months of bi-weekly data)
-    sorted_dates = sorted(date_class_counts.keys())[-6:]
+    # 3. Sort dates, keep last 24 bi-weekly snapshots (roughly 1 year)
+    sorted_dates = sorted(date_class_counts.keys())[-24:]
 
     # 4. Collect all classifications, order by current count desc
     all_classes = set()
@@ -2240,8 +3519,23 @@ def classification_history_by_sector():
         if dt and cls and cat:
             sector_date_cls[cat][dt][cls] += 1
 
-    # Add current scan
-    scan_time = STATE.get("scan_time", "")[:10] or "current"
+    # Add current scan as the "today" column (matching /api/classification-history).
+    # Per-sector — too close to last ve_obs (< 3 days) replaces, else appends.
+    from datetime import datetime as _dt
+    scan_time_raw = STATE.get("scan_time", "") or ""
+    scan_time = scan_time_raw[:10] or _dt.utcnow().strftime("%Y-%m-%d")
+    MIN_VISUAL_GAP = 3
+    for cat in list(sector_date_cls.keys()):
+        existing = sorted(sector_date_cls[cat].keys())
+        if existing:
+            try:
+                last = _dt.strptime(existing[-1][:10], "%Y-%m-%d")
+                cur = _dt.strptime(scan_time[:10], "%Y-%m-%d")
+                if 0 < (cur - last).days < MIN_VISUAL_GAP and existing[-1] != scan_time:
+                    sector_date_cls[cat].pop(existing[-1], None)
+            except Exception:
+                pass
+
     for r in results:
         cat = r.get("category", "")
         cls = r.get("classification", "")
@@ -2252,7 +3546,7 @@ def classification_history_by_sector():
     all_dates = set()
     for cat_data in sector_date_cls.values():
         all_dates.update(cat_data.keys())
-    sorted_dates = sorted(all_dates)[-6:]
+    sorted_dates = sorted(all_dates)[-24:]
 
     # Standard classification order
     std_classes = [
@@ -2683,6 +3977,38 @@ def classification_validation():
     eval_dates = sorted(set(o.get("eval_date", "") for o in ve_obs if isinstance(o, dict)))
     n_eval_points = len(eval_dates)
 
+    # ── Phase 1G: Hit rate segmented by cyclical_tag / style_tilt / region ──
+    # 각 obs에 inject된 macro tags 활용. 동일 hypothesis 평가를 segment별로 분리 실행.
+    segments = {"cyclical_tag": {}, "style_tilt": {}, "region": {}}
+    tag_dims = [("cyclical_tag", ["cyclical", "defensive", "broad"]),
+                ("style_tilt", ["growth", "value", "balanced"]),
+                ("region", ["US", "Korea", "Japan", "China", "Europe", "Other Asia",
+                            "LatAm", "EMEA", "Canada", "Global Broad"])]
+    for dim_key, dim_values in tag_dims:
+        for dim_val in dim_values:
+            sub_obs = [o for o in ve_obs if isinstance(o, dict) and o.get(dim_key) == dim_val]
+            if len(sub_obs) < 30:
+                continue
+            # Aggregate momentum hit rate (PASS_IDEAL + PASS) across all classifications
+            n_pass = 0
+            n_total = 0
+            for cls, hyps in _MOMENTUM_HYPOTHESES.items():
+                actuals = _compute_momentum_actuals(sub_obs, cls, {})
+                for metric_key, spec in hyps.items():
+                    verdict = _eval_hypothesis(actuals.get(metric_key), spec)
+                    if verdict in ("PASS", "PASS_IDEAL"):
+                        n_pass += 1
+                        n_total += 1
+                    elif verdict == "FAIL":
+                        n_total += 1
+            hit_rate = round(n_pass / n_total * 100, 1) if n_total > 0 else 0.0
+            segments[dim_key][dim_val] = {
+                "n_obs": len(sub_obs),
+                "hit_rate": hit_rate,
+                "n_pass": n_pass,
+                "n_total": n_total,
+            }
+
     return _clean_dict({
         "summary": {
             "total_observations": n_total_obs,
@@ -2691,6 +4017,368 @@ def classification_validation():
         },
         "momentum": momentum_results,
         "pre_momentum": pre_momentum_results,
+        # Phase 1G — segmented hit rates by macro context (cyclical/style/region)
+        "segments": segments,
+    })
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Anti-Lag Phase 1 Validation — PROVISIONAL tier forward performance tracking
+# ─────────────────────────────────────────────────────────────────────────────
+
+@app.get("/api/new-pd/validation")
+def new_pd_validation():
+    """SVE-style validation for the New Price Discovery (PROVISIONAL) tier.
+
+    PROVISIONAL은 PM Score + agreement_ratio 임계값을 사용하나, ve_obs에는 historical PM
+    score가 없음. 따라서 proxy 정의를 사용:
+      - Classification ∈ {NEUTRAL, CONSOLIDATION, RECOVERY, PULLBACK}  (bullish PM-stage)
+      - score_composite ∈ [35, 55)                                     (almost eligible)
+
+    이 proxy는 "Pre-Momentum 강한 신호이나 아직 Composite 미충족" 그룹을 capture.
+    Forward 5d/21d/63d/126d/252d 수익률 + 양수 비율(success rate) + 차익 vs EligibleMomentum 산출.
+    """
+    ve_obs = STATE.get("ve_stats", {}).get("observations", []) or []
+    if not ve_obs:
+        return {"error": "No ve_observations available"}
+
+    PM_STAGE_BULL = {"🟠 NEUTRAL", "🟡 CONSOLIDATION", "🔵 RECOVERY", "🔶 PULLBACK"}
+    MOMENTUM_CLS = {"🟢 CONTINUATION", "🟡 OVEREXTENDED", "🔵 FORMATION", "🟦 LAGGING_CATCHUP"}
+    BEARISH_CLS = {"⬇️ DOWNTREND", "🟤 EXHAUSTING", "🟤 FADING", "🟣 COUNTER_RALLY",
+                   "🔴 CYCLE_PEAK", "⚠️ WEAKENING"}
+
+    def _tier(o):
+        cls = o.get("classification", "")
+        comp = o.get("score_composite", 0) or 0
+        elig = o.get("eligible", False)
+        if elig and cls in MOMENTUM_CLS:
+            return "EligibleMomentum"
+        if cls in PM_STAGE_BULL and 35 <= comp < 55:
+            return "ProvisionalPM_proxy"
+        if cls in PM_STAGE_BULL:
+            return "PreMomentum"
+        if cls in BEARISH_CLS:
+            return "Excluded"
+        return "Other"
+
+    from collections import defaultdict
+    import statistics as _stat
+    tier_buckets: dict = defaultdict(lambda: {
+        "n": 0,
+        "fwd_returns": {5: [], 21: [], 63: [], 126: [], 252: []},
+        "bench_returns": {5: [], 21: [], 63: [], 126: [], 252: []},
+        "fwd_pos_count": {5: 0, 21: 0, 63: 0, 126: 0, 252: 0},
+        "fwd_total_count": {5: 0, 21: 0, 63: 0, 126: 0, 252: 0},
+    })
+
+    for o in ve_obs:
+        if not isinstance(o, dict):
+            continue
+        tier = _tier(o)
+        tier_buckets[tier]["n"] += 1
+        fr = o.get("fwd_rets") or {}
+        fb = o.get("fwd_bench") or {}
+        for w in (5, 21, 63, 126, 252):
+            v = fr.get(w) if isinstance(fr, dict) else None
+            if v is not None and isinstance(v, (int, float)) and v == v:
+                tier_buckets[tier]["fwd_returns"][w].append(float(v))
+                tier_buckets[tier]["fwd_total_count"][w] += 1
+                if v > 0:
+                    tier_buckets[tier]["fwd_pos_count"][w] += 1
+            vb = fb.get(w) if isinstance(fb, dict) else None
+            if vb is not None and isinstance(vb, (int, float)) and vb == vb:
+                tier_buckets[tier]["bench_returns"][w].append(float(vb))
+
+    # Build response per tier
+    tier_summary = []
+    for tier in ["EligibleMomentum", "ProvisionalPM_proxy", "PreMomentum", "Excluded", "Other"]:
+        d = tier_buckets[tier]
+        row = {"tier": tier, "n_observations": d["n"]}
+        for w in (5, 21, 63, 126, 252):
+            rets = d["fwd_returns"][w]
+            bench = d["bench_returns"][w]
+            n = d["fwd_total_count"][w]
+            pos = d["fwd_pos_count"][w]
+            avg = _stat.mean(rets) if rets else None
+            avg_bench = _stat.mean(bench) if bench else None
+            excess = (avg - avg_bench) if avg is not None and avg_bench is not None else None
+            stdev = _stat.stdev(rets) if len(rets) > 1 else None
+            row[f"fwd_{w}d_avg"] = round(avg, 3) if avg is not None else None
+            row[f"fwd_{w}d_bench"] = round(avg_bench, 3) if avg_bench is not None else None
+            row[f"fwd_{w}d_excess"] = round(excess, 3) if excess is not None else None
+            row[f"fwd_{w}d_stdev"] = round(stdev, 3) if stdev is not None else None
+            row[f"fwd_{w}d_n"] = n
+            row[f"fwd_{w}d_pos_pct"] = round((pos / n) * 100, 1) if n > 0 else None
+            row[f"fwd_{w}d_sharpe_like"] = (
+                round(avg / stdev * (252 ** 0.5) / 16, 3)
+                if (avg is not None and stdev is not None and stdev > 0) else None
+            )
+        tier_summary.append(row)
+
+    # PROVISIONAL → EligibleMomentum 'promotion rate' (sequential snapshots)
+    by_ticker: dict = defaultdict(list)
+    for o in ve_obs:
+        if isinstance(o, dict):
+            by_ticker[o.get("ticker", "")].append(o)
+    for tk in by_ticker:
+        by_ticker[tk].sort(key=lambda x: x.get("eval_date", ""))
+
+    promo_yes = 0
+    promo_no = 0
+    promo_to_bearish = 0
+    for tk, lst in by_ticker.items():
+        for i, o in enumerate(lst[:-1]):
+            if _tier(o) == "ProvisionalPM_proxy":
+                nxt = lst[i + 1]
+                nxt_tier = _tier(nxt)
+                if nxt_tier == "EligibleMomentum":
+                    promo_yes += 1
+                elif nxt_tier == "Excluded":
+                    promo_to_bearish += 1
+                else:
+                    promo_no += 1
+    total_transitions = promo_yes + promo_no + promo_to_bearish
+    promotion_stats = {
+        "total_provisional_transitions": total_transitions,
+        "promoted_to_eligible": promo_yes,
+        "promoted_to_eligible_pct": round(promo_yes / max(1, total_transitions) * 100, 1),
+        "stayed_or_demoted_neutral": promo_no,
+        "stayed_or_demoted_neutral_pct": round(promo_no / max(1, total_transitions) * 100, 1),
+        "demoted_to_excluded": promo_to_bearish,
+        "demoted_to_excluded_pct": round(promo_to_bearish / max(1, total_transitions) * 100, 1),
+    }
+
+    # Methodology disclosure
+    methodology = {
+        "validation_approach": "ve_observations 기반 proxy validation (historical PM score 부재로 인한 한계)",
+        "provisional_proxy_definition": (
+            "Classification ∈ {NEUTRAL, CONSOLIDATION, RECOVERY, PULLBACK} (bullish PM-stage) "
+            "AND score_composite ∈ [35, 55) (almost eligible)"
+        ),
+        "comparison_tiers": [
+            "EligibleMomentum: eligible=True + bullish momentum classification (정상 Momentum 탭)",
+            "ProvisionalPM_proxy: PM-stage classification + composite 35-55 (조기 entry 후보)",
+            "PreMomentum: PM-stage classification (composite 무관)",
+            "Excluded: bearish classification",
+        ],
+        "windows_days": [5, 21, 63, 126, 252],
+        "metrics_per_window": [
+            "fwd_avg: average forward return %",
+            "fwd_bench: benchmark (SPY) return for same window",
+            "fwd_excess: tier average minus benchmark",
+            "fwd_pos_pct: % of observations with positive forward return",
+            "fwd_stdev: std-dev of returns",
+            "fwd_sharpe_like: annualized risk-adjusted (avg / stdev × √(252/window_days))",
+        ],
+        "note": (
+            "Real PROVISIONAL (PM score ≥ 45 + agreement ≥ 0.6) tracking requires forward-tracking "
+            "from today. This proxy approximates the early-entry tier using available data."
+        ),
+    }
+
+    return _clean_dict({
+        "tier_summary": tier_summary,
+        "promotion_stats": promotion_stats,
+        "methodology": methodology,
+        "summary": {
+            "total_observations": len(ve_obs),
+            "tiers_with_data": sum(1 for r in tier_summary if r["n_observations"] > 0),
+        },
+    })
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Sector-Segmented Price Discovery (New2) — Validation endpoint
+# ─────────────────────────────────────────────────────────────────────────────
+
+@app.get("/api/new-pd-v2/validation")
+def new_pd_v2_validation():
+    """SVE-style validation for sector-segmented Price Discovery (New2).
+
+    Proxy tier definitions (using ve_obs which has classification + composite + sector):
+      - SectorTopN_proxy: ticker가 해당 eval_date의 동일 sector 내 top-N (by composite)
+                            + bullish classification + composite ≥ 40
+      - UniverseEligible: 기존 eligible=True flag
+      - BothEligible: 두 조건 모두 충족
+      - SectorOnly_proxy: sector top-N이나 universe eligible 아님
+      - UniverseOnly: eligible=True이나 sector top-N 아님
+
+    Sector top-N의 forward return + win-rate를 universe eligible과 비교.
+    """
+    ve_obs = STATE.get("ve_stats", {}).get("observations", []) or []
+    if not ve_obs:
+        return {"error": "No ve_observations available"}
+
+    # Need sector column on observations. ve_obs is enriched with cyclical_tag/region/style
+    # but sector itself is on STATE["df"]. Build a ticker -> sector map.
+    sector_map = {}
+    df = STATE.get("df")
+    if df is not None and not df.empty and "sector" in df.columns:
+        for _, row in df.iterrows():
+            tk = row.get("ticker", "")
+            sec = row.get("sector", "")
+            if tk and sec:
+                sector_map[tk] = sec
+
+    BULLISH_CLS = {
+        "🟢 CONTINUATION", "🔵 FORMATION", "🟦 LAGGING_CATCHUP",
+        "🔵 RECOVERY", "🟡 OVEREXTENDED",
+    }
+    SKIP_SECTORS = {"Fixed Income", "Macro", "Multi-Asset", "Alternatives"}
+    TOP_N = 5
+    MIN_COMP = 40.0
+
+    # Group ve_obs by eval_date × sector and compute top-N within each cell
+    from collections import defaultdict
+    import statistics as _stat
+
+    # eval_date -> sector -> list of obs (with composite filtered for bullish + min)
+    by_date_sec: dict = defaultdict(lambda: defaultdict(list))
+    for o in ve_obs:
+        if not isinstance(o, dict): continue
+        tk = o.get("ticker", "")
+        sec = sector_map.get(tk)
+        if not sec or sec in SKIP_SECTORS:
+            continue
+        cls = o.get("classification", "")
+        comp = o.get("score_composite", 0) or 0
+        if cls in BULLISH_CLS and comp >= MIN_COMP:
+            by_date_sec[o.get("eval_date", "")][sec].append(o)
+
+    # For each (date, sector), mark top-N
+    sector_top_obs_keys = set()  # (eval_date, ticker) for membership lookup
+    for eval_date, sec_dict in by_date_sec.items():
+        for sec, obs_list in sec_dict.items():
+            sorted_obs = sorted(obs_list, key=lambda x: -(x.get("score_composite", 0) or 0))
+            for o in sorted_obs[:TOP_N]:
+                sector_top_obs_keys.add((eval_date, o.get("ticker", "")))
+
+    # Now tier-classify each observation
+    def _tier_v2(o):
+        cls = o.get("classification", "")
+        comp = o.get("score_composite", 0) or 0
+        elig = o.get("eligible", False)
+        key = (o.get("eval_date", ""), o.get("ticker", ""))
+        tk = o.get("ticker", "")
+        sec = sector_map.get(tk)
+        # Sector top-N membership
+        is_sector_top = key in sector_top_obs_keys
+        is_univ_elig = bool(elig and cls in BULLISH_CLS)
+        if is_univ_elig and is_sector_top:
+            return "BothEligible"
+        if is_univ_elig:
+            return "UniverseOnly"
+        if is_sector_top:
+            return "SectorOnly_proxy"
+        # Other categories
+        if cls in BULLISH_CLS and comp >= MIN_COMP:
+            return "OtherBullish"
+        return "OtherExcluded"
+
+    # Aggregate forward returns per tier
+    tier_buckets: dict = defaultdict(lambda: {
+        "n": 0,
+        "fwd_returns": {5: [], 21: [], 63: [], 126: [], 252: []},
+        "bench_returns": {5: [], 21: [], 63: [], 126: [], 252: []},
+        "fwd_pos_count": {5: 0, 21: 0, 63: 0, 126: 0, 252: 0},
+        "fwd_total_count": {5: 0, 21: 0, 63: 0, 126: 0, 252: 0},
+    })
+    for o in ve_obs:
+        if not isinstance(o, dict): continue
+        tk = o.get("ticker", "")
+        if sector_map.get(tk, "") in SKIP_SECTORS:
+            continue
+        tier = _tier_v2(o)
+        tier_buckets[tier]["n"] += 1
+        fr = o.get("fwd_rets") or {}
+        fb = o.get("fwd_bench") or {}
+        for w in (5, 21, 63, 126, 252):
+            v = fr.get(w) if isinstance(fr, dict) else None
+            if v is not None and isinstance(v, (int, float)) and v == v:
+                tier_buckets[tier]["fwd_returns"][w].append(float(v))
+                tier_buckets[tier]["fwd_total_count"][w] += 1
+                if v > 0:
+                    tier_buckets[tier]["fwd_pos_count"][w] += 1
+            vb = fb.get(w) if isinstance(fb, dict) else None
+            if vb is not None and isinstance(vb, (int, float)) and vb == vb:
+                tier_buckets[tier]["bench_returns"][w].append(float(vb))
+
+    tier_summary = []
+    for tier in ["BothEligible", "UniverseOnly", "SectorOnly_proxy", "OtherBullish", "OtherExcluded"]:
+        d = tier_buckets[tier]
+        row = {"tier": tier, "n_observations": d["n"]}
+        for w in (5, 21, 63, 126, 252):
+            rets = d["fwd_returns"][w]
+            bench = d["bench_returns"][w]
+            n = d["fwd_total_count"][w]
+            pos = d["fwd_pos_count"][w]
+            avg = _stat.mean(rets) if rets else None
+            avg_bench = _stat.mean(bench) if bench else None
+            excess = (avg - avg_bench) if avg is not None and avg_bench is not None else None
+            stdev = _stat.stdev(rets) if len(rets) > 1 else None
+            row[f"fwd_{w}d_avg"] = round(avg, 3) if avg is not None else None
+            row[f"fwd_{w}d_bench"] = round(avg_bench, 3) if avg_bench is not None else None
+            row[f"fwd_{w}d_excess"] = round(excess, 3) if excess is not None else None
+            row[f"fwd_{w}d_stdev"] = round(stdev, 3) if stdev is not None else None
+            row[f"fwd_{w}d_n"] = n
+            row[f"fwd_{w}d_pos_pct"] = round((pos / n) * 100, 1) if n > 0 else None
+            row[f"fwd_{w}d_sharpe_like"] = (
+                round(avg / stdev * ((252 / w) ** 0.5), 3)
+                if (avg is not None and stdev is not None and stdev > 0) else None
+            )
+        tier_summary.append(row)
+
+    # Sector coverage stats — current snapshot
+    current_picks_by_sector: dict = defaultdict(list)
+    if df is not None and "sector_segmented_eligible" in df.columns:
+        eligible_now = df[df["sector_segmented_eligible"].fillna(False)]
+        for _, row in eligible_now.iterrows():
+            sec = row.get("sector", "Other")
+            current_picks_by_sector[sec].append({
+                "ticker": row.get("ticker"),
+                "name": row.get("name"),
+                "composite": float(row.get("composite") or 0),
+                "classification": row.get("classification"),
+                "sector_rank": row.get("sector_rank"),
+            })
+    sector_coverage = sorted([
+        {"sector": sec, "n_picks": len(items), "picks": items}
+        for sec, items in current_picks_by_sector.items()
+    ], key=lambda x: -x["n_picks"])
+
+    methodology = {
+        "validation_approach": "ve_observations 기반 sector-segmented proxy validation",
+        "sector_top_proxy_definition": (
+            f"각 eval_date의 (sector, bullish classification, composite ≥ {MIN_COMP}) "
+            f"종목들 중 composite 기준 top-{TOP_N}"
+        ),
+        "tiers": [
+            "BothEligible: universe-eligible + sector top-N (가장 강한 합의)",
+            "UniverseOnly: universe-eligible이나 sector top-N 미달 (sector 내 mediocre)",
+            "SectorOnly_proxy: sector top-N이나 universe-eligible 아님 (sector best지만 전체 평균 이하)",
+            "OtherBullish: bullish but neither (남은 bullish 종목)",
+            "OtherExcluded: bearish or weak",
+        ],
+        "top_per_sector": TOP_N,
+        "min_composite": MIN_COMP,
+        "skip_sectors": list(SKIP_SECTORS),
+        "windows_days": [5, 21, 63, 126, 252],
+        "note": (
+            "SectorOnly가 universe-only보다 forward return 우수하면 → sector-segmented가 alpha 추가. "
+            "비슷하거나 낮으면 → 단순 diversification 효과만, lag 단축 안 됨."
+        ),
+    }
+
+    return _clean_dict({
+        "tier_summary": tier_summary,
+        "sector_coverage": sector_coverage,
+        "methodology": methodology,
+        "summary": {
+            "total_observations": len(ve_obs),
+            "tiers_with_data": sum(1 for r in tier_summary if r["n_observations"] > 0),
+            "current_total_picks": sum(s["n_picks"] for s in sector_coverage),
+            "sectors_covered": len(sector_coverage),
+        },
     })
 
 
@@ -2912,3 +4600,1030 @@ def serve_reference(filename: str):
     media_type = "application/pdf" if filename.lower().endswith(".pdf") \
                  else "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     return FileResponse(fpath, media_type=media_type, filename=filename)
+
+
+# ─────────────────────────────────────────────────────────────────────────
+# Multi-Agent ConvictionDebate (cache-serve only — no LLM call here)
+# ─────────────────────────────────────────────────────────────────────────
+# The cache is written by an in-session Claude Code run (see agents/
+# conviction_debate.py + agents/README.md). This server endpoint does no
+# LLM I/O; it just reads the JSON and returns it. All LLM spend happens
+# inside the Claude Max plan, never via this server.
+
+@app.get("/api/conviction-debate/multi")
+def get_conviction_debate_multi():
+    """Return Multi-Agent ConvictionDebate — selection auto-refreshed on every call.
+
+    SELECTION (always fresh from current scan_cache):
+      Top 5 stocks LONG + Top 5 ETFs LONG  (highest BuyScore — buy candidates)
+      Top 5 stocks SHORT + Top 5 ETFs SHORT (lowest BuyScore — sell candidates)
+      = 20 tickers total per refresh
+
+    VERDICTS (from cache, in-session generated):
+      Each selected ticker looked up in .multi_agent_debate_cache.json.
+      Present → full multi-agent verdict (3-specialist + dual synthesis).
+      Missing → placeholder verdict ("pending sub-agent debate").
+
+    => Live scan refresh updates the ticker list immediately; verdicts
+       require a subsequent in-session Claude Code run to populate.
+       Server makes NO LLM calls.
+    """
+    try:
+        from agents.multi_round_debate import (
+            load_multi_verdicts, freshness_minutes,
+        )
+        from agents.buyscore import top_buy_picks_split, top_sell_picks_split
+        import re
+
+        # ---- 1. Build live selection from current scan_cache (always fresh) ----
+        results = STATE.get("results") or []
+        if not results:
+            return {"last_update": None, "stale_minutes": None, "n_verdicts": 0,
+                    "verdicts": [], "selection_source": "scan_cache empty"}
+
+        # Mirror frontend's regime + consensus inject (so BuyScore matches
+        # ConvictionPicks exactly)
+        regime = STATE.get("regime") or {}
+        sec_regime = regime.get("sector_regime") or []
+        bull = set(s.get("sector") for s in sorted(
+            sec_regime, key=lambda s: -(s.get("pct_bullish", 0)))[:4])
+        bear = set(s.get("sector") for s in [
+            x for x in sorted(sec_regime, key=lambda s: -(s.get("pct_bearish", 0)))[:3]
+            if x.get("pct_bearish", 0) > 30])
+        # consensus from quant_strategies (computed by run_quant_strategies)
+        try:
+            from quant_strategies import run_quant_strategies
+            q = run_quant_strategies(results)
+        except Exception:
+            q = {"strategies": {}}
+        cmap = {}
+        for k, s in (q.get("strategies") or {}).items():
+            if isinstance(s, dict):
+                for p in (s.get("picks") or []):
+                    if isinstance(p, dict) and p.get("ticker"):
+                        cmap[p["ticker"]] = cmap.get(p["ticker"], 0) + 1
+
+        # Normalize results — api.py already adds asset_type / sector
+        live_results = []
+        for r in results:
+            row = dict(r)
+            # asset_type from category (STK_ vs others)
+            if not row.get("asset_type"):
+                cat = row.get("category", "") or ""
+                row["asset_type"] = "Stock" if cat.startswith("STK_") else "ETF"
+            # clean STK_ prefix from category if present (BuyScore needs it)
+            cat = row.get("category", "")
+            if isinstance(cat, str) and cat.startswith(("STK_", "EQ_", "FI_", "MA_", "ETF_")):
+                row["category"] = cat.split("_", 1)[1]
+            live_results.append(row)
+
+        # ---- 2. Load cached verdicts (in-session generated) ----
+        cache = load_multi_verdicts()
+        cache_meta = cache.pop("_meta", {}) if cache else {}
+        cached_tickers = {k for k in cache.keys() if not k.startswith("_")}
+
+        # ── 2026-05 split: Momentum vs Pre-Momentum (hold-period buckets) ──
+        # Take literal Top-5 per cell — selection_skipped fires ONLY when one of
+        # the Top-5 BuyScore picks lacks a cached verdict, so auto-fill on the
+        # Live Scan button reliably converges to skipped=0 in a single cycle.
+        # Trade-off: cells with < 5 cached Top-5 picks display fewer rows until
+        # auto-fill catches up.
+        WIDE_N = 5
+        long_split  = top_buy_picks_split(live_results, top_n_stock=WIDE_N, top_n_etf=WIDE_N,
+                                          bull_sectors=bull, bear_sectors=bear, consensus_map=cmap)
+        short_split = top_sell_picks_split(live_results, top_n_stock=WIDE_N, top_n_etf=WIDE_N,
+                                           bull_sectors=bull, bear_sectors=bear, consensus_map=cmap)
+
+        # Filter each bucket to cached-only, keep top 5, track skipped live picks
+        FINAL_N = 5
+        selection_skipped: list[dict] = []
+
+        def _filter_to_cached(split: dict, side: str) -> None:
+            for group in ("momentum", "pre_momentum"):
+                bucket = split.get(group) or {}
+                for asset_key, asset_label in (("stocks", "stock"), ("etfs", "etf")):
+                    items = bucket.get(asset_key) or []
+                    cached_items, skipped = [], []
+                    for s in items:
+                        (cached_items if s["ticker"] in cached_tickers else skipped).append(s)
+                    # Top-FINAL_N cached (rank order preserved from selector)
+                    bucket[asset_key] = cached_items[:FINAL_N]
+                    # Record uncached live Top-FINAL_N as "would-have-been" picks
+                    import math as _math
+                    for s in skipped[:FINAL_N]:
+                        rs = s.get("rank_score", 0) or 0
+                        if not _math.isfinite(rs):
+                            rs = 0.0
+                        selection_skipped.append({
+                            "ticker": s["ticker"], "side": side, "group": group,
+                            "asset_type": asset_label, "rank_score": round(rs, 2),
+                        })
+
+        _filter_to_cached(long_split,  "long")
+        _filter_to_cached(short_split, "short")
+
+        # ---- 3. Pull each selected ticker's cached verdict (cache hit guaranteed) ----
+        def _from_cache(ticker: str, asset: str, side: str, group: str) -> dict:
+            cached = cache.get(ticker) or {}
+            # Force live side/group (cache may be stale if ticker moved buckets)
+            cached_asset = cached.get("asset_type") or asset
+            rounds_out = []
+            for r in cached.get("rounds", []):
+                def _pass(d: dict) -> dict:
+                    return {
+                        "rating": d.get("rating", "—"),
+                        "confidence": d.get("confidence", 0),
+                        "key_points": d.get("key_points", []) or [],
+                        "biggest_risk": d.get("biggest_risk", "") or "",
+                        "biggest_opportunity": d.get("biggest_opportunity", "") or "",
+                        "raw_text": d.get("raw_text", "") or "",
+                    }
+                rounds_out.append({
+                    "round": r.get("round_num", 1),
+                    "fundamental": _pass(r.get("fundamental") or {}),
+                    "sentiment":   _pass(r.get("sentiment")   or {}),
+                    "valuation":   _pass(r.get("valuation")   or {}),
+                })
+            n = cached.get("synthesis_neutral") or {}
+            a = cached.get("synthesis_averse") or {}
+            return {
+                "ticker": ticker, "tier": cached.get("tier", "A"),
+                "asset_type": cached_asset, "side": side, "group": group,
+                "rounds": rounds_out,
+                "converged_round": cached.get("converged_round", 0),
+                "disagreement": cached.get("disagreement", {}),
+                "synthesis_neutral": {
+                    "rating": n.get("rating", "HOLD"),
+                    "position_modifier": n.get("position_modifier", 0),
+                    "sizing_recommendation": n.get("sizing_recommendation", ""),
+                    "reasoning": n.get("reasoning", ""),
+                },
+                "synthesis_averse": {
+                    "rating": a.get("rating", "HOLD"),
+                    "position_modifier": a.get("position_modifier", 0),
+                    "sizing_recommendation": a.get("sizing_recommendation", ""),
+                    "reasoning": a.get("reasoning", ""),
+                },
+                "composite_at_time": cached.get("composite_at_time"),
+                "classification_at_time": cached.get("classification_at_time"),
+                "generated_at": cached.get("generated_at", ""),
+            }
+
+        verdicts = []
+        group_counts = {"momentum": 0, "pre_momentum": 0}
+
+        def _walk(split: dict, side: str):
+            for group in ("momentum", "pre_momentum"):
+                bucket = split.get(group) or {}
+                for s in bucket.get("stocks", []):
+                    verdicts.append(_from_cache(s["ticker"], "stock", side, group))
+                    group_counts[group] += 1
+                for e in bucket.get("etfs", []):
+                    verdicts.append(_from_cache(e["ticker"], "etf", side, group))
+                    group_counts[group] += 1
+
+        _walk(long_split,  "long")
+        _walk(short_split, "short")
+
+        return {
+            "last_update": cache_meta.get("last_update"),
+            "stale_minutes": freshness_minutes(),
+            "n_verdicts": len(verdicts),
+            "n_cached": len(verdicts),
+            "n_pending": 0,
+            "n_momentum": group_counts["momentum"],
+            "n_pre_momentum": group_counts["pre_momentum"],
+            "cache_universe": len(cached_tickers),
+            "selection_skipped": selection_skipped[:20],  # uncached live picks worth debating next
+            "verdicts": verdicts,
+            "selection_source": (
+                "live BuyScore × classification-group split × cache-filtered "
+                "(Top-5 cached per Momentum/Pre-Momentum × Stock/ETF × Long/Short cell, "
+                "uncached live picks listed in selection_skipped)"
+            ),
+        }
+    except ImportError as e:
+        return {"last_update": None, "stale_minutes": None,
+                "n_verdicts": 0, "verdicts": [], "error": f"import: {e}"}
+    except Exception as e:
+        import traceback
+        return {"last_update": None, "stale_minutes": None,
+                "n_verdicts": 0, "verdicts": [],
+                "error": str(e), "trace": traceback.format_exc()[:500]}
+
+
+# ─────────────────────────────────────────────────────────────────────────
+# Live Scan integration — refresh queue
+# ─────────────────────────────────────────────────────────────────────────
+# Pattern: the dashboard's Live Scan button triggers /api/scan (Layer 1 quant).
+# After scan completes, the frontend calls /api/conviction-debate/refresh-queue
+# which detects uncached live picks and writes them to .debate_refresh_queue.json.
+# The user then runs `python3 agents/refresh_from_queue.py` from a Claude Code
+# session — this dispatches sub-agents (within Max plan), persists verdicts,
+# and clears the queue. Server itself NEVER calls LLM.
+
+@app.post("/api/conviction-debate/refresh-queue")
+def post_refresh_debate_queue():
+    """Detect uncached live picks and write them to .debate_refresh_queue.json.
+    Returns queue size + processing instructions. Server makes NO LLM call.
+    """
+    try:
+        from pathlib import Path as _P
+        import time as _time
+        # Re-use the same selection logic by calling the GET endpoint internally
+        d = get_conviction_debate_multi()
+        skipped = d.get("selection_skipped") or []
+        queue_path = _P(".debate_refresh_queue.json")
+        # Enrich each skipped item with quant snapshot
+        results = STATE.get("results") or []
+        rmap = {r.get("ticker"): r for r in results}
+        enriched = []
+        import math as _math
+        def _clean(v):
+            if v is None: return None
+            try:
+                f = float(v)
+                return f if _math.isfinite(f) else None
+            except (TypeError, ValueError):
+                return v
+        for s in skipped:
+            r = rmap.get(s["ticker"], {})
+            enriched.append({
+                **s,
+                "name": r.get("name", ""),
+                "category": r.get("category", ""),
+                "classification": r.get("classification", ""),
+                "composite": _clean(r.get("composite")),
+                "oer": _clean(r.get("oer")),
+                "tcs_short": _clean(r.get("tcs_short")), "tcs_long": _clean(r.get("tcs_long")),
+                "tfs_short": _clean(r.get("tfs_short")), "tfs_long": _clean(r.get("tfs_long")),
+                "rss_short": _clean(r.get("rss_short")), "rss_long": _clean(r.get("rss_long")),
+                "urs": _clean(r.get("urs")),
+                "pre_momentum_score": _clean(r.get("pre_momentum_score")),
+            })
+        payload = {
+            "queued_at": _time.strftime("%Y-%m-%dT%H:%M:%S"),
+            "n_queued": len(enriched),
+            "tickers": enriched,
+            "instructions": (
+                "Run `python3 agents/refresh_from_queue.py` from a Claude Code "
+                "session to dispatch sub-agents and populate cache. "
+                "Server side will not call LLM (Claude Max plan constraint)."
+            ),
+        }
+        queue_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False),
+                              encoding="utf-8")
+        return {
+            "queue_file": ".debate_refresh_queue.json",
+            "n_queued": len(enriched),
+            "instructions": payload["instructions"],
+        }
+    except Exception as e:
+        import traceback
+        return {"error": str(e), "trace": traceback.format_exc()[:500]}
+
+
+@app.get("/api/conviction-debate/refresh-queue")
+def get_refresh_debate_queue():
+    """Inspect current queue without modifying."""
+    from pathlib import Path as _P
+    queue_path = _P(".debate_refresh_queue.json")
+    if not queue_path.exists():
+        return {"queued_at": None, "n_queued": 0, "tickers": []}
+    try:
+        return json.loads(queue_path.read_text(encoding="utf-8"))
+    except Exception as e:
+        return {"error": str(e)}
+
+
+# ─────────────────────────────────────────────────────────────────────
+# Auto-fill — server spawns `claude -p` subprocesses (within Max plan)
+# ─────────────────────────────────────────────────────────────────────
+# Each `claude -p` invocation runs in the user's authenticated Claude Code
+# session and is billed against the Max plan — exactly what sub-agent
+# dispatch costs would be. Server itself holds no API keys.
+
+_AUTOFILL_STATUS: dict = {
+    "running": False, "started_at": "", "finished_at": "",
+    "n_total": 0, "n_completed": 0, "n_failed": 0, "n_persisted": 0,
+    "last_error": "", "current": "", "errors": [],
+}
+
+_CLAUDE_BIN = None  # resolved lazily
+
+
+def _find_claude() -> Optional[str]:
+    """Return path to the `claude` CLI binary or None if not on PATH."""
+    global _CLAUDE_BIN
+    if _CLAUDE_BIN is not None:
+        return _CLAUDE_BIN or None
+    import shutil
+    p = shutil.which("claude")
+    _CLAUDE_BIN = p or ""
+    return p
+
+
+def _extract_json_fence(text: str) -> Optional[dict]:
+    """Pull a {...} JSON object out of a ```json fence or first {...} block."""
+    import re as _re
+    # Try fenced block first
+    m = _re.search(r"```json\s*(\{.*?\})\s*```", text, _re.DOTALL)
+    if m:
+        try: return json.loads(m.group(1))
+        except Exception: pass
+    # Fallback: greedy first {...} block (matched braces)
+    m = _re.search(r"\{.*\}", text, _re.DOTALL)
+    if m:
+        try: return json.loads(m.group(0))
+        except Exception: pass
+    return None
+
+
+def _normalize_verdict(raw: dict, ticker: str, asset: str, side: str, group: str,
+                       composite: float, classification: str) -> dict:
+    """Coerce a free-form claude-p verdict into the cache schema."""
+    import time as _t
+    # Best-effort field extraction
+    rounds = raw.get("rounds") or []
+    r1 = rounds[0] if rounds else {}
+    f = (r1.get("fundamental") or {})
+    s = (r1.get("sentiment") or {})
+    v = (r1.get("valuation") or {})
+    n = raw.get("synthesis_neutral") or {}
+    a = raw.get("synthesis_averse")  or {}
+    dis = raw.get("disagreement") or {}
+
+    def _rt(d: dict, default: str) -> str:
+        r = d.get("rating") or d.get("verdict") or d.get("stance") or default
+        return str(r).upper().replace(" ", "_").replace("-", "_")
+
+    def _mod(d: dict) -> int:
+        for k in ("position_modifier", "modifier", "final_modifier", "modifier_applied"):
+            if k in d and d[k] is not None:
+                try: return int(round(float(d[k])))
+                except Exception: pass
+        return 0
+
+    def _reason(d: dict) -> str:
+        return str(d.get("reasoning") or d.get("thesis") or d.get("rationale")
+                   or d.get("summary") or "")[:4000]
+
+    def _sizing(d: dict) -> str:
+        return str(d.get("sizing_recommendation") or d.get("sizing_guidance")
+                   or d.get("entry_plan") or "")[:1000]
+
+    def _kp(d: dict) -> list:
+        for k in ("key_points","key_drivers","points","drivers"):
+            val = d.get(k)
+            if isinstance(val, list) and val:
+                return [str(x)[:300] for x in val[:8]]
+        return []
+
+    def _risk(d: dict) -> str:
+        for k in ("biggest_risk","risk","key_risks","risks"):
+            val = d.get(k)
+            if isinstance(val, str) and val: return val[:500]
+            if isinstance(val, list) and val: return "; ".join(str(x) for x in val[:3])[:500]
+        return ""
+
+    def _opp(d: dict) -> str:
+        for k in ("biggest_opportunity","opportunity","key_opportunities","catalysts"):
+            val = d.get(k)
+            if isinstance(val, str) and val: return val[:500]
+            if isinstance(val, list) and val: return "; ".join(str(x) for x in val[:3])[:500]
+        return ""
+
+    def _raw(d: dict) -> str:
+        for k in ("raw_text","thesis","narrative","summary"):
+            val = d.get(k)
+            if isinstance(val, str) and val: return val[:1500]
+        return ""
+
+    return {
+        "ticker": ticker, "tier": "A",
+        "asset_type": asset, "side": side, "group": group,
+        "rounds": [{
+            "round_num": 1,
+            "fundamental": {"persona":"fundamental","rating":_rt(f,"HOLD"),"confidence":float(f.get("confidence",0.6) or 0.6),"key_points":_kp(f),"biggest_risk":_risk(f),"biggest_opportunity":_opp(f),"raw_text":_raw(f) or "[archived from claude -p]","narrative_summary":"","critique":""},
+            "sentiment":   {"persona":"sentiment","rating":_rt(s,"HOLD"),"confidence":float(s.get("confidence",0.6) or 0.6),"key_points":_kp(s),"biggest_risk":_risk(s),"biggest_opportunity":_opp(s),"raw_text":_raw(s) or "[archived from claude -p]","narrative_summary":"","critique":""},
+            "valuation":   {"persona":"valuation","rating":_rt(v,"HOLD"),"confidence":float(v.get("confidence",0.6) or 0.6),"key_points":_kp(v),"biggest_risk":_risk(v),"biggest_opportunity":_opp(v),"raw_text":_raw(v) or "[archived from claude -p]","narrative_summary":"","critique":""},
+            "notes": ""
+        }],
+        "synthesis_neutral": {
+            "risk_mode":"neutral","rating":_rt(n,"HOLD"),"position_modifier":_mod(n),
+            "sizing_recommendation":_sizing(n),"reasoning":_reason(n),
+            "raw_text":"[rule-based neutral synthesis]"
+        },
+        "synthesis_averse": {
+            "risk_mode":"averse","rating":_rt(a,"HOLD"),"position_modifier":_mod(a),
+            "sizing_recommendation":_sizing(a),"reasoning":_reason(a),
+            "raw_text":"[rule-based averse synthesis]"
+        },
+        "converged_round": int(raw.get("converged_round", 1) or 1),
+        "disagreement": {
+            "rating_axis": int(dis.get("rating_axis", 1) or 1),
+            "specialist_dispersion": float(dis.get("specialist_dispersion", 0.15) or 0.15),
+            "type": str(dis.get("type", "ENTRY_TIMING") or "ENTRY_TIMING"),
+        },
+        "composite_at_time": composite,
+        "classification_at_time": classification,
+        "generated_at": _t.strftime("%Y-%m-%dT%H:%M:%S"),
+    }
+
+
+def _build_dispatch_prompt(item: dict) -> str:
+    """Build the same prompt as agents/refresh_from_queue.py for consistency."""
+    try:
+        from agents.refresh_from_queue import build_prompt as _bp
+        return _bp(item)
+    except Exception:
+        # Inline fallback
+        return f"""Multi-Agent ConvictionDebate Round 1 + dual synthesis for **{item.get('ticker','?')}** in **{item.get('group','momentum')} {item.get('side','long').upper()}** bucket.
+Composite: {item.get('composite',0)} | Classification: {item.get('classification','?')}
+OER: {item.get('oer',0)} | TCS_s/l: {item.get('tcs_short',0)}/{item.get('tcs_long',0)} | TFS_s/l: {item.get('tfs_short',0)}/{item.get('tfs_long',0)} | RSS_s/l: {item.get('rss_short',0)}/{item.get('rss_long',0)} | URS: {item.get('urs',0)}
+Return strict JSON in ```json fence with: rounds[0].fundamental/sentiment/valuation each with rating/confidence; synthesis_neutral and synthesis_averse each with rating/position_modifier/sizing_recommendation/reasoning; disagreement with type."""
+
+
+def _run_one_claude(item: dict, timeout: int = 180, retries: int = 3) -> dict:
+    """Invoke `claude -p` for a single ticker; retry on transient 529/rate-limit.
+    Exponential backoff: 4s, 12s, 36s.
+    """
+    import subprocess as _sp, time as _t
+    bin_path = _find_claude()
+    if not bin_path:
+        raise RuntimeError("claude CLI not on PATH")
+    prompt = _build_dispatch_prompt(item)
+
+    last_err = ""
+    for attempt in range(retries + 1):
+        proc = _sp.run(
+            [bin_path, "-p"],
+            input=prompt, capture_output=True, text=True,
+            timeout=timeout,
+        )
+        stdout = (proc.stdout or "").strip()
+        stderr = (proc.stderr or "").strip()
+        transient = (
+            "overloaded_error" in stdout
+            or "rate_limit" in stdout.lower()
+            or "529" in stdout[:200]
+            or "503" in stdout[:200]
+        )
+        if "API Error:" in stdout or transient:
+            err_line = next((ln for ln in stdout.splitlines() if "Error" in ln or "error" in ln),
+                            stdout[:200])
+            last_err = f"anthropic api error: {err_line[:300]}"
+            if transient and attempt < retries:
+                _t.sleep(4 * (3 ** attempt))   # 4s, 12s, 36s
+                continue
+            raise RuntimeError(last_err)
+        if proc.returncode != 0:
+            raise RuntimeError(f"claude exit {proc.returncode}: stderr={stderr[:200]} stdout={stdout[:200]}")
+        raw = _extract_json_fence(stdout)
+        if not raw:
+            raise RuntimeError(f"no JSON fence in output: {stdout[:300]}")
+        break  # success
+    else:
+        raise RuntimeError(last_err or "max retries exceeded")
+    return _normalize_verdict(
+        raw, item["ticker"], item.get("asset_type","stock"),
+        item.get("side","long"), item.get("group","momentum"),
+        float(item.get("composite") or 0),
+        str(item.get("classification") or ""),
+    )
+
+
+@app.post("/api/conviction-debate/auto-fill")
+def post_autofill_debate_cache(max_workers: int = 4, timeout_sec: int = 180):
+    """Server-side dispatch: spawn `claude -p` subprocesses for every queued ticker.
+
+    Each subprocess invokes the user's authenticated Claude Code CLI, so cost is
+    billed against the Max plan (no API key, no out-of-plan charge). Runs in a
+    background thread; poll /api/conviction-debate/auto-fill/status for progress.
+    """
+    import threading, concurrent.futures as _futures, time as _t
+    from pathlib import Path as _P
+
+    if _AUTOFILL_STATUS["running"]:
+        return {"status": "already_running", **_AUTOFILL_STATUS}
+    if not _find_claude():
+        return {"status": "no_claude_cli",
+                "hint": "Install Claude Code CLI and authenticate to enable auto-fill."}
+
+    # Rebuild queue from current selection first
+    try:
+        post_refresh_debate_queue()
+    except Exception:
+        pass
+    qpath = _P(".debate_refresh_queue.json")
+    if not qpath.exists():
+        return {"status": "no_queue"}
+    queue = json.loads(qpath.read_text(encoding="utf-8"))
+    items = queue.get("tickers") or []
+    if not items:
+        return {"status": "empty_queue", "n_total": 0}
+
+    # Reset status
+    _AUTOFILL_STATUS.update({
+        "running": True, "started_at": _t.strftime("%Y-%m-%dT%H:%M:%S"),
+        "finished_at": "", "n_total": len(items),
+        "n_completed": 0, "n_failed": 0, "n_persisted": 0,
+        "last_error": "", "current": "", "errors": [],
+    })
+
+    def _worker():
+        from agents.multi_round_debate import load_multi_verdicts, save_multi_verdict, MultiAgentVerdict
+        cache_path = _P(".multi_agent_debate_cache.json")
+        cache = json.loads(cache_path.read_text(encoding="utf-8")) if cache_path.exists() else {}
+        try:
+            with _futures.ThreadPoolExecutor(max_workers=max_workers) as ex:
+                fut_map = {ex.submit(_run_one_claude, it, timeout_sec): it for it in items}
+                for fut in _futures.as_completed(fut_map):
+                    item = fut_map[fut]
+                    ticker = item.get("ticker", "?")
+                    _AUTOFILL_STATUS["current"] = ticker
+                    try:
+                        verdict = fut.result()
+                        cache[ticker] = verdict
+                        _AUTOFILL_STATUS["n_completed"] += 1
+                        _AUTOFILL_STATUS["n_persisted"] += 1
+                    except Exception as e:
+                        _AUTOFILL_STATUS["n_failed"] += 1
+                        _AUTOFILL_STATUS["errors"].append(f"{ticker}: {type(e).__name__}: {str(e)[:200]}")
+                        if len(_AUTOFILL_STATUS["errors"]) > 25:
+                            _AUTOFILL_STATUS["errors"] = _AUTOFILL_STATUS["errors"][-25:]
+            cache["_meta"] = {
+                "last_update": _t.strftime("%Y-%m-%dT%H:%M:%S"),
+                "n_verdicts": len([k for k in cache if not k.startswith("_")]),
+                "tier": "A",
+            }
+            cache_path.write_text(json.dumps(cache, indent=2, ensure_ascii=False), encoding="utf-8")
+            # Clear queue
+            if qpath.exists(): qpath.unlink()
+        except Exception as e:
+            _AUTOFILL_STATUS["last_error"] = f"{type(e).__name__}: {e}"
+        finally:
+            _AUTOFILL_STATUS["running"] = False
+            _AUTOFILL_STATUS["finished_at"] = _t.strftime("%Y-%m-%dT%H:%M:%S")
+
+    threading.Thread(target=_worker, daemon=True).start()
+    return {"status": "started", "n_total": len(items)}
+
+
+@app.get("/api/conviction-debate/auto-fill/status")
+def get_autofill_status():
+    return dict(_AUTOFILL_STATUS)
+
+
+# ─────────────────────────────────────────────────────────────────────
+# Market Leaders 6-agent swarm — Phase 1 (4 parallel) + Phase 2 + Phase 3 dual
+# ─────────────────────────────────────────────────────────────────────
+
+_SWARM_STATUS: dict = {
+    "running": False, "started_at": "", "finished_at": "",
+    "phase": "", "current": "", "events": [], "last_error": "",
+}
+
+
+@app.post("/api/market-leaders/swarm")
+def post_market_leaders_swarm(force: bool = False):
+    """Trigger 6-agent Market Leaders swarm. Caches result with 12h TTL.
+
+    Args:
+        force: if True, ignore cache and re-run swarm.
+    """
+    import threading
+    import time as _t
+
+    if _SWARM_STATUS["running"]:
+        return {"status": "already_running", **_SWARM_STATUS}
+
+    try:
+        from agents.market_leaders_swarm import (
+            cache_fresh, load_cached, run_swarm,
+        )
+    except ImportError as e:
+        return {"status": "import_error", "error": str(e)}
+
+    if not force and cache_fresh():
+        cached = load_cached() or {}
+        return {"status": "cached", "generated_at": cached.get("generated_at"),
+                "ttl_hours": 12}
+
+    if not _find_claude():
+        return {"status": "no_claude_cli"}
+
+    _SWARM_STATUS.update({
+        "running": True, "started_at": _t.strftime("%Y-%m-%dT%H:%M:%S"),
+        "finished_at": "", "phase": "phase1", "current": "starting",
+        "events": [], "last_error": "",
+    })
+
+    def _cb(phase: str, agent: str, status: str):
+        _SWARM_STATUS["phase"] = phase
+        _SWARM_STATUS["current"] = f"{agent}:{status}"
+        _SWARM_STATUS["events"].append({
+            "t": _t.strftime("%H:%M:%S"), "phase": phase, "agent": agent, "status": status,
+        })
+        if len(_SWARM_STATUS["events"]) > 50:
+            _SWARM_STATUS["events"] = _SWARM_STATUS["events"][-50:]
+
+    def _worker():
+        try:
+            run_swarm(progress_cb=_cb)
+        except Exception as e:
+            _SWARM_STATUS["last_error"] = f"{type(e).__name__}: {str(e)[:300]}"
+        finally:
+            _SWARM_STATUS["running"] = False
+            _SWARM_STATUS["finished_at"] = _t.strftime("%Y-%m-%dT%H:%M:%S")
+
+    threading.Thread(target=_worker, daemon=True).start()
+    return {"status": "started"}
+
+
+@app.get("/api/market-leaders/swarm/status")
+def get_swarm_status():
+    return dict(_SWARM_STATUS)
+
+
+@app.get("/api/backtest/results")
+def get_backtest_results():
+    """Return cached PM proxy backtest results."""
+    from pathlib import Path as _P
+    p = _P("backtest/results.json")
+    if not p.exists():
+        return {"available": False}
+    try:
+        return {"available": True, "result": json.loads(p.read_text(encoding="utf-8"))}
+    except Exception as e:
+        return {"available": False, "error": str(e)}
+
+
+@app.post("/api/backtest/run")
+def trigger_backtest_run():
+    """Re-run the PM proxy backtest in a background thread."""
+    import threading, subprocess, sys, time as _t
+    _BACKTEST_STATUS = globals().setdefault("_BACKTEST_STATUS", {
+        "running": False, "started_at": "", "finished_at": "", "last_error": ""})
+    if _BACKTEST_STATUS["running"]:
+        return {"status": "already_running", **_BACKTEST_STATUS}
+
+    def _worker():
+        _BACKTEST_STATUS["running"] = True
+        _BACKTEST_STATUS["started_at"] = _t.strftime("%Y-%m-%dT%H:%M:%S")
+        _BACKTEST_STATUS["last_error"] = ""
+        try:
+            proc = subprocess.run([sys.executable, "backtest/run.py"],
+                                  capture_output=True, text=True, timeout=300)
+            if proc.returncode != 0:
+                _BACKTEST_STATUS["last_error"] = (proc.stderr or "")[:500]
+        except Exception as e:
+            _BACKTEST_STATUS["last_error"] = str(e)
+        finally:
+            _BACKTEST_STATUS["running"] = False
+            _BACKTEST_STATUS["finished_at"] = _t.strftime("%Y-%m-%dT%H:%M:%S")
+
+    threading.Thread(target=_worker, daemon=True).start()
+    return {"status": "started"}
+
+
+@app.get("/api/backtest/status")
+def get_backtest_status():
+    return dict(globals().get("_BACKTEST_STATUS", {"running": False}))
+
+
+# ─────────────────────────────────────────────────────────────────────
+# PM Picks History (forward collection)
+# ─────────────────────────────────────────────────────────────────────
+
+@app.get("/api/pm-history/summary")
+def get_pm_history_summary():
+    """High-level stats — n snapshots, date range, top persistent tickers."""
+    try:
+        from agents.pm_history import summarize_history
+        return summarize_history()
+    except Exception as e:
+        return {"error": str(e), "n_snapshots": 0}
+
+
+@app.get("/api/final-list")
+def get_final_list():
+    """Buy/Sell Final List — synthesizes PM Swarm + Phase 5.5 + Phase 5.6 + Backtest.
+
+    Returns:
+      buy_list:  LONG candidates ranked by confidence (★★★ down to ★)
+      sell_list: SHORT candidates + existing positions to close
+
+    Each buy_list pick is augmented with Elliott Wave-based stop loss:
+      stop_price, stop_pct, stop_type, stop_rationale, stop_wave_guess
+    (cached daily in .elliott_stops_cache.json — first call after refresh
+     takes ~30s for 50 picks via yfinance; subsequent calls use cache.)
+    """
+    try:
+        from agents.final_list import build_final_lists
+        result = build_final_lists()
+        # All row sources that surface in the unified frontend table need entry/stop
+        # annotations — not just buy_list. HOLDING/ENTERED rows come from
+        # active_positions, and EXIT_PENDING rows from exit_pending. Annotating all
+        # three ensures no row shows empty 진입가/손절가 columns.
+        # Dedupe by (ticker, horizon): the annotate functions key their cache the same
+        # way, so a ticker held AND in buy_list is computed once and the shared cache
+        # serves the duplicate — but we still pass all dict refs so each gets mutated.
+        all_annotatable = []
+        for key in ("buy_list", "active_positions", "exit_pending"):
+            all_annotatable.extend(result.get(key) or [])
+
+        # ─── Annotate with Elliott Wave stop-loss prices ───
+        try:
+            from agents.elliott_wave_stops import annotate_buy_list_with_stops
+            if all_annotatable:
+                annotate_buy_list_with_stops(all_annotatable, use_cache=True)
+        except Exception as ew_err:
+            for r in all_annotatable:
+                r.setdefault("stop_price", None)
+                r.setdefault("stop_pct", None)
+                r.setdefault("stop_type", "UNAVAILABLE")
+                r.setdefault("stop_rationale", f"elliott_wave error: {str(ew_err)[:120]}")
+        # ─── Annotate with 3-tier Entry prices (CAN SLIM + Elliott + SMA50) ───
+        try:
+            from agents.entry_price import annotate_buy_list_with_entries
+            if all_annotatable:
+                annotate_buy_list_with_entries(all_annotatable, use_cache=True)
+        except Exception as ep_err:
+            for r in all_annotatable:
+                r.setdefault("entry_aggressive", None)
+                r.setdefault("entry_primary", None)
+                r.setdefault("entry_conservative", None)
+                r.setdefault("entry_skip_reason", f"entry_price error: {str(ep_err)[:120]}")
+        # JSON-safe sanitization (drop NaN/Inf in stop_price/stop_pct across all rows)
+        import math as _math
+        for r in all_annotatable:
+            for k in ("stop_price", "stop_pct"):
+                v = r.get(k)
+                if v is not None:
+                    try:
+                        v = float(v)
+                        if not _math.isfinite(v): r[k] = None
+                    except (TypeError, ValueError):
+                        r[k] = None
+        return result
+    except Exception as e:
+        return {"error": str(e), "buy_list": [], "sell_list": [], "metadata": {}}
+
+
+@app.post("/api/final-list/refresh-entries")
+def refresh_entry_prices():
+    """Force refresh CAN SLIM + Elliott entry prices cache for current buy_list.
+
+    Bypasses 24h TTL cache and fetches fresh OHLCV from yfinance.
+    Returns count + timing.
+    """
+    import time as _t
+    try:
+        from agents.final_list import build_final_lists
+        from agents.entry_price import annotate_buy_list_with_entries
+        t0 = _t.time()
+        fl = build_final_lists()
+        buy = fl.get("buy_list") or []
+        annotate_buy_list_with_entries(buy, use_cache=False)
+        return {
+            "ok": True,
+            "n_buy_list": len(buy),
+            "n_with_primary":   sum(1 for r in buy if r.get("entry_primary")),
+            "n_with_aggressive": sum(1 for r in buy if r.get("entry_aggressive")),
+            "n_with_conservative": sum(1 for r in buy if r.get("entry_conservative")),
+            "elapsed_sec": round(_t.time() - t0, 1),
+        }
+    except Exception as e:
+        return {"ok": False, "error": str(e)[:300]}
+
+
+@app.post("/api/final-list/refresh-stops")
+def refresh_elliott_stops():
+    """Force refresh Elliott Wave stop-loss cache for current buy_list.
+
+    Use when you want to recompute stops (e.g., after big price move).
+    Bypasses cache TTL and fetches fresh OHLCV from yfinance.
+    Returns count + timing.
+    """
+    import time as _t
+    try:
+        from agents.final_list import build_final_lists
+        from agents.elliott_wave_stops import annotate_buy_list_with_stops
+        t0 = _t.time()
+        fl = build_final_lists()
+        buy = fl.get("buy_list") or []
+        annotate_buy_list_with_stops(buy, use_cache=False)   # force fresh
+        return {
+            "ok": True,
+            "n_buy_list": len(buy),
+            "n_with_stops": sum(1 for r in buy if r.get("stop_price")),
+            "elapsed_sec": round(_t.time() - t0, 1),
+        }
+    except Exception as e:
+        return {"ok": False, "error": str(e)[:300]}
+
+
+@app.get("/api/validated-extra-timeline")
+def get_validated_extra_timeline():
+    """Synthesize backtest-style records for ★★+ validated tickers MISSING from backtest data.
+
+    Used by frontend to extend the '검증된 매수 종목' timeline visualization
+    so PM-validated stocks (which proxy backtest didn't pick) also get a timeline.
+
+    Returns same schema as trading_lifecycles_compact (per horizon + bucket).
+    Each record contains backtest-style fields:
+      t, n, d, sig, mst, mr (always null for synthetic), bh, bhp, bhd
+    """
+    try:
+        import pickle, json
+        from pathlib import Path
+        import pandas as pd
+        from agents.final_list import build_final_lists
+
+        # Load backtest results + price cache
+        bt_path = Path("backtest/results.json")
+        if not bt_path.exists():
+            return {"tactical": {"long_stocks": [], "long_etfs": []},
+                    "core":     {"long_stocks": [], "long_etfs": []},
+                    "strategic":{"long_stocks": [], "long_etfs": []}}
+        bt = json.loads(bt_path.read_text(encoding="utf-8"))
+        tlc = bt.get("trading_lifecycles_compact", {})
+        core = tlc.get("core", {})
+
+        # Existing tickers in backtest (per bucket)
+        existing_stocks = {r["t"] for r in core.get("long_stocks", [])}
+        existing_etfs   = {r["t"] for r in core.get("long_etfs",   [])}
+
+        # All cohort dates from existing data
+        all_dates = sorted({r["d"] for r in core.get("long_stocks", [])} |
+                           {r["d"] for r in core.get("long_etfs",   [])})
+
+        # Find ★★+ tickers NOT in existing data
+        fl = build_final_lists()
+        missing_stocks: list[tuple[str,str]] = []
+        missing_etfs:   list[tuple[str,str]] = []
+        for r in fl.get("buy_list", []):
+            if r.get("stars", 0) < 2: continue
+            t = r["ticker"]
+            name = r.get("name", "") or ""
+            if "stocks" in r.get("bucket", "") and t not in existing_stocks:
+                missing_stocks.append((t, name))
+            elif "etfs" in r.get("bucket", "") and t not in existing_etfs:
+                missing_etfs.append((t, name))
+
+        if not missing_stocks and not missing_etfs:
+            return {"tactical": {"long_stocks": [], "long_etfs": []},
+                    "core":     {"long_stocks": [], "long_etfs": []},
+                    "strategic":{"long_stocks": [], "long_etfs": []}}
+
+        # Load price cache
+        cache_path = Path(".backtest_price_cache.pkl")
+        if not cache_path.exists():
+            return {"error": "no price cache", "core": {"long_stocks": [], "long_etfs": []}}
+        cache = pickle.load(open(cache_path, "rb"))
+        data = cache.get("data", {})
+
+        HORIZON_DAYS = {"tactical": 5, "core": 21, "strategic": 63}
+
+        def _compute(tickers_with_names: list[tuple[str,str]], horizon_days: int) -> list[dict]:
+            recs = []
+            for t, name in tickers_with_names:
+                df = data.get(t)
+                if df is None or df.empty: continue
+                for d_str in all_dates:
+                    entry_date = pd.Timestamp(d_str)
+                    hist = df[df.index <= entry_date]
+                    if len(hist) == 0: continue
+                    entry_close = float(hist["Close"].iloc[-1])
+                    if entry_close <= 0: continue
+
+                    fwd = df[df.index > entry_date]
+                    # Full horizon return
+                    bh_ret = None
+                    if len(fwd) >= horizon_days:
+                        exit_close = float(fwd["Close"].iloc[horizon_days - 1])
+                        if exit_close > 0:
+                            bh_ret = exit_close / entry_close - 1
+                    # Partial return (MTM at latest)
+                    bhp = None
+                    bhd = 0
+                    if len(fwd) > 0:
+                        last_close = float(fwd["Close"].iloc[-1])
+                        if last_close > 0:
+                            bhp = last_close / entry_close - 1
+                            bhd = len(fwd)
+                    recs.append({
+                        "t":  t, "n": (name or "")[:40],
+                        "d":  d_str,
+                        "sig": "—",
+                        "mst": "SYNTHETIC",
+                        "mex": None,
+                        "mr":  None,  # No proxy/managed for synthetic
+                        "mdh": None, "mdt": None,
+                        "bh":  bh_ret,
+                        "bhp": bhp,
+                        "bhd": bhd,
+                    })
+            return recs
+
+        return {
+            h: {
+                "long_stocks": _compute(missing_stocks, HORIZON_DAYS[h]),
+                "long_etfs":   _compute(missing_etfs,   HORIZON_DAYS[h]),
+            }
+            for h in ("tactical", "core", "strategic")
+        }
+    except Exception as e:
+        return {"error": str(e),
+                "tactical": {"long_stocks": [], "long_etfs": []},
+                "core":     {"long_stocks": [], "long_etfs": []},
+                "strategic":{"long_stocks": [], "long_etfs": []}}
+
+
+@app.get("/api/pm-history/list")
+def get_pm_history_list(limit: int = 200):
+    """Return all snapshots (date + bucket sizes for each)."""
+    try:
+        from agents.pm_history import load_history
+        h = load_history()
+        snaps = h.get("snapshots", [])[-limit:]
+        # Compact view — only metadata + counts (full picks fetched separately)
+        out = []
+        for s in snaps:
+            p5 = s.get("phase5_picks") or {}
+            out.append({
+                "date": s.get("date"),
+                "snapshot_at": s.get("snapshot_at"),
+                "regime_tag": s.get("regime_tag"),
+                "synthesis_neutral_regime": s.get("synthesis_neutral_regime"),
+                "n_picks": {b: len(p5.get(b) or []) for b in
+                            ("long_stocks","long_etfs","short_stocks","short_etfs")},
+            })
+        return {"snapshots": out, "n_total": len(h.get("snapshots", []))}
+    except Exception as e:
+        return {"error": str(e), "snapshots": []}
+
+
+@app.get("/api/pm-history/date/{date}")
+def get_pm_history_date(date: str):
+    """Return the full snapshot (phase4 + phase5 picks + commentary) for one date."""
+    try:
+        from agents.pm_history import load_history
+        h = load_history()
+        for s in h.get("snapshots", []):
+            if s.get("date") == date:
+                return s
+        return {"available": False, "date": date}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+# ─────────────────────────────────────────────────────────────────────
+# Backtest per-ticker drilldown (Task 4)
+# ─────────────────────────────────────────────────────────────────────
+
+@app.get("/api/backtest/ticker/{ticker}")
+def get_backtest_ticker(ticker: str):
+    """Per-ticker drilldown: all cohort appearances + forward returns + aggregates."""
+    from pathlib import Path as _P
+    p = _P("backtest/ticker_details.json")
+    if not p.exists():
+        return {"available": False}
+    try:
+        data = json.loads(p.read_text(encoding="utf-8"))
+        rec = (data.get("tickers") or {}).get(ticker)
+        if not rec:
+            return {"available": False, "ticker": ticker}
+        return {"available": True, "ticker": ticker, "data": rec,
+                "as_of_run": data.get("as_of_run")}
+    except Exception as e:
+        return {"available": False, "error": str(e)}
+
+
+@app.get("/api/backtest/rankings")
+def get_backtest_rankings():
+    """Top + Worst tickers per bucket by 21d mean alpha."""
+    from pathlib import Path as _P
+    p = _P("backtest/ticker_rankings.json")
+    if not p.exists():
+        return {"available": False}
+    try:
+        return {"available": True, "rankings": json.loads(p.read_text(encoding="utf-8"))}
+    except Exception as e:
+        return {"available": False, "error": str(e)}
+
+
+@app.get("/api/market-leaders/swarm/result")
+def get_swarm_result():
+    """Return cached swarm result (Phase 1 verdicts + Phase 2 + dual synthesis)."""
+    try:
+        from agents.market_leaders_swarm import load_cached, cache_fresh
+        cached = load_cached() or {}
+        return {
+            "available": bool(cached),
+            "fresh": cache_fresh(),
+            "result": cached,
+        }
+    except Exception as e:
+        return {"available": False, "fresh": False, "error": str(e)}

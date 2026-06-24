@@ -195,8 +195,9 @@ def draw_page1_diagram(fig, ax):
     # LAYER 4
     box(ax, 6,  35, 39, 12,
         "A. MOMENTUM COMPOSITE\n\n"
-        "0.30·TCS + 0.25·TFS\n+ 0.30·RSS + 0.15·URS",
-        SCORE_FILL, SCORE_EDGE, fontsize=10, weight="bold")
+        "0.30·TCS + 0.25·TFS_resid\n+ 0.30·RSS + 0.15·URS\n"
+        "− 0.10·max(0, OER−40)",
+        SCORE_FILL, SCORE_EDGE, fontsize=9, weight="bold")
     box(ax, 50, 35, 30, 12,
         "B. PRE-MOMENTUM SCORE\n\n"
         "0.20·Micro + 0.15·Macro\n+ 0.20·Graph + 0.20·Catalyst\n+ 0.25·QVR",
@@ -598,18 +599,20 @@ def draw_page4_agents(fig, ax):
 
     agent_card(ax, 36, 60, 30, 29,
         "2. Macro Regime", "0.15", PM_FILL, PM_EDGE,
-        "Top-down regime fit + sector\n"
-        "rotation alignment.",
-        "• Category breadth\n"
-        "  (% of peers eligible)\n"
-        "• Cross-asset alignment\n"
-        "• avg_composite of category peers\n"
-        "• Bullish % of peers\n"
-        "• Sector relative strength",
-        "Uses ONLY peer/category aggregates\n"
-        "(not own composite). When the sector\n"
-        "starts rotating up, individual names\n"
-        "follow — this catches the rotation.")
+        "Top-down regime + rotation +\n"
+        "Risk/Style/Region + Bottom-up ETF.",
+        "• sector_rotation (0.20)\n"
+        "• cross_asset (0.10)\n"
+        "• category_breadth (0.20)\n"
+        "• relative_improvement (0.15)\n"
+        "• rotation_alignment (0.20)\n"
+        "• etf_parent_signal (0.15) NEW\n"
+        "   = bottom-up ETF flag aggregation",
+        "etf_parent_signal (Hybrid Phase D):\n"
+        "Stock = weighted avg of parent ETF\n"
+        "divergence flags (STEALTH/HEALTHY/\n"
+        "WRAPPER/NARROW). ETF = own breadth.\n"
+        "Forward-looking bottom-up signal.")
 
     agent_card(ax, 68, 60, 28, 29,
         "3. Graph Relational", "0.20", PM_FILL, PM_EDGE,
@@ -687,34 +690,33 @@ def draw_page5_scores(fig, ax):
     # ── Left: Composite (A) ──
     info_box(ax, 4, 75, 45, 16,
         "A. MOMENTUM COMPOSITE  (0-100)",
-        "Composite = 0.30·TCS + 0.25·TFS\n"
-        "          + 0.30·RSS + 0.15·URS\n\n"
-        "Purpose: 'Where momentum IS now.'\n"
-        "Pure technical, observable.\n\n"
-        "Eligibility threshold: ≥ 55\n\n"
-        "Range:\n"
-        "  0-30 weak / no momentum\n"
-        "  30-55 forming / borderline\n"
-        "  55-75 confirmed momentum\n"
-        "  75-100 very strong (overextended)",
+        "base = 0.30·TCS + 0.25·TFS_resid\n"
+        "     + 0.30·RSS_hybrid + 0.15·URS\n"
+        "Composite = base - 0.10*max(0, OER-40)\n\n"
+        "TFS_resid = TFS residualized vs TCS\n"
+        "  (removes TCS-TFS info overlap; same in SVE)\n"
+        "RSS_hybrid = 0.6*within_sector + 0.4*universe\n"
+        "  (sector beta correction; sector n>=8)\n"
+        "OER penalty: linear from 40+ (max -6 pts)\n\n"
+        "Eligibility threshold: >= 55",
         SCORE_FILL, SCORE_EDGE,
-        title_size=10, content_size=8)
+        title_size=10, content_size=7.5)
 
     # ── Right: Pre-Mom Score (B) ──
     info_box(ax, 51, 75, 45, 16,
         "B. PRE-MOMENTUM SCORE  (0-100)",
-        "Pre-Mom = 0.20·Micro + 0.15·Macro\n"
-        "        + 0.20·Graph + 0.20·Catalyst\n"
-        "        + 0.25·QVR\n\n"
+        "Pre-Mom = 0.20*Micro + 0.15*Macro*\n"
+        "        + 0.20*Graph + 0.20*Catalyst\n"
+        "        + 0.25*QVR\n\n"
+        "* Macro Regime Agent — 6 sub-signals:\n"
+        "  sector_rotation (0.20), cross_asset (0.10),\n"
+        "  category_breadth (0.20), rel_improvement (0.15),\n"
+        "  rotation_alignment (0.20) [Phase 2C],\n"
+        "  etf_parent_signal (0.15) [Hybrid Phase D, NEW]\n\n"
         "Purpose: 'Where momentum WILL BE.'\n"
-        "No hard threshold; pair with agreement_ratio.\n\n"
-        "Range:\n"
-        "  0-30 no signal\n"
-        "  30-50 weak setup\n"
-        "  50-65 moderate forming setup\n"
-        "  65-100 strong forming setup",
+        "Forward-looking bottom-up signal integrated.",
         SCORE_FILL, SCORE_EDGE,
-        title_size=10, content_size=8)
+        title_size=10, content_size=7.5)
 
     # ── agreement_ratio explanation (condensed to fit) ──
     info_box(ax, 4, 56, 92, 17,
@@ -774,13 +776,18 @@ def draw_page5_scores(fig, ax):
     # Overrides
     ax.text(4, 16, "Overrides (applied AFTER the matrix):",
             fontsize=9, fontweight="bold", color=SCORE_EDGE)
-    text_block(ax, 4, 14,
-        "  • OVEREXTENDED   = OER ≥ 60 on a bullish cell (warns of mean-reversion risk)\n"
+    text_block(ax, 4, 13.7,
+        "  • OVEREXTENDED   = OER >= 60 on a bullish cell (warns of mean-reversion risk)\n"
         "  • FORMATION      = rapid short-term breakout from a low base (overrides RECOVERY)\n"
         "  • EXHAUSTING     = old established trend losing steam (overrides CONTINUATION when age + slope decay)\n"
-        "  • CYCLE_PEAK     = ret_36_12m percentile ≥ 85 + 12M momentum declining (long bull cycle peak)\n"
-        "  • LAGGING_CATCHUP = sector-lagging name with broad sector strength (catch-up candidate)",
-        fontsize=8.5, color=FG)
+        "  • CYCLE_PEAK     = ret_36_12m percentile >= 85 + 12M momentum declining (long bull cycle peak)\n"
+        "  • LAGGING_CATCHUP = sector-lagging name with broad sector strength (catch-up candidate)\n"
+        "  * Phase 3B (api.py): Regime-aware CYCLE_PEAK early promotion\n"
+        "      Risk-Off + cyclical ticker + OVEREXTENDED + OER>=70 -> CYCLE_PEAK\n"
+        "      Risk-On + defensive ticker + OVEREXTENDED + OER>=70 -> CYCLE_PEAK (anomaly)\n"
+        "  * Sticky FLAT hysteresis: prev=FLAT -> entry threshold * 1.3 (stricter)\n"
+        "      Removes bi-weekly NEUTRAL <-> CONSOLIDATION <-> RECOVERY <-> FADING flip noise",
+        fontsize=8, color=FG)
 
     # Bullish set used by Eligibility Gate
     ax.text(50, 2.5,
@@ -868,17 +875,32 @@ def draw_page6_gate(fig, ax):
         title_size=9.5, content_size=7.8)
 
     # ── Tab routing summary ──
-    section_h2(ax, 4, 17, "Tab Routing Summary", color=GATE_EDGE, fontsize=11)
+    section_h2(ax, 4, 17, "Tab Routing + Phase 1-3 Macro Context Tags (api.py post-load)",
+               color=GATE_EDGE, fontsize=11)
 
-    text_block(ax, 4, 14,
-        "  Momentum tab     : passes ALL 4 gate conditions  →  current actionable holdings\n"
-        "  Excluded tab     : bearish classification (4 types) OR demoted by WeakQVR  →  monitor for exit / avoidance\n"
-        "  Pre-Momentum tab : not yet eligible BUT pre_momentum_score signals forming  →  watchlist / preparation\n",
-        fontsize=8.5, color=FG)
+    text_block(ax, 4, 14.5,
+        "  Momentum tab     : passes ALL 4 gate conditions  ->  current actionable holdings\n"
+        "  Excluded tab     : bearish classification OR demoted by WeakQVR  ->  monitor for exit / avoidance\n"
+        "  Pre-Momentum tab : not yet eligible BUT pre_momentum_score signals forming  ->  watchlist / preparation\n\n"
+        "  -- Macro Context Tags (api.py post-load) --\n"
+        "  * Phase 1     : cyclical_tag . style_tilt . region . industry_group (+ Biotech/Telecom industry refinement)\n"
+        "  * Phase 1G    : ve_obs tag injection -> /api/validation segmented hit rates (cyc/style/region)\n"
+        "  * Phase 2C    : MacroRegimeAgent rotation_alignment sub-signal (weight 0.20)\n"
+        "  * Phase 2D    : per-ticker rotation_long / rotation_short scores\n"
+        "  * Phase 3B    : Regime-aware CYCLE_PEAK early promotion (Risk-Off + cyclical + OVEREXTENDED + OER>=70)\n\n"
+        "  -- Hybrid Bottom-up (ETF constituent integration) --\n"
+        "  * Phase A     : etf_holdings_pipeline.py fetches top-10 holdings via yfinance (70 ETFs cached)\n"
+        "  * Phase A+B   : ETF sidecar metrics (constituent_breadth_mom, weighted_comp, coverage, leader_gap)\n"
+        "                  + divergence_flag = {HEALTHY_TREND, NARROW_RALLY, STEALTH_STRENGTH, WRAPPER_DRAG, NEUTRAL}\n"
+        "  * Phase C     : MarketCommentaryTab ETF Hybrid Health Card (per-ETF 8-col table + flag badges)\n"
+        "  * Phase D     : parent_etf_signal -> MacroRegimeAgent etf_parent_signal sub-signal (weight 0.15)\n"
+        "                  Stock = weighted avg of parent ETF flags; ETF = own constituent breadth\n"
+        "  * Phase E     : Conviction Picks BuyScore += ETF flag bonus (STEALTH +10, HEALTHY +6, NARROW -4)",
+        fontsize=7.2, color=FG)
 
     # End-of-document footer
     ax.text(50, 4.5,
-            "End of document.  ·  Source: pre_momentum.py · price_discovery.py · qvr_agent.py · api.py",
+            "End of document.  ·  Source: pre_momentum.py · price_discovery.py · qvr_agent.py · api.py · etf_holdings_pipeline.py",
             fontsize=8, color=MUTED, ha="center", style="italic")
 
 

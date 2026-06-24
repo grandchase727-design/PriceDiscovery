@@ -1,22 +1,65 @@
 @import "tailwindcss";
 
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+/* ─────────────────────────────────────────────────────────────
+   Financial Times (ft.com) styling
+   - FT Pink paper background (#FFF1E5)
+   - Serif headlines (Financier Display → Georgia fallback)
+   - Sans body/data (MetricWeb → system sans fallback)
+   ───────────────────────────────────────────────────────────── */
+
+/* FT uses custom fonts (Financier Display / MetricWeb). Free web-safe
+   approximations: Georgia for serif display, system sans for body. */
+
+:root {
+  --ft-pink: #FFF1E5;
+  --ft-paper: #FFFFFF;
+  --ft-black: #33302E;
+  --ft-slate: #66605C;
+  --ft-wheat: #E6D9CE;
+  --ft-blue: #0F5499;
+  --ft-claret: #990F3D;
+  --ft-teal: #0D7680;
 }
 
-/* Plotly dark theme overrides */
+body {
+  margin: 0;
+  background: var(--ft-pink);
+  color: var(--ft-black);
+  font-family: "MetricWeb", -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Serif display for headlines — FT signature */
+h1, h2, h3, .ft-serif {
+  font-family: "Financier Display", Georgia, "Times New Roman", serif;
+  letter-spacing: -0.01em;
+}
+
+/* Plotly modebar position */
 .js-plotly-plot .plotly .modebar {
   right: 0 !important;
 }
 
-/* Scrollbar styling */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #111827; }
-::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+/* Scrollbar — FT wheat on pink */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #F2E5D7; }
+::-webkit-scrollbar-thumb { background: #CCC1B7; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #B3A698; }
 
-/* Markdown table styling */
+/* Markdown / prose tables — FT editorial table style */
+.prose { color: var(--ft-black); }
 .prose table { border-collapse: collapse; width: 100%; font-size: 12px; }
-.prose th, .prose td { border: 1px solid #374151; padding: 4px 8px; }
-.prose th { background: #1f2937; }
+.prose th, .prose td { border: 1px solid var(--ft-wheat); padding: 5px 9px; }
+.prose th {
+  background: #F2E5D7;
+  font-family: "MetricWeb", -apple-system, sans-serif;
+  font-weight: 600;
+  text-align: left;
+  border-bottom: 2px solid #CCC1B7;
+}
+.prose tr:nth-child(even) td { background: #FBF2E9; }
+.prose a { color: var(--ft-blue); text-decoration: underline; }
+.prose h1, .prose h2, .prose h3 { font-family: "Financier Display", Georgia, serif; color: var(--ft-black); }
+
+/* Links default to FT Oxford blue */
+a { color: var(--ft-blue); }

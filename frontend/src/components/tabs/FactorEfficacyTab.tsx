@@ -24,8 +24,8 @@ export function FactorEfficacyTab() {
 
   useEffect(() => { fetchFactorEfficacy().then(setRaw); }, []);
 
-  if (!raw) return <div className="text-gray-500 p-8">Loading...</div>;
-  if (raw.error) return <div className="text-yellow-400 p-8">{raw.error}</div>;
+  if (!raw) return <div className="text-[#857F7A] p-8">Loading...</div>;
+  if (raw.error) return <div className="text-[#B85C00] p-8">{raw.error}</div>;
 
   const unified = raw.unified ?? {};
   const fm = raw.fama_macbeth ?? {};
@@ -50,23 +50,23 @@ export function FactorEfficacyTab() {
       </div>
 
       {unified.top3_factors && (
-        <div className="bg-[#111827] rounded-lg p-3 border border-gray-800 text-sm">
-          <span className="text-gray-400">Top 3 Factors: </span>
-          <span className="text-cyan-400 font-semibold">{unified.top3_factors.join(", ")}</span>
-          <span className="text-gray-600 mx-3">|</span>
-          <span className="text-gray-400">Top 3 Groups: </span>
-          <span className="text-blue-400 font-semibold">{unified.top3_groups?.join(", ")}</span>
+        <div className="bg-[#FFFFFF] rounded-lg p-3 border border-[#E6D9CE] text-[16px]">
+          <span className="text-[#66605C]">Top 3 Factors: </span>
+          <span className="text-[#0F5499] font-semibold">{unified.top3_factors.join(", ")}</span>
+          <span className="text-[#857F7A] mx-3">|</span>
+          <span className="text-[#66605C]">Top 3 Groups: </span>
+          <span className="text-[#0F5499] font-semibold">{unified.top3_groups?.join(", ")}</span>
         </div>
       )}
 
       {/* ── Sub-tab bar ── */}
-      <div className="flex items-center gap-1 border-b border-gray-800 pb-0">
+      <div className="flex items-center gap-1 border-b border-[#E6D9CE] pb-0">
         {SUB_TABS.map((t, i) => (
           <button key={t}
-            className={`px-4 py-2 text-sm border-b-2 transition-colors ${
+            className={`px-4 py-2 text-[16px] border-b-2 transition-colors ${
               sub === i
-                ? "border-cyan-400 text-cyan-400"
-                : "border-transparent text-gray-500 hover:text-gray-300"
+                ? "border-[#0F5499] text-[#0F5499]"
+                : "border-transparent text-[#857F7A] hover:text-[#33302E]"
             }`}
             onClick={() => setSub(i)}>
             {t}
@@ -95,9 +95,9 @@ const SIGNAL_COLORS: Record<string, string> = {
 };
 const SIGNAL_BG: Record<string, string> = {
   STRONG_LONG: "bg-emerald-900/40 border-emerald-600",
-  LONG: "bg-cyan-900/40 border-cyan-600",
-  SHORT: "bg-orange-900/40 border-orange-600",
-  STRONG_SHORT: "bg-red-900/40 border-red-600",
+  LONG: "bg-[#E3EEF5]/40 border-[#9CC3D5]",
+  SHORT: "bg-[#F7EDE0]/40 border-[#E0C3A0]",
+  STRONG_SHORT: "bg-[#F7E3E3]/40 border-[#E0AAAA]",
 };
 
 function TickerSignalsSection({ ts }: { ts: any }) {
@@ -106,7 +106,7 @@ function TickerSignalsSection({ ts }: { ts: any }) {
   const dist = ts.signal_distribution ?? {};
   const [filter, setFilter] = useState<string>("ALL");
 
-  if (!signals.length) return <div className="text-gray-500 p-8">No ticker signal data available.</div>;
+  if (!signals.length) return <div className="text-[#857F7A] p-8">No ticker signal data available.</div>;
 
   const filtered = filter === "ALL" ? signals : signals.filter((s: any) => s.signal === filter);
 
@@ -116,10 +116,10 @@ function TickerSignalsSection({ ts }: { ts: any }) {
 
   return (
     <div className="space-y-8">
-      <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">
+      <h3 className="text-[16px] font-semibold text-[#66605C] uppercase tracking-wide">
         Factor-Implied Ticker Signals
       </h3>
-      <p className="text-[11px] text-gray-500">
+      <p className="text-[13px] text-[#857F7A]">
         IC 분석에서 유효한 팩터 Top 10의 IC_IR 가중합산 → 종목별 팩터 시그널 점수 → 백분위 기반 4분류.
         Eval Date: {ts.eval_date ?? "?"}
       </p>
@@ -135,13 +135,13 @@ function TickerSignalsSection({ ts }: { ts: any }) {
 
       {/* Factors used */}
       {factorsUsed.length > 0 && (
-        <details className="bg-[#111827] rounded border border-gray-800 p-3">
-          <summary className="text-sm text-gray-400 cursor-pointer">Signal Factors Used ({factorsUsed.length} factors)</summary>
+        <details className="bg-[#FFFFFF] rounded border border-[#E6D9CE] p-3">
+          <summary className="text-[16px] text-[#66605C] cursor-pointer">Signal Factors Used ({factorsUsed.length} factors)</summary>
           <div className="mt-2 grid grid-cols-5 gap-2">
             {factorsUsed.map((f: any) => (
-              <div key={f.factor} className="bg-[#1f2937] rounded p-2 text-xs">
-                <div className="font-semibold text-gray-200">{f.factor}</div>
-                <div className="text-gray-500">
+              <div key={f.factor} className="bg-[#F2E5D7] rounded p-2 text-[14px]">
+                <div className="font-semibold text-[#33302E]">{f.factor}</div>
+                <div className="text-[#857F7A]">
                   wt={f.weight?.toFixed(3)} | IR={f.ic_ir?.toFixed(2)} | {f.direction} | {f.quality}
                 </div>
               </div>
@@ -154,15 +154,15 @@ function TickerSignalsSection({ ts }: { ts: any }) {
       <div className="grid grid-cols-4 gap-4">
         {(["STRONG_LONG", "LONG", "SHORT", "STRONG_SHORT"] as const).map((sig) => (
           <div key={sig} className={`rounded-lg border p-3 ${SIGNAL_BG[sig]}`}>
-            <h4 className="text-sm font-bold mb-2" style={{ color: SIGNAL_COLORS[sig] }}>
+            <h4 className="text-[16px] font-bold mb-2" style={{ color: SIGNAL_COLORS[sig] }}>
               {sig.replace("_", " ")} ({grouped[sig]?.length ?? 0})
             </h4>
             <div className="max-h-[360px] overflow-y-auto space-y-1">
               {(grouped[sig] ?? []).slice(0, 30).map((s: any) => (
-                <div key={s.ticker} className="flex items-center justify-between text-xs bg-black/30 rounded px-2 py-1">
+                <div key={s.ticker} className="flex items-center justify-between text-[14px] bg-black/30 rounded px-2 py-1">
                   <div>
-                    <span className="font-mono font-semibold text-gray-200">{s.ticker}</span>
-                    <span className="text-gray-500 ml-1.5">{s.category?.replace("STK_", "").replace("EQ_", "")}</span>
+                    <span className="font-mono font-semibold text-[#33302E]">{s.ticker}</span>
+                    <span className="text-[#857F7A] ml-1.5">{s.category?.replace("STK_", "").replace("EQ_", "")}</span>
                   </div>
                   <span className="font-mono" style={{ color: SIGNAL_COLORS[sig] }}>
                     {s.score_pctile?.toFixed(0)}p
@@ -170,7 +170,7 @@ function TickerSignalsSection({ ts }: { ts: any }) {
                 </div>
               ))}
               {(grouped[sig]?.length ?? 0) > 30 && (
-                <div className="text-[10px] text-gray-600 text-center">+{(grouped[sig]?.length ?? 0) - 30} more</div>
+                <div className="text-[12px] text-[#857F7A] text-center">+{(grouped[sig]?.length ?? 0) - 30} more</div>
               )}
             </div>
           </div>
@@ -180,31 +180,31 @@ function TickerSignalsSection({ ts }: { ts: any }) {
       {/* Filter + Full table */}
       <div>
         <div className="flex items-center gap-2 mb-3">
-          <span className="text-sm text-gray-400">Filter:</span>
+          <span className="text-[16px] text-[#66605C]">Filter:</span>
           {["ALL", "STRONG_LONG", "LONG", "SHORT", "STRONG_SHORT"].map((f) => (
             <button key={f}
-              className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
-                filter === f ? "text-white" : "text-gray-500 hover:text-gray-300"
+              className={`px-3 py-1 rounded text-[14px] font-medium transition-colors ${
+                filter === f ? "text-[#33302E]" : "text-[#857F7A] hover:text-[#33302E]"
               }`}
-              style={filter === f ? { backgroundColor: SIGNAL_COLORS[f] ?? C.cyan } : { backgroundColor: "#1f2937" }}
+              style={filter === f ? { backgroundColor: SIGNAL_COLORS[f] ?? C.cyan } : { backgroundColor: "#F2E5D7" }}
               onClick={() => setFilter(f)}>
               {f.replace("_", " ")}
             </button>
           ))}
-          <span className="text-xs text-gray-600 ml-auto">{filtered.length} tickers</span>
+          <span className="text-[14px] text-[#857F7A] ml-auto">{filtered.length} tickers</span>
         </div>
 
         <DataTable data={filtered} columns={[
           { accessorKey: "ticker", header: "Ticker", size: 70,
             cell: (p: any) => <span className="font-mono font-semibold">{p.getValue()}</span> },
           { accessorKey: "name", header: "Name",
-            cell: (p: any) => <span className="text-xs text-gray-400 truncate block max-w-[180px]">{p.getValue()}</span> },
+            cell: (p: any) => <span className="text-[14px] text-[#66605C] truncate block max-w-[180px]">{p.getValue()}</span> },
           { accessorKey: "category", header: "Category", size: 100,
-            cell: (p: any) => <span className="text-xs">{(p.getValue() as string)?.replace("STK_", "").replace("EQ_", "")}</span> },
+            cell: (p: any) => <span className="text-[14px]">{(p.getValue() as string)?.replace("STK_", "").replace("EQ_", "")}</span> },
           { accessorKey: "signal", header: "Signal", size: 110,
             cell: (p: any) => {
               const v = p.getValue() as string;
-              return <span className="font-semibold text-xs px-2 py-0.5 rounded"
+              return <span className="font-semibold text-[14px] px-2 py-0.5 rounded"
                 style={{ color: SIGNAL_COLORS[v], backgroundColor: `${SIGNAL_COLORS[v]}20` }}>
                 {v?.replace("_", " ")}
               </span>;
@@ -216,7 +216,7 @@ function TickerSignalsSection({ ts }: { ts: any }) {
           { accessorKey: "top_contributions", header: "Top Contributing Factors",
             cell: (p: any) => {
               const contribs: any[] = p.getValue() ?? [];
-              return <span className="text-[10px] text-gray-400">
+              return <span className="text-[12px] text-[#66605C]">
                 {contribs.map((c: any) => `${c.factor}(${c.contribution > 0 ? "+" : ""}${c.contribution.toFixed(3)})`).join(", ")}
               </span>;
             }},
@@ -236,10 +236,10 @@ function UnifiedSection({ unified }: { unified: any }) {
 
   return (
     <div className="space-y-8">
-      <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">
+      <h3 className="text-[16px] font-semibold text-[#66605C] uppercase tracking-wide">
         5-Method Composite Factor Ranking
       </h3>
-      <p className="text-[11px] text-gray-500">FM 25% + IC 30% + LS 25% + PCA 10% + Regime 10%</p>
+      <p className="text-[13px] text-[#857F7A]">FM 25% + IC 30% + LS 25% + PCA 10% + Regime 10%</p>
 
       {/* Horizontal bar */}
       {ranking.length > 0 && (
@@ -273,7 +273,7 @@ function UnifiedSection({ unified }: { unified: any }) {
       {/* Group ranking */}
       {grpRank.length > 0 && (
         <>
-          <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mt-8">
+          <h3 className="text-[16px] font-semibold text-[#66605C] uppercase tracking-wide mt-8">
             Factor Group Ranking
           </h3>
           <div className="grid grid-cols-2 gap-6">
@@ -309,10 +309,10 @@ function FamaMacBethSection({ fm }: { fm: any }) {
 
   return (
     <div className="space-y-8">
-      <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">
+      <h3 className="text-[16px] font-semibold text-[#66605C] uppercase tracking-wide">
         Fama-MacBeth Cross-Sectional Regression
       </h3>
-      <p className="text-[11px] text-gray-500">
+      <p className="text-[13px] text-[#857F7A]">
         R_i = alpha + sum(lambda_k * F_k,i) — 팩터 프리미엄 lambda의 시계열 평균과 t-stat으로 유의성 판정
       </p>
 
@@ -369,10 +369,10 @@ function ICAnalysisSection({ ic, mh }: { ic: any; mh: any }) {
 
   return (
     <div className="space-y-8">
-      <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">
+      <h3 className="text-[16px] font-semibold text-[#66605C] uppercase tracking-wide">
         Information Coefficient (IC) Analysis
       </h3>
-      <p className="text-[11px] text-gray-500">
+      <p className="text-[13px] text-[#857F7A]">
         IC = Spearman(Factor, Forward Return). IC_IR = IC_mean / IC_std. IR &ge; 0.5 = 유의미한 예측력.
       </p>
 
@@ -437,8 +437,8 @@ function ICAnalysisSection({ ic, mh }: { ic: any; mh: any }) {
       {/* IC time series for selected factor */}
       {fi.length > 0 && (
         <div>
-          <h4 className="text-sm font-semibold text-gray-400 mb-2">IC Time Series</h4>
-          <select className="bg-[#1f2937] text-gray-300 text-sm rounded px-3 py-1.5 border border-gray-700 mb-3"
+          <h4 className="text-[16px] font-semibold text-[#66605C] mb-2">IC Time Series</h4>
+          <select className="bg-[#F2E5D7] text-[#33302E] text-[16px] rounded px-3 py-1.5 border border-[#E6D9CE] mb-3"
             value={selFactor} onChange={(e) => setSelFactor(Number(e.target.value))}>
             {fi.map((f: any, i: number) => (
               <option key={f.factor} value={i}>{f.factor} (IR={f.ic_ir?.toFixed(3)})</option>
@@ -466,7 +466,7 @@ function ICAnalysisSection({ ic, mh }: { ic: any; mh: any }) {
       {/* Multi-horizon */}
       {Object.keys(mh).length > 0 && (
         <div>
-          <h4 className="text-sm font-semibold text-gray-400 mb-2">Multi-Horizon IC Comparison</h4>
+          <h4 className="text-[16px] font-semibold text-[#66605C] mb-2">Multi-Horizon IC Comparison</h4>
           {(() => {
             const horizonColors: Record<string, string> = { "1W": C.yellow, "1M": C.cyan, "3M": C.blue };
             const traces = Object.entries(mh).map(([period, data]: [string, any]) => ({
@@ -513,10 +513,10 @@ function LongShortSection({ ls }: { ls: any }) {
 
   return (
     <div className="space-y-8">
-      <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">
+      <h3 className="text-[16px] font-semibold text-[#66605C] uppercase tracking-wide">
         Long-Short Factor Portfolio
       </h3>
-      <p className="text-[11px] text-gray-500">
+      <p className="text-[13px] text-[#857F7A]">
         팩터값 Top/Bottom 분위 → L-S 수익률. Sharpe &ge; 0.5 + 단조적이면 강력한 팩터.
       </p>
 
@@ -576,8 +576,8 @@ function LongShortSection({ ls }: { ls: any }) {
       {/* Quintile returns for selected factor */}
       {fr.length > 0 && (
         <div>
-          <h4 className="text-sm font-semibold text-gray-400 mb-2">Quintile Return Profile</h4>
-          <select className="bg-[#1f2937] text-gray-300 text-sm rounded px-3 py-1.5 border border-gray-700 mb-3"
+          <h4 className="text-[16px] font-semibold text-[#66605C] mb-2">Quintile Return Profile</h4>
+          <select className="bg-[#F2E5D7] text-[#33302E] text-[16px] rounded px-3 py-1.5 border border-[#E6D9CE] mb-3"
             value={selIdx} onChange={(e) => setSelIdx(Number(e.target.value))}>
             {fr.map((f: any, i: number) => (
               <option key={f.factor} value={i}>{f.factor} (SR={f.ann_sharpe?.toFixed(2)}, Mono={f.monotonicity?.toFixed(2)})</option>
@@ -627,10 +627,10 @@ function PCASection({ pca }: { pca: any }) {
 
   return (
     <div className="space-y-8">
-      <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">
+      <h3 className="text-[16px] font-semibold text-[#66605C] uppercase tracking-wide">
         PCA Statistical Factor Model
       </h3>
-      <p className="text-[11px] text-gray-500">
+      <p className="text-[13px] text-[#857F7A]">
         수익률 공분산행렬 eigendecomposition → 잠재 팩터 추출 → 명명된 팩터와 상관 매핑.
       </p>
 
@@ -670,7 +670,7 @@ function PCASection({ pca }: { pca: any }) {
       {/* PC → Factor mapping table */}
       {comps.length > 0 && (
         <>
-          <h4 className="text-sm font-semibold text-gray-400">PC → Factor Mapping</h4>
+          <h4 className="text-[16px] font-semibold text-[#66605C]">PC → Factor Mapping</h4>
           <DataTable data={comps.map((c: any) => ({
             pc: `PC${c.pc}`,
             eigenvalue: c.eigenvalue?.toFixed(3),
@@ -721,8 +721,8 @@ function PCASection({ pca }: { pca: any }) {
 
       {/* Top tickers per PC */}
       {pcTickers.slice(0, 3).map((pct: any) => (
-        <details key={pct.pc} className="bg-[#111827] rounded border border-gray-800 p-3">
-          <summary className="text-sm text-gray-400 cursor-pointer">PC{pct.pc} — Top 10 Tickers</summary>
+        <details key={pct.pc} className="bg-[#FFFFFF] rounded border border-[#E6D9CE] p-3">
+          <summary className="text-[16px] text-[#66605C] cursor-pointer">PC{pct.pc} — Top 10 Tickers</summary>
           <div className="mt-2">
             <DataTable data={pct.top_tickers ?? []} columns={[
               { accessorKey: "ticker", header: "Ticker" },
@@ -749,10 +749,10 @@ function RegimeSection({ rc }: { rc: any }) {
 
   return (
     <div className="space-y-8">
-      <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">
+      <h3 className="text-[16px] font-semibold text-[#66605C] uppercase tracking-wide">
         Regime-Conditional Factor Premium
       </h3>
-      <p className="text-[11px] text-gray-500">
+      <p className="text-[13px] text-[#857F7A]">
         SPY 가격구조로 BULL/BEAR/TRANSITION 레짐 분류 → 레짐별 팩터 IC 비교 → 현재 환경 최적 팩터 판단.
       </p>
 
@@ -765,7 +765,7 @@ function RegimeSection({ rc }: { rc: any }) {
 
       {recs.length > 0 && (
         <div className="bg-emerald-900/30 border border-emerald-700 rounded p-3 space-y-1">
-          {recs.map((r, i) => <p key={i} className="text-sm text-emerald-300">{r}</p>)}
+          {recs.map((r, i) => <p key={i} className="text-[16px] text-emerald-300">{r}</p>)}
         </div>
       )}
 
@@ -774,7 +774,7 @@ function RegimeSection({ rc }: { rc: any }) {
         <div className={`grid gap-4`} style={{ gridTemplateColumns: `repeat(${Object.keys(rankings).length}, 1fr)` }}>
           {Object.entries(rankings).map(([regime, factors]: [string, any]) => (
             <div key={regime}>
-              <h4 className="text-sm font-bold mb-2" style={{ color: regimeColors[regime] ?? C.gray }}>{regime}</h4>
+              <h4 className="text-[16px] font-bold mb-2" style={{ color: regimeColors[regime] ?? C.gray }}>{regime}</h4>
               <DataTable data={(factors as any[]).slice(0, 10)} columns={[
                 { accessorKey: "factor", header: "Factor" },
                 { accessorKey: "ic_mean", header: "IC", cell: (p: any) => p.getValue()?.toFixed(4) },
@@ -799,7 +799,7 @@ function RegimeSection({ rc }: { rc: any }) {
         );
         return fList.length > 0 ? (
           <>
-            <h4 className="text-sm font-semibold text-gray-400">Cross-Regime Factor Heatmap</h4>
+            <h4 className="text-[16px] font-semibold text-[#66605C]">Cross-Regime Factor Heatmap</h4>
             <Plot
               data={[{
                 type: "heatmap", z: zData, x: regimes, y: fList,
@@ -817,8 +817,8 @@ function RegimeSection({ rc }: { rc: any }) {
       {/* All-weather stability */}
       {stability.length > 0 && (
         <>
-          <h4 className="text-sm font-semibold text-gray-400">All-Weather Factor Stability</h4>
-          <p className="text-[11px] text-gray-500 mb-2">모든 레짐에서 같은 방향 IC → 레짐 불변 팩터</p>
+          <h4 className="text-[16px] font-semibold text-[#66605C]">All-Weather Factor Stability</h4>
+          <p className="text-[13px] text-[#857F7A] mb-2">모든 레짐에서 같은 방향 IC → 레짐 불변 팩터</p>
           <DataTable data={stability} columns={[
             { accessorKey: "factor", header: "Factor" },
             { accessorKey: "group", header: "Group" },
@@ -829,8 +829,8 @@ function RegimeSection({ rc }: { rc: any }) {
           {(() => {
             const aw = stability.filter((f: any) => f.all_weather).map((f: any) => f.factor);
             return aw.length > 0 ? (
-              <div className="bg-blue-900/30 border border-blue-700 rounded p-3">
-                <span className="text-sm text-blue-300">All-Weather Factors: <strong>{aw.join(", ")}</strong></span>
+              <div className="bg-[#E3EEF5]/30 border border-[#9CC3D5] rounded p-3">
+                <span className="text-[16px] text-[#0F5499]">All-Weather Factors: <strong>{aw.join(", ")}</strong></span>
               </div>
             ) : null;
           })()}

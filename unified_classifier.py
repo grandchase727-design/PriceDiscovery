@@ -70,6 +70,141 @@ YFINANCE_TO_GICS: Dict[str, str] = {
     "Utilities":              "Utilities",
 }
 
+
+# yfinance industry → GICS Industry Group (Level 2, ~24 groups across 11 sectors).
+# Built from full list of 100 industries observed in the universe.
+INDUSTRY_GROUP_MAP: Dict[str, str] = {
+    # Communication Services
+    "Internet Content & Information":         "Media & Entertainment",
+    "Electronic Gaming & Multimedia":         "Media & Entertainment",
+    "Entertainment":                           "Media & Entertainment",
+    "Advertising Agencies":                    "Media & Entertainment",
+    "Telecom Services":                        "Telecommunication Services",
+    # Consumer Discretionary
+    "Auto Manufacturers":                      "Automobiles & Components",
+    "Auto Parts":                              "Automobiles & Components",
+    "Internet Retail":                         "Consumer Discretionary Distribution & Retail",
+    "Apparel Retail":                          "Consumer Discretionary Distribution & Retail",
+    "Specialty Retail":                        "Consumer Discretionary Distribution & Retail",
+    "Home Improvement Retail":                 "Consumer Discretionary Distribution & Retail",
+    "Restaurants":                             "Consumer Services",
+    "Travel Services":                         "Consumer Services",
+    "Resorts & Casinos":                       "Consumer Services",
+    "Lodging":                                 "Consumer Services",
+    "Gambling":                                "Consumer Services",
+    "Luxury Goods":                            "Consumer Durables & Apparel",
+    "Footwear & Accessories":                  "Consumer Durables & Apparel",
+    # Consumer Staples
+    "Tobacco":                                 "Food, Beverage & Tobacco",
+    "Beverages - Non-Alcoholic":               "Food, Beverage & Tobacco",
+    "Beverages - Brewers":                     "Food, Beverage & Tobacco",
+    "Beverages - Wineries & Distilleries":     "Food, Beverage & Tobacco",
+    "Confectioners":                           "Food, Beverage & Tobacco",
+    "Packaged Foods":                          "Food, Beverage & Tobacco",
+    "Farm Products":                           "Food, Beverage & Tobacco",
+    "Household & Personal Products":           "Household & Personal Products",
+    "Discount Stores":                         "Consumer Staples Distribution & Retail",
+    "Food Distribution":                       "Consumer Staples Distribution & Retail",
+    "Education & Training Services":           "Consumer Staples Distribution & Retail",
+    # Energy
+    "Oil & Gas Integrated":                    "Energy",
+    "Uranium":                                 "Energy",
+    "Oil & Gas E&P":                           "Energy",
+    "Oil & Gas Midstream":                     "Energy",
+    "Oil & Gas Refining & Marketing":          "Energy",
+    "Oil & Gas Equipment & Services":          "Energy",
+    # Financials
+    "Banks - Diversified":                     "Banks",
+    "Banks - Regional":                        "Banks",
+    "Capital Markets":                         "Diversified Financials",
+    "Asset Management":                        "Diversified Financials",
+    "Financial Data & Stock Exchanges":        "Diversified Financials",
+    "Credit Services":                         "Diversified Financials",
+    "Financial Conglomerates":                 "Diversified Financials",
+    "Insurance - Property & Casualty":         "Insurance",
+    "Insurance - Life":                        "Insurance",
+    "Insurance Brokers":                       "Insurance",
+    "Insurance - Diversified":                 "Insurance",
+    # Health Care
+    "Drug Manufacturers - General":            "Pharmaceuticals, Biotechnology & Life Sciences",
+    "Drug Manufacturers - Specialty & Generic":"Pharmaceuticals, Biotechnology & Life Sciences",
+    "Biotechnology":                           "Pharmaceuticals, Biotechnology & Life Sciences",
+    "Diagnostics & Research":                  "Pharmaceuticals, Biotechnology & Life Sciences",
+    "Medical Devices":                         "Health Care Equipment & Services",
+    "Healthcare Plans":                        "Health Care Equipment & Services",
+    "Medical Instruments & Supplies":          "Health Care Equipment & Services",
+    "Health Information Services":             "Health Care Equipment & Services",
+    "Medical Distribution":                    "Health Care Equipment & Services",
+    "Medical Care Facilities":                 "Health Care Equipment & Services",
+    # Industrials
+    "Specialty Industrial Machinery":          "Capital Goods",
+    "Aerospace & Defense":                     "Capital Goods",
+    "Conglomerates":                           "Capital Goods",
+    "Electrical Equipment & Parts":            "Capital Goods",
+    "Engineering & Construction":              "Capital Goods",
+    "Building Products & Equipment":           "Capital Goods",
+    "Industrial Distribution":                 "Capital Goods",
+    "Metal Fabrication":                       "Capital Goods",
+    "Farm & Heavy Construction Machinery":     "Capital Goods",
+    "Tools & Accessories":                     "Capital Goods",
+    "Pollution & Treatment Controls":          "Capital Goods",
+    "Railroads":                               "Transportation",
+    "Integrated Freight & Logistics":          "Transportation",
+    "Marine Shipping":                         "Transportation",
+    "Specialty Business Services":             "Commercial & Professional Services",
+    "Waste Management":                        "Commercial & Professional Services",
+    "Consulting Services":                     "Commercial & Professional Services",
+    # Information Technology
+    "Semiconductors":                          "Semiconductors & Semiconductor Equipment",
+    "Semiconductor Equipment & Materials":     "Semiconductors & Semiconductor Equipment",
+    "Software - Application":                  "Software & Services",
+    "Software - Infrastructure":               "Software & Services",
+    "Information Technology Services":         "Software & Services",
+    "Computer Hardware":                       "Technology Hardware & Equipment",
+    "Electronic Components":                   "Technology Hardware & Equipment",
+    "Scientific & Technical Instruments":      "Technology Hardware & Equipment",
+    "Consumer Electronics":                    "Technology Hardware & Equipment",
+    "Communication Equipment":                 "Technology Hardware & Equipment",
+    "Solar":                                   "Technology Hardware & Equipment",
+    # Materials
+    "Specialty Chemicals":                     "Materials",
+    "Chemicals":                               "Materials",
+    "Agricultural Inputs":                     "Materials",
+    "Building Materials":                      "Materials",
+    "Gold":                                    "Materials",
+    "Silver":                                  "Materials",
+    "Copper":                                  "Materials",
+    "Steel":                                   "Materials",
+    "Other Industrial Metals & Mining":        "Materials",
+    "Other Precious Metals & Mining":          "Materials",
+    # Real Estate
+    "REIT - Specialty":                        "Equity Real Estate Investment Trusts (REITs)",
+    "REIT - Industrial":                       "Equity Real Estate Investment Trusts (REITs)",
+    "REIT - Healthcare Facilities":            "Equity Real Estate Investment Trusts (REITs)",
+    "REIT - Residential":                      "Equity Real Estate Investment Trusts (REITs)",
+    "REIT - Office":                           "Equity Real Estate Investment Trusts (REITs)",
+    "REIT - Retail":                           "Equity Real Estate Investment Trusts (REITs)",
+    "REIT - Mortgage":                         "Equity Real Estate Investment Trusts (REITs)",
+    "REIT - Diversified":                      "Equity Real Estate Investment Trusts (REITs)",
+    "REIT - Hotel & Motel":                    "Equity Real Estate Investment Trusts (REITs)",
+    "Real Estate Services":                    "Real Estate Management & Development",
+    "Real Estate - Development":               "Real Estate Management & Development",
+    "Real Estate - Diversified":               "Real Estate Management & Development",
+    # Utilities
+    "Utilities - Regulated Electric":          "Utilities",
+    "Utilities - Regulated Gas":               "Utilities",
+    "Utilities - Regulated Water":             "Utilities",
+    "Utilities - Independent Power Producers": "Utilities",
+    "Utilities - Renewable":                   "Utilities",
+    "Utilities - Diversified":                 "Utilities",
+}
+
+
+def _industry_to_group(industry: Optional[str]) -> Optional[str]:
+    if not industry:
+        return None
+    return INDUSTRY_GROUP_MAP.get(industry.strip(), "Other")
+
 # Approximate FX rates for converting non-USD market cap to USD.
 # (Rough — refresh quarterly via FRED if precision matters.)
 FX_TO_USD: Dict[str, float] = {
@@ -150,6 +285,7 @@ def classify_ticker(ticker: str, retry: int = 1) -> Dict[str, Any]:
         "currency": None,
         "yfinance_sector": None,
         "gics_sector": None,
+        "gics_industry_group": None,
         "gics_industry": None,
         "mktcap_usd_b": None,
         "cap_tier": None,
@@ -173,6 +309,7 @@ def classify_ticker(ticker: str, retry: int = 1) -> Dict[str, Any]:
                 "currency": cur,
                 "yfinance_sector": yf_sec,
                 "gics_sector": _yfinance_to_gics(yf_sec),
+                "gics_industry_group": _industry_to_group(ind),
                 "gics_industry": ind,
                 "mktcap_usd_b": round(mc_usd / 1e9, 2) if mc_usd else None,
                 "cap_tier": _cap_tier(mc_usd) if mc_usd else None,

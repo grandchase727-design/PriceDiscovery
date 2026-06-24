@@ -32,9 +32,9 @@ const DEFAULT_WEIGHTS: MlWeights = { w_tcs: 0.30, w_tfs: 0.25, w_rss: 0.30, w_ur
 function MlMetaPanel({ meta }: { meta: MlMetaResponse | null }) {
   if (!meta || !meta.available) {
     return (
-      <div className="bg-[#1f2937] border border-gray-700 rounded p-3 text-xs text-gray-400">
-        ML cache not loaded. Run <code className="text-cyan-400">python3 optimize_params.py</code>
-        {" → "}<code className="text-cyan-400">python3 score_ml.py</code>, then restart the API.
+      <div className="bg-[#F2E5D7] border border-[#E6D9CE] rounded p-3 text-[14px] text-[#66605C]">
+        ML cache not loaded. Run <code className="text-[#0F5499]">python3 optimize_params.py</code>
+        {" → "}<code className="text-[#0F5499]">python3 score_ml.py</code>, then restart the API.
       </div>
     );
   }
@@ -45,19 +45,19 @@ function MlMetaPanel({ meta }: { meta: MlMetaResponse | null }) {
   const ts = m.as_of ? new Date(m.as_of).toLocaleString() : "—";
 
   return (
-    <div className="bg-[#111827] border border-gray-800 rounded-lg p-4 space-y-3">
+    <div className="bg-[#FFFFFF] border border-[#E6D9CE] rounded-lg p-4 space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-sm font-semibold text-cyan-400">
+          <div className="text-[16px] font-semibold text-[#0F5499]">
             ML-Optimized Composite — Per Asset Class
           </div>
-          <div className="text-[10px] text-gray-500 mt-0.5">
+          <div className="text-[12px] text-[#857F7A] mt-0.5">
             Optuna walk-forward CV on ve_observations · L2 reg toward defaults · {ts}
           </div>
         </div>
-        <div className="text-right text-[11px] text-gray-400">
+        <div className="text-right text-[13px] text-[#66605C]">
           {m.n_total ?? 0} tickers · stages:
-          <span className="ml-2 text-cyan-400">PM {counts["pre-momentum"] ?? 0}</span>
+          <span className="ml-2 text-[#0F5499]">PM {counts["pre-momentum"] ?? 0}</span>
           <span className="ml-2" style={{ color: C.green }}>Mom {counts.momentum ?? 0}</span>
           <span className="ml-2" style={{ color: C.red }}>Excl {counts.excluded ?? 0}</span>
         </div>
@@ -65,25 +65,25 @@ function MlMetaPanel({ meta }: { meta: MlMetaResponse | null }) {
 
       {/* Weights table */}
       <div className="overflow-x-auto">
-        <table className="w-full text-xs border-collapse">
+        <table className="w-full text-[14px] border-collapse">
           <thead>
-            <tr className="border-b border-gray-700 bg-[#1f2937]">
-              <th className="py-1.5 px-2 text-left text-gray-500">Asset class</th>
-              <th className="py-1.5 px-2 text-right text-gray-500">w_TCS</th>
-              <th className="py-1.5 px-2 text-right text-gray-500">w_TFS</th>
-              <th className="py-1.5 px-2 text-right text-gray-500">w_RSS</th>
-              <th className="py-1.5 px-2 text-right text-gray-500">w_URS</th>
-              <th className="py-1.5 px-2 text-right text-gray-500">Δ vs default</th>
+            <tr className="border-b border-[#E6D9CE] bg-[#F2E5D7]">
+              <th className="py-1.5 px-2 text-left text-[#857F7A]">Asset class</th>
+              <th className="py-1.5 px-2 text-right text-[#857F7A]">w_TCS</th>
+              <th className="py-1.5 px-2 text-right text-[#857F7A]">w_TFS</th>
+              <th className="py-1.5 px-2 text-right text-[#857F7A]">w_RSS</th>
+              <th className="py-1.5 px-2 text-right text-[#857F7A]">w_URS</th>
+              <th className="py-1.5 px-2 text-right text-[#857F7A]">Δ vs default</th>
             </tr>
           </thead>
           <tbody>
-            <tr className="border-b border-gray-800/50 bg-[#0b1220]">
-              <td className="py-1.5 px-2 text-gray-400">Default (baseline)</td>
-              <td className="py-1.5 px-2 text-right font-mono text-gray-500">{DEFAULT_WEIGHTS.w_tcs.toFixed(3)}</td>
-              <td className="py-1.5 px-2 text-right font-mono text-gray-500">{DEFAULT_WEIGHTS.w_tfs.toFixed(3)}</td>
-              <td className="py-1.5 px-2 text-right font-mono text-gray-500">{DEFAULT_WEIGHTS.w_rss.toFixed(3)}</td>
-              <td className="py-1.5 px-2 text-right font-mono text-gray-500">{DEFAULT_WEIGHTS.w_urs.toFixed(3)}</td>
-              <td className="py-1.5 px-2 text-right text-gray-600">—</td>
+            <tr className="border-b border-[#E6D9CE]/50 bg-[#FFF1E5]">
+              <td className="py-1.5 px-2 text-[#66605C]">Default (baseline)</td>
+              <td className="py-1.5 px-2 text-right font-mono text-[#857F7A]">{DEFAULT_WEIGHTS.w_tcs.toFixed(3)}</td>
+              <td className="py-1.5 px-2 text-right font-mono text-[#857F7A]">{DEFAULT_WEIGHTS.w_tfs.toFixed(3)}</td>
+              <td className="py-1.5 px-2 text-right font-mono text-[#857F7A]">{DEFAULT_WEIGHTS.w_rss.toFixed(3)}</td>
+              <td className="py-1.5 px-2 text-right font-mono text-[#857F7A]">{DEFAULT_WEIGHTS.w_urs.toFixed(3)}</td>
+              <td className="py-1.5 px-2 text-right text-[#857F7A]">—</td>
             </tr>
             {Object.entries(weights).map(([ac, w]) => {
               const dist = Math.sqrt(
@@ -93,13 +93,13 @@ function MlMetaPanel({ meta }: { meta: MlMetaResponse | null }) {
                 ),
               );
               return (
-                <tr key={ac} className="border-b border-gray-800/50">
-                  <td className="py-1.5 px-2 text-gray-300 font-semibold">{ac}</td>
-                  <td className="py-1.5 px-2 text-right font-mono text-cyan-400">{w.w_tcs.toFixed(3)}</td>
-                  <td className="py-1.5 px-2 text-right font-mono text-cyan-400">{w.w_tfs.toFixed(3)}</td>
-                  <td className="py-1.5 px-2 text-right font-mono text-cyan-400">{w.w_rss.toFixed(3)}</td>
-                  <td className="py-1.5 px-2 text-right font-mono text-cyan-400">{w.w_urs.toFixed(3)}</td>
-                  <td className="py-1.5 px-2 text-right font-mono text-gray-400">{dist.toFixed(3)}</td>
+                <tr key={ac} className="border-b border-[#E6D9CE]/50">
+                  <td className="py-1.5 px-2 text-[#33302E] font-semibold">{ac}</td>
+                  <td className="py-1.5 px-2 text-right font-mono text-[#0F5499]">{w.w_tcs.toFixed(3)}</td>
+                  <td className="py-1.5 px-2 text-right font-mono text-[#0F5499]">{w.w_tfs.toFixed(3)}</td>
+                  <td className="py-1.5 px-2 text-right font-mono text-[#0F5499]">{w.w_rss.toFixed(3)}</td>
+                  <td className="py-1.5 px-2 text-right font-mono text-[#0F5499]">{w.w_urs.toFixed(3)}</td>
+                  <td className="py-1.5 px-2 text-right font-mono text-[#66605C]">{dist.toFixed(3)}</td>
                 </tr>
               );
             })}
@@ -108,17 +108,17 @@ function MlMetaPanel({ meta }: { meta: MlMetaResponse | null }) {
       </div>
 
       {/* Delta vs original Eligibility Gate */}
-      <div className="text-[11px] text-gray-500 flex flex-wrap gap-x-4 gap-y-1">
+      <div className="text-[13px] text-[#857F7A] flex flex-wrap gap-x-4 gap-y-1">
         <span>vs original gate:</span>
         <span style={{ color: C.green }}>upgraded → momentum: {delta.upgraded_to_momentum ?? 0}</span>
         <span style={{ color: C.red }}>demoted from momentum: {delta.demoted_from_momentum ?? 0}</span>
-        <span className="text-gray-500">unchanged: {delta.unchanged ?? 0}</span>
+        <span className="text-[#857F7A]">unchanged: {delta.unchanged ?? 0}</span>
       </div>
 
-      <div className="text-[10px] text-gray-600 italic">
+      <div className="text-[12px] text-[#857F7A] italic">
         ★ Note: optimization uses ve_observations forward-21d returns with L2 regularization toward defaults.
         OOS lift vs default is typically small or negative — defaults are already well-tuned, and ML weights
-        primarily serve to <em className="text-gray-500">re-bucket</em> tickers into pre-momentum/momentum/excluded
+        primarily serve to <em className="text-[#857F7A]">re-bucket</em> tickers into pre-momentum/momentum/excluded
         based on the alternate weighting. The 5-agent Pre-Momentum framework is unchanged (signal-independent of
         Composite weights).
       </div>
@@ -143,21 +143,21 @@ export function PriceDiscoveryMLTab({ filters }: { filters: FilterParams }) {
       <MlMetaPanel meta={meta} />
 
       {/* Sub-tab bar */}
-      <div className="flex items-center gap-1 border-b border-gray-800">
+      <div className="flex items-center gap-1 border-b border-[#E6D9CE]">
         {SUBS.map(({ label }, i) => (
           <button
             key={label}
             onClick={() => setSub(i)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            className={`px-4 py-2 text-[16px] font-medium border-b-2 transition-colors ${
               sub === i
-                ? "border-cyan-400 text-cyan-400"
-                : "border-transparent text-gray-500 hover:text-gray-300"
+                ? "border-[#0F5499] text-[#0F5499]"
+                : "border-transparent text-[#857F7A] hover:text-[#33302E]"
             }`}
           >
             {label}
           </button>
         ))}
-        <span className="ml-3 text-[11px] text-gray-600">{SUBS[sub].desc}</span>
+        <span className="ml-3 text-[13px] text-[#857F7A]">{SUBS[sub].desc}</span>
       </div>
 
       {/* Sub-tab content — same components, mlMode=true to swap fetchers */}

@@ -8,24 +8,24 @@ import { C, DARK_LAYOUT } from "../../styles/theme";
 const regimeColor: Record<string, string> = {
   "RISK-ON": C.green, "RISK-OFF": C.red, "ROTATION": C.orange,
   "TRANSITION": C.blue, "COMPRESSION": C.purple,
-  "MILD-BULL": "#86efac", "MILD-BEAR": "#fca5a5", "NEUTRAL": C.gray,
+  "MILD-BULL": "#0A7D3F", "MILD-BEAR": "#CC0000", "NEUTRAL": C.gray,
 };
 
 function pctBar(pct: number, color: string, maxW = 200) {
   return (
     <div className="flex items-center gap-2">
       <div className="h-2 rounded" style={{ width: Math.max(2, pct / 100 * maxW), background: color }} />
-      <span className="text-[10px] text-gray-400">{pct.toFixed(1)}%</span>
+      <span className="text-[12px] text-[#66605C]">{pct.toFixed(1)}%</span>
     </div>
   );
 }
 
 function MetricBox({ label, value, sub, color }: { label: string; value: string; sub?: string; color?: string }) {
   return (
-    <div className="bg-[#111827] border border-gray-800 rounded-lg p-3 min-w-[120px]">
-      <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">{label}</div>
-      <div className={`text-lg font-bold ${color || "text-gray-200"}`}>{value}</div>
-      {sub && <div className="text-[10px] text-gray-500 mt-0.5">{sub}</div>}
+    <div className="bg-[#FFFFFF] border border-[#E6D9CE] rounded-lg p-3 min-w-[120px]">
+      <div className="text-[12px] text-[#857F7A] uppercase tracking-wider mb-1">{label}</div>
+      <div className={`text-[20px] font-bold ${color || "text-[#33302E]"}`}>{value}</div>
+      {sub && <div className="text-[12px] text-[#857F7A] mt-0.5">{sub}</div>}
     </div>
   );
 }
@@ -39,7 +39,7 @@ const REGIME_DEFS: { regime: string; color: string; condition: string; desc: str
   },
   {
     regime: "MILD-BULL",
-    color: "#86efac",
+    color: "#0A7D3F",
     condition: "Bullish >= 40% AND Bearish <= 20% (RISK-ON 미충족)",
     desc: "완만한 상승 기조. Bullish 종목이 우세하지만 강한 추세 합의에는 미달. 선별적 매수 유효, 추세 강화 여부 모니터링 필요.",
   },
@@ -51,7 +51,7 @@ const REGIME_DEFS: { regime: string; color: string; condition: string; desc: str
   },
   {
     regime: "MILD-BEAR",
-    color: "#fca5a5",
+    color: "#CC0000",
     condition: "Bearish >= 25% AND Bullish <= 40% (RISK-OFF 미충족)",
     desc: "완만한 하락 또는 조정 기조. Bearish 종목이 증가 중이나 아직 광범위하지 않음. 리스크 관리 강화, 약세 전환 가능성 경계.",
   },
@@ -86,7 +86,7 @@ export function MarketRegimeTab({ filters }: { filters: FilterParams }) {
   const [showDefs, setShowDefs] = useState(false);
   useEffect(() => { fetchMarketRegime(filters).then(setData); }, [filters]);
 
-  if (!data || data.error) return <div className="text-gray-500 p-8">Loading...</div>;
+  if (!data || data.error) return <div className="text-[#857F7A] p-8">Loading...</div>;
 
   const { regime, regime_desc, breadth: b, strategy_breadth, strategy_groups,
           agreement_score, classification_dist, signal_dist,
@@ -98,36 +98,36 @@ export function MarketRegimeTab({ filters }: { filters: FilterParams }) {
     <div className="space-y-6">
 
       {/* ═══ Regime Definitions Toggle ═══ */}
-      <div className="bg-[#111827] border border-gray-800 rounded-lg">
+      <div className="bg-[#FFFFFF] border border-[#E6D9CE] rounded-lg">
         <button
           className="w-full flex items-center justify-between px-4 py-3 text-left"
           onClick={() => setShowDefs(!showDefs)}
         >
-          <span className="text-sm font-semibold text-gray-400 uppercase tracking-wide">Market Regime Definitions</span>
-          <span className="text-gray-500 text-xs">{showDefs ? "▲ 접기" : "▼ 펼치기"}</span>
+          <span className="text-[16px] font-semibold text-[#66605C] uppercase tracking-wide">Market Regime Definitions</span>
+          <span className="text-[#857F7A] text-[14px]">{showDefs ? "▲ 접기" : "▼ 펼치기"}</span>
         </button>
         {showDefs && (
           <div className="px-4 pb-4 space-y-0">
-            <table className="w-full text-xs border-collapse">
+            <table className="w-full text-[14px] border-collapse">
               <thead>
-                <tr className="border-b border-gray-700">
-                  <th className="py-2 px-2 text-left text-gray-500 w-[120px]">Regime</th>
-                  <th className="py-2 px-2 text-left text-gray-500 w-[380px]">판정 조건</th>
-                  <th className="py-2 px-2 text-left text-gray-500">설명</th>
+                <tr className="border-b border-[#E6D9CE]">
+                  <th className="py-2 px-2 text-left text-[#857F7A] w-[120px]">Regime</th>
+                  <th className="py-2 px-2 text-left text-[#857F7A] w-[380px]">판정 조건</th>
+                  <th className="py-2 px-2 text-left text-[#857F7A]">설명</th>
                 </tr>
               </thead>
               <tbody>
                 {REGIME_DEFS.map((rd) => (
-                  <tr key={rd.regime} className={`border-b border-gray-800/50 ${regime === rd.regime ? "bg-[#1f2937]/60" : ""}`}>
+                  <tr key={rd.regime} className={`border-b border-[#E6D9CE]/50 ${regime === rd.regime ? "bg-[#F2E5D7]/60" : ""}`}>
                     <td className="py-2 px-2">
                       <div className="flex items-center gap-2">
                         <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: rd.color }} />
                         <span className="font-bold" style={{ color: rd.color }}>{rd.regime}</span>
-                        {regime === rd.regime && <span className="text-[9px] text-cyan-400 font-semibold ml-1">CURRENT</span>}
+                        {regime === rd.regime && <span className="text-[11px] text-[#0F5499] font-semibold ml-1">CURRENT</span>}
                       </div>
                     </td>
-                    <td className="py-2 px-2 text-gray-500 font-mono text-[10px]">{rd.condition}</td>
-                    <td className="py-2 px-2 text-gray-400">{rd.desc}</td>
+                    <td className="py-2 px-2 text-[#857F7A] font-mono text-[12px]">{rd.condition}</td>
+                    <td className="py-2 px-2 text-[#66605C]">{rd.desc}</td>
                   </tr>
                 ))}
               </tbody>
@@ -138,30 +138,30 @@ export function MarketRegimeTab({ filters }: { filters: FilterParams }) {
 
       {/* ═══ 1. Regime Indicator ═══ */}
       <div className="flex items-start gap-6">
-        <div className="bg-[#111827] border-2 rounded-xl p-5 flex-shrink-0" style={{ borderColor: rc }}>
-          <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Current Market Regime</div>
-          <div className="text-2xl font-black" style={{ color: rc }}>{regime}</div>
-          <div className="text-xs text-gray-400 mt-2 max-w-[400px]">{regime_desc}</div>
-          <div className="text-[10px] text-gray-600 mt-2">Strategy Agreement: <span className="text-gray-300 font-semibold">{agreement_score}%</span></div>
+        <div className="bg-[#FFFFFF] border-2 rounded-xl p-5 flex-shrink-0" style={{ borderColor: rc }}>
+          <div className="text-[12px] text-[#857F7A] uppercase tracking-wider mb-1">Current Market Regime</div>
+          <div className="text-[26px] font-black" style={{ color: rc }}>{regime}</div>
+          <div className="text-[14px] text-[#66605C] mt-2 max-w-[400px]">{regime_desc}</div>
+          <div className="text-[12px] text-[#857F7A] mt-2">Strategy Agreement: <span className="text-[#33302E] font-semibold">{agreement_score}%</span></div>
         </div>
         <div className="flex flex-wrap gap-3">
           <MetricBox label="Bull / Bear / Neutral" value={`${b.pct_bull}% / ${b.pct_bear}% / ${b.pct_neutral}%`}
             sub={`${b.n_bull} / ${b.n_bear} / ${b.n_neutral} of ${b.n}`} />
           <MetricBox label="Avg Composite" value={b.avg_composite.toFixed(1)} sub={`Median ${b.median_composite} | Std ${b.std_composite}`}
-            color={b.avg_composite >= 55 ? "text-green-400" : b.avg_composite <= 45 ? "text-red-400" : "text-gray-200"} />
+            color={b.avg_composite >= 55 ? "text-[#0A7D3F]" : b.avg_composite <= 45 ? "text-[#CC0000]" : "text-[#33302E]"} />
           <MetricBox label="Avg Long# / Short#" value={`${b.avg_long_count} / ${b.avg_short_count}`}
             sub={`Net ${(b.avg_long_count - b.avg_short_count).toFixed(2)}`}
-            color={b.avg_long_count > b.avg_short_count ? "text-green-400" : "text-red-400"} />
+            color={b.avg_long_count > b.avg_short_count ? "text-[#0A7D3F]" : "text-[#CC0000]"} />
           <MetricBox label="Eligible %" value={`${b.pct_eligible}%`} />
           <MetricBox label="Avg RSI" value={b.avg_rsi.toFixed(1)}
-            color={b.avg_rsi >= 60 ? "text-yellow-400" : b.avg_rsi <= 40 ? "text-blue-400" : "text-gray-200"} />
+            color={b.avg_rsi >= 60 ? "text-[#B85C00]" : b.avg_rsi <= 40 ? "text-[#0F5499]" : "text-[#33302E]"} />
           <MetricBox label="Score Axes" value={`T${b.avg_tcs} F${b.avg_tfs} R${b.avg_rss}`} sub={`OER ${b.avg_oer}`} />
         </div>
       </div>
 
       {/* ═══ 2. Strategy Breadth Matrix ═══ */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">Strategy Breadth — Long vs Short (% of universe with signal &ge; 50)</h3>
+        <h3 className="text-[16px] font-semibold text-[#66605C] uppercase tracking-wide mb-3">Strategy Breadth — Long vs Short (% of universe with signal &ge; 50)</h3>
         <ColDefToggle defs={[
           { col: "Strategy", desc: "8개 hedge strategy 이름" },
           { col: "Long Breadth", desc: "유니버스 중 해당 전략 Long 점수 ≥ 50인 종목 비율 (%)" },
@@ -171,34 +171,34 @@ export function MarketRegimeTab({ filters }: { filters: FilterParams }) {
           { col: "Net Avg", desc: "Long Avg − Short Avg. 전략의 전체적 방향성 강도" },
         ]} />
         <div className="overflow-x-auto">
-          <table className="w-full text-xs border-collapse">
+          <table className="w-full text-[14px] border-collapse">
             <thead>
-              <tr className="border-b border-gray-700 bg-[#111827]">
-                <th className="py-2 px-3 text-left text-gray-500">Strategy</th>
-                <th className="py-2 px-3 text-right text-gray-500">Long Breadth</th>
-                <th className="py-2 px-3 text-left text-gray-500 w-[220px]"></th>
-                <th className="py-2 px-3 text-right text-gray-500">Short Breadth</th>
-                <th className="py-2 px-3 text-left text-gray-500 w-[220px]"></th>
-                <th className="py-2 px-3 text-right text-gray-500">Net</th>
-                <th className="py-2 px-3 text-right text-gray-500">Long Avg</th>
-                <th className="py-2 px-3 text-right text-gray-500">Short Avg</th>
-                <th className="py-2 px-3 text-right text-gray-500">Net Avg</th>
+              <tr className="border-b border-[#E6D9CE] bg-[#FFFFFF]">
+                <th className="py-2 px-3 text-left text-[#857F7A]">Strategy</th>
+                <th className="py-2 px-3 text-right text-[#857F7A]">Long Breadth</th>
+                <th className="py-2 px-3 text-left text-[#857F7A] w-[220px]"></th>
+                <th className="py-2 px-3 text-right text-[#857F7A]">Short Breadth</th>
+                <th className="py-2 px-3 text-left text-[#857F7A] w-[220px]"></th>
+                <th className="py-2 px-3 text-right text-[#857F7A]">Net</th>
+                <th className="py-2 px-3 text-right text-[#857F7A]">Long Avg</th>
+                <th className="py-2 px-3 text-right text-[#857F7A]">Short Avg</th>
+                <th className="py-2 px-3 text-right text-[#857F7A]">Net Avg</th>
               </tr>
             </thead>
             <tbody>
               {strategy_breadth.map((sb: any) => (
-                <tr key={sb.strategy} className="border-b border-gray-800/50 hover:bg-[#1f2937]/30">
-                  <td className="py-1.5 px-3 font-semibold text-gray-300">{sb.label}</td>
-                  <td className="py-1.5 px-3 text-right text-green-400">{sb.long_breadth}%</td>
+                <tr key={sb.strategy} className="border-b border-[#E6D9CE]/50 hover:bg-[#F2E5D7]/30">
+                  <td className="py-1.5 px-3 font-semibold text-[#33302E]">{sb.label}</td>
+                  <td className="py-1.5 px-3 text-right text-[#0A7D3F]">{sb.long_breadth}%</td>
                   <td className="py-1.5 px-3">{pctBar(sb.long_breadth, C.green)}</td>
-                  <td className="py-1.5 px-3 text-right text-red-400">{sb.short_breadth}%</td>
+                  <td className="py-1.5 px-3 text-right text-[#CC0000]">{sb.short_breadth}%</td>
                   <td className="py-1.5 px-3">{pctBar(sb.short_breadth, C.red)}</td>
-                  <td className={`py-1.5 px-3 text-right font-bold ${sb.net_breadth > 0 ? "text-green-400" : sb.net_breadth < 0 ? "text-red-400" : "text-gray-400"}`}>
+                  <td className={`py-1.5 px-3 text-right font-bold ${sb.net_breadth > 0 ? "text-[#0A7D3F]" : sb.net_breadth < 0 ? "text-[#CC0000]" : "text-[#66605C]"}`}>
                     {sb.net_breadth > 0 ? "+" : ""}{sb.net_breadth}%
                   </td>
-                  <td className="py-1.5 px-3 text-right text-gray-400">{sb.long_avg}</td>
-                  <td className="py-1.5 px-3 text-right text-gray-400">{sb.short_avg}</td>
-                  <td className={`py-1.5 px-3 text-right ${sb.net_avg > 0 ? "text-green-400" : sb.net_avg < 0 ? "text-red-400" : "text-gray-400"}`}>
+                  <td className="py-1.5 px-3 text-right text-[#66605C]">{sb.long_avg}</td>
+                  <td className="py-1.5 px-3 text-right text-[#66605C]">{sb.short_avg}</td>
+                  <td className={`py-1.5 px-3 text-right ${sb.net_avg > 0 ? "text-[#0A7D3F]" : sb.net_avg < 0 ? "text-[#CC0000]" : "text-[#66605C]"}`}>
                     {sb.net_avg > 0 ? "+" : ""}{sb.net_avg}
                   </td>
                 </tr>
@@ -210,23 +210,23 @@ export function MarketRegimeTab({ filters }: { filters: FilterParams }) {
 
       {/* ═══ 3. Strategy Group Analysis ═══ */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">Strategy Group Divergence</h3>
+        <h3 className="text-[16px] font-semibold text-[#66605C] uppercase tracking-wide mb-3">Strategy Group Divergence</h3>
         <div className="grid grid-cols-5 gap-3">
           {strategy_groups.map((g: any) => {
             const netColor = g.net_breadth > 10 ? C.green : g.net_breadth < -10 ? C.red : C.yellow;
             return (
-              <div key={g.group} className="bg-[#111827] border border-gray-800 rounded-lg p-3">
-                <div className="text-[11px] font-bold text-gray-300 mb-1">{g.group}</div>
-                <div className="text-[10px] text-gray-600 mb-2">{g.desc}</div>
-                <div className="text-lg font-black" style={{ color: netColor }}>
+              <div key={g.group} className="bg-[#FFFFFF] border border-[#E6D9CE] rounded-lg p-3">
+                <div className="text-[13px] font-bold text-[#33302E] mb-1">{g.group}</div>
+                <div className="text-[12px] text-[#857F7A] mb-2">{g.desc}</div>
+                <div className="text-[20px] font-black" style={{ color: netColor }}>
                   {g.net_breadth > 0 ? "+" : ""}{g.net_breadth}%
                 </div>
-                <div className="text-[10px] text-gray-500">Net Breadth</div>
-                <div className="text-sm font-bold mt-1" style={{ color: netColor }}>
+                <div className="text-[12px] text-[#857F7A]">Net Breadth</div>
+                <div className="text-[16px] font-bold mt-1" style={{ color: netColor }}>
                   {g.net_avg > 0 ? "+" : ""}{g.net_avg}
                 </div>
-                <div className="text-[10px] text-gray-500">Net Avg Score</div>
-                <div className="text-[9px] text-gray-600 mt-1">{g.strategies.join(", ")}</div>
+                <div className="text-[12px] text-[#857F7A]">Net Avg Score</div>
+                <div className="text-[11px] text-[#857F7A] mt-1">{g.strategies.join(", ")}</div>
               </div>
             );
           })}
@@ -237,7 +237,7 @@ export function MarketRegimeTab({ filters }: { filters: FilterParams }) {
       <div className="space-y-4">
 
         {/* Classification Distribution — full width for label legibility */}
-        <div className="bg-[#111827] border border-gray-800 rounded-lg p-4">
+        <div className="bg-[#FFFFFF] border border-[#E6D9CE] rounded-lg p-4">
           <Plot
             data={[{
               type: "bar",
@@ -250,9 +250,9 @@ export function MarketRegimeTab({ filters }: { filters: FilterParams }) {
               },
               text: classification_dist.map((d: any) => `${d.pct}%`),
               textposition: "outside" as const,
-              textfont: { size: 11, color: "#9ca3af" },
+              textfont: { size: 11, color: "#66605C" },
             }]}
-            layout={{ ...DARK_LAYOUT, title: { text: "Classification Distribution", font: { size: 13, color: "#9ca3af" } },
+            layout={{ ...DARK_LAYOUT, title: { text: "Classification Distribution", font: { size: 13, color: "#66605C" } },
                       height: 420, xaxis: { tickangle: -45, tickfont: { size: 10 }, automargin: true }, yaxis: { title: "Count" },
                       margin: { t: 40, b: 160, l: 50, r: 20 }, bargap: 0.3 }}
             config={{ displayModeBar: false }}
@@ -261,7 +261,7 @@ export function MarketRegimeTab({ filters }: { filters: FilterParams }) {
         </div>
 
         {/* Composite Histogram */}
-        <div className="bg-[#111827] border border-gray-800 rounded-lg p-4">
+        <div className="bg-[#FFFFFF] border border-[#E6D9CE] rounded-lg p-4">
           <Plot
             data={[{
               type: "bar",
@@ -280,7 +280,7 @@ export function MarketRegimeTab({ filters }: { filters: FilterParams }) {
               line: { color: C.yellow, width: 2, dash: "dot" as const },
               name: `Median ${cd.median}`,
             }]}
-            layout={{ ...DARK_LAYOUT, title: { text: `Composite Distribution (Skew: ${cd.skew})`, font: { size: 13, color: "#9ca3af" } },
+            layout={{ ...DARK_LAYOUT, title: { text: `Composite Distribution (Skew: ${cd.skew})`, font: { size: 13, color: "#66605C" } },
                       height: 300, xaxis: { title: "Composite Score", range: [0, 100] }, yaxis: { title: "Count" },
                       showlegend: true, legend: { x: 0.7, y: 0.95, font: { size: 9 } },
                       margin: { t: 40, b: 50, l: 40, r: 10 } }}
@@ -292,7 +292,7 @@ export function MarketRegimeTab({ filters }: { filters: FilterParams }) {
 
       {/* ═══ 5. Net Signal Distribution ═══ */}
       {signal_dist.length > 0 && (
-        <div className="bg-[#111827] border border-gray-800 rounded-lg p-4">
+        <div className="bg-[#FFFFFF] border border-[#E6D9CE] rounded-lg p-4">
           <Plot
             data={[{
               type: "bar",
@@ -301,15 +301,15 @@ export function MarketRegimeTab({ filters }: { filters: FilterParams }) {
               marker: { color: signal_dist.map((d: any) => {
                 const s = d.signal;
                 if (s === "STRONG_LONG") return C.green;
-                if (s === "LONG") return "#86efac";
+                if (s === "LONG") return "#0A7D3F";
                 if (s === "STRONG_SHORT") return C.red;
-                if (s === "SHORT") return "#fca5a5";
+                if (s === "SHORT") return "#CC0000";
                 return C.gray;
               })},
               text: signal_dist.map((d: any) => d.count),
               textposition: "outside" as const,
             }]}
-            layout={{ ...DARK_LAYOUT, title: { text: "Net Signal Distribution (Multi-Strategy Consensus)", font: { size: 13, color: "#9ca3af" } },
+            layout={{ ...DARK_LAYOUT, title: { text: "Net Signal Distribution (Multi-Strategy Consensus)", font: { size: 13, color: "#66605C" } },
                       height: 250, margin: { t: 40, b: 40, l: 40, r: 10 } }}
             config={{ displayModeBar: false }}
             style={{ width: "100%" }}
@@ -320,7 +320,7 @@ export function MarketRegimeTab({ filters }: { filters: FilterParams }) {
       {/* ═══ 6. Sector Regime Heatmap ═══ */}
       {sector_regime.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">Sector Regime Analysis</h3>
+          <h3 className="text-[16px] font-semibold text-[#66605C] uppercase tracking-wide mb-3">Sector Regime Analysis</h3>
           <ColDefToggle defs={[
             { col: "Sector", desc: "글로벌 GICS 기반 섹터" },
             { col: "N", desc: "섹터 내 종목 수" },
@@ -331,21 +331,21 @@ export function MarketRegimeTab({ filters }: { filters: FilterParams }) {
             { col: "TCS/TFS/RSS/OER", desc: "섹터 평균 4축 점수" },
           ]} />
           <div className="overflow-x-auto">
-            <table className="w-full text-xs border-collapse">
+            <table className="w-full text-[14px] border-collapse">
               <thead>
-                <tr className="border-b border-gray-700 bg-[#111827]">
-                  <th className="py-2 px-2 text-left text-gray-500">Sector</th>
-                  <th className="py-2 px-2 text-right text-gray-500">N</th>
-                  <th className="py-2 px-2 text-right text-gray-500">Avg Comp</th>
-                  <th className="py-2 px-2 text-right text-gray-500">Bull%</th>
-                  <th className="py-2 px-2 text-right text-gray-500">Bear%</th>
-                  <th className="py-2 px-2 text-left text-gray-500 w-[200px]">Bull/Bear Ratio</th>
-                  <th className="py-2 px-2 text-right text-gray-500">Avg L#</th>
-                  <th className="py-2 px-2 text-right text-gray-500">Avg S#</th>
-                  <th className="py-2 px-2 text-right text-gray-500">TCS</th>
-                  <th className="py-2 px-2 text-right text-gray-500">TFS</th>
-                  <th className="py-2 px-2 text-right text-gray-500">RSS</th>
-                  <th className="py-2 px-2 text-right text-gray-500">OER</th>
+                <tr className="border-b border-[#E6D9CE] bg-[#FFFFFF]">
+                  <th className="py-2 px-2 text-left text-[#857F7A]">Sector</th>
+                  <th className="py-2 px-2 text-right text-[#857F7A]">N</th>
+                  <th className="py-2 px-2 text-right text-[#857F7A]">Avg Comp</th>
+                  <th className="py-2 px-2 text-right text-[#857F7A]">Bull%</th>
+                  <th className="py-2 px-2 text-right text-[#857F7A]">Bear%</th>
+                  <th className="py-2 px-2 text-left text-[#857F7A] w-[200px]">Bull/Bear Ratio</th>
+                  <th className="py-2 px-2 text-right text-[#857F7A]">Avg L#</th>
+                  <th className="py-2 px-2 text-right text-[#857F7A]">Avg S#</th>
+                  <th className="py-2 px-2 text-right text-[#857F7A]">TCS</th>
+                  <th className="py-2 px-2 text-right text-[#857F7A]">TFS</th>
+                  <th className="py-2 px-2 text-right text-[#857F7A]">RSS</th>
+                  <th className="py-2 px-2 text-right text-[#857F7A]">OER</th>
                 </tr>
               </thead>
               <tbody>
@@ -353,33 +353,33 @@ export function MarketRegimeTab({ filters }: { filters: FilterParams }) {
                   const ratio = s.pct_bullish - s.pct_bearish;
                   const barColor = ratio > 20 ? C.green : ratio < -20 ? C.red : C.yellow;
                   return (
-                    <tr key={s.sector} className="border-b border-gray-800/50 hover:bg-[#1f2937]/30">
-                      <td className="py-1.5 px-2 font-semibold text-gray-300">{s.sector}</td>
-                      <td className="py-1.5 px-2 text-right text-gray-500">{s.n}</td>
-                      <td className={`py-1.5 px-2 text-right font-semibold ${s.avg_composite >= 55 ? "text-green-400" : s.avg_composite <= 45 ? "text-red-400" : "text-gray-300"}`}>
+                    <tr key={s.sector} className="border-b border-[#E6D9CE]/50 hover:bg-[#F2E5D7]/30">
+                      <td className="py-1.5 px-2 font-semibold text-[#33302E]">{s.sector}</td>
+                      <td className="py-1.5 px-2 text-right text-[#857F7A]">{s.n}</td>
+                      <td className={`py-1.5 px-2 text-right font-semibold ${s.avg_composite >= 55 ? "text-[#0A7D3F]" : s.avg_composite <= 45 ? "text-[#CC0000]" : "text-[#33302E]"}`}>
                         {s.avg_composite}
                       </td>
-                      <td className="py-1.5 px-2 text-right text-green-400">{s.pct_bullish}%</td>
-                      <td className="py-1.5 px-2 text-right text-red-400">{s.pct_bearish}%</td>
+                      <td className="py-1.5 px-2 text-right text-[#0A7D3F]">{s.pct_bullish}%</td>
+                      <td className="py-1.5 px-2 text-right text-[#CC0000]">{s.pct_bearish}%</td>
                       <td className="py-1.5 px-2">
                         <div className="flex items-center gap-1">
-                          <div className="relative h-2 w-[180px] bg-gray-800 rounded overflow-hidden">
+                          <div className="relative h-2 w-[180px] bg-[#F2E5D7] rounded overflow-hidden">
                             {ratio >= 0 ? (
                               <div className="absolute left-1/2 h-full rounded-r" style={{ width: `${Math.min(ratio, 100) / 2}%`, background: barColor }} />
                             ) : (
                               <div className="absolute right-1/2 h-full rounded-l" style={{ width: `${Math.min(-ratio, 100) / 2}%`, background: barColor }} />
                             )}
-                            <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gray-600" />
+                            <div className="absolute left-1/2 top-0 bottom-0 w-px bg-[#CCC1B7]" />
                           </div>
-                          <span className="text-[10px]" style={{ color: barColor }}>{ratio > 0 ? "+" : ""}{ratio.toFixed(0)}</span>
+                          <span className="text-[12px]" style={{ color: barColor }}>{ratio > 0 ? "+" : ""}{ratio.toFixed(0)}</span>
                         </div>
                       </td>
-                      <td className="py-1.5 px-2 text-right text-gray-400">{s.avg_long_count}</td>
-                      <td className="py-1.5 px-2 text-right text-gray-400">{s.avg_short_count}</td>
-                      <td className="py-1.5 px-2 text-right text-gray-400">{s.avg_tcs}</td>
-                      <td className="py-1.5 px-2 text-right text-gray-400">{s.avg_tfs}</td>
-                      <td className="py-1.5 px-2 text-right text-gray-400">{s.avg_rss}</td>
-                      <td className="py-1.5 px-2 text-right text-gray-400">{s.avg_oer}</td>
+                      <td className="py-1.5 px-2 text-right text-[#66605C]">{s.avg_long_count}</td>
+                      <td className="py-1.5 px-2 text-right text-[#66605C]">{s.avg_short_count}</td>
+                      <td className="py-1.5 px-2 text-right text-[#66605C]">{s.avg_tcs}</td>
+                      <td className="py-1.5 px-2 text-right text-[#66605C]">{s.avg_tfs}</td>
+                      <td className="py-1.5 px-2 text-right text-[#66605C]">{s.avg_rss}</td>
+                      <td className="py-1.5 px-2 text-right text-[#66605C]">{s.avg_oer}</td>
                     </tr>
                   );
                 })}
@@ -391,7 +391,7 @@ export function MarketRegimeTab({ filters }: { filters: FilterParams }) {
 
       {/* ═══ 7. Regime History Timeline ═══ */}
       {regime_history.length >= 2 && (
-        <div className="bg-[#111827] border border-gray-800 rounded-lg p-4">
+        <div className="bg-[#FFFFFF] border border-[#E6D9CE] rounded-lg p-4">
           <Plot
             data={[
               {
@@ -425,7 +425,7 @@ export function MarketRegimeTab({ filters }: { filters: FilterParams }) {
             ]}
             layout={{
               ...DARK_LAYOUT,
-              title: { text: "Regime History (7-Day Snapshots)", font: { size: 13, color: "#9ca3af" } },
+              title: { text: "Regime History (7-Day Snapshots)", font: { size: 13, color: "#66605C" } },
               height: 320,
               xaxis: { title: "Date" },
               yaxis: { title: "Score (0-100)", side: "left" as const, range: [0, 100] },

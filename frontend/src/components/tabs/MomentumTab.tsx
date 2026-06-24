@@ -8,7 +8,7 @@ import { useSort } from "../../hooks/useSort";
 // Types
 // ---------------------------------------------------------------------------
 
-interface Ticker {
+export interface Ticker {
   ticker: string;
   name: string;
   category: string;
@@ -67,6 +67,7 @@ interface Ticker {
   ret_21d: number;
   ret_63d: number;
   ret_126d: number;
+  ret_ytd?: number | null;
   ret_252d: number;
   ret_3y_ann: number | null;
   ret_5y_ann: number | null;
@@ -77,7 +78,7 @@ interface Ticker {
 // Expandable Section (same pattern as PreMomentumTab)
 // ---------------------------------------------------------------------------
 
-function Section({
+export function Section({
   title,
   children,
   defaultOpen = false,
@@ -90,22 +91,22 @@ function Section({
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="border border-gray-800 rounded-lg overflow-hidden">
+    <div className="border border-[#E6D9CE] rounded-lg overflow-hidden">
       <button
-        className="w-full px-4 py-3 text-left text-sm font-semibold bg-[#111827] hover:bg-[#1f2937] flex justify-between items-center"
+        className="w-full px-4 py-3 text-left text-[16px] font-semibold bg-[#FFFFFF] hover:bg-[#F2E5D7] flex justify-between items-center"
         onClick={() => setOpen(!open)}
       >
         <span className="flex items-center gap-2">
           {title}
           {badge && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-900/50 text-cyan-400">
+            <span className="text-[12px] px-1.5 py-0.5 rounded bg-[#E3EEF5]/50 text-[#0F5499]">
               {badge}
             </span>
           )}
         </span>
-        <span className="text-gray-500 text-xs">{open ? "\u25BC" : "\u25B6"}</span>
+        <span className="text-[#857F7A] text-[14px]">{open ? "\u25BC" : "\u25B6"}</span>
       </button>
-      {open && <div className="p-4 bg-[#0d1117] space-y-4">{children}</div>}
+      {open && <div className="p-4 bg-[#FBEEE3] space-y-4">{children}</div>}
     </div>
   );
 }
@@ -123,8 +124,8 @@ function compColor(v: number): string {
 
 function retColor(v: number): string {
   if (v > 3) return C.green;
-  if (v > 0) return "#86efac";
-  if (v > -3) return "#fca5a5";
+  if (v > 0) return "#0A7D3F";
+  if (v > -3) return "#CC0000";
   return C.red;
 }
 
@@ -143,9 +144,9 @@ function qvrColor(v: number): string {
 
 function signalColor(sig: string): string {
   if (sig.includes("STRONG_LONG")) return C.green;
-  if (sig.includes("LONG")) return "#86efac";
+  if (sig.includes("LONG")) return "#0A7D3F";
   if (sig.includes("STRONG_SHORT")) return C.red;
-  if (sig.includes("SHORT")) return "#fca5a5";
+  if (sig.includes("SHORT")) return "#CC0000";
   return C.gray;
 }
 
@@ -188,7 +189,7 @@ function decideAction(r: Ticker): Decision {
     return {
       action: "TRIM 검토",
       rationale: `과열 진입 (OER ${oer.toFixed(0)}) → 신규 매수 보류, 보유는 일부 익절`,
-      color: "#fb923c",
+      color: "#C2701C",
       rank: 7,
     };
   }
@@ -244,7 +245,7 @@ function decideAction(r: Ticker): Decision {
     return {
       action: "SCALE-IN",
       rationale: "초기 돌파이나 합의 부족 → 1/3씩 분할 매수",
-      color: "#86efac",
+      color: "#0A7D3F",
       rank: 3,
     };
   }
@@ -266,7 +267,7 @@ function decideAction(r: Ticker): Decision {
       return {
         action: "TRIM 일부",
         rationale: `장기 추세(${age}d) + OER ${oer.toFixed(0)} → 일부 익절 / stop 상향`,
-        color: "#fb923c",
+        color: "#C2701C",
         rank: 7,
       };
     }
@@ -283,7 +284,7 @@ function decideAction(r: Ticker): Decision {
       return {
         action: "HOLD + 주시",
         rationale: `상승 추세 + OER ${oer.toFixed(0)} → 60 도달 시 hedge 준비`,
-        color: "#86efac",
+        color: "#0A7D3F",
         rank: 4,
       };
     }
@@ -300,7 +301,7 @@ function decideAction(r: Ticker): Decision {
       return {
         action: "ACCUMULATE",
         rationale: `상승 추세 진행 중 → 점진 매집`,
-        color: "#86efac",
+        color: "#0A7D3F",
         rank: 3,
       };
     }
@@ -318,7 +319,7 @@ function decideAction(r: Ticker): Decision {
       return {
         action: "ACCUMULATE",
         rationale: `회복 초기 + 합의 (composite ${composite.toFixed(0)}) → 점진 매집 시작`,
-        color: "#86efac",
+        color: "#0A7D3F",
         rank: 3,
       };
     }
@@ -326,7 +327,7 @@ function decideAction(r: Ticker): Decision {
       return {
         action: "SCALE-IN",
         rationale: "회복 초기 — 분할 진입 (확정 후 추가)",
-        color: "#86efac",
+        color: "#0A7D3F",
         rank: 4,
       };
     }
@@ -373,6 +374,7 @@ const COLUMN_DEFS = [
   { col: "1M", desc: "1-month return (%) \u2014 21 trading days" },
   { col: "3M", desc: "3-month return (%) \u2014 63 trading days" },
   { col: "6M", desc: "6-month return (%) \u2014 126 trading days" },
+  { col: "YTD", desc: "Year-to-date return (%) \u2014 prior year-end close to today" },
   { col: "1Y", desc: "1-year return (%) \u2014 252 trading days" },
   { col: "3Y/A", desc: "3-year annualized return (%)" },
   { col: "5Y/A", desc: "5-year annualized return (%)" },
@@ -393,156 +395,156 @@ interface EWeight {
   isMax?: boolean;
 }
 
-function CompositeFormulaGuide() {
+export function CompositeFormulaGuide() {
   const [open, setOpen] = useState(false);
 
   const effectiveWeights: EWeight[] = [
-    { axis: "TCS", component: "TCS_short (단기 추세 지속)", outer: "0.30", inner: "0.40", effective: 0.120, color: "#22c55e" },
-    { axis: "TCS", component: "TCS_long (장기 추세 지속)",  outer: "0.30", inner: "0.60", effective: 0.180, color: "#22c55e" },
-    { axis: "TFS", component: "TFS_short (단기 추세 형성)", outer: "0.25", inner: "0.50", effective: 0.125, color: "#3b82f6" },
-    { axis: "TFS", component: "TFS_long (장기 추세 형성)",  outer: "0.25", inner: "0.50", effective: 0.125, color: "#3b82f6" },
-    { axis: "RSS", component: "RSS_short (단기 상대강도)",  outer: "0.30", inner: "0.35", effective: 0.105, color: "#f59e0b" },
-    { axis: "RSS", component: "RSS_long (장기 상대강도, 12-1M)", outer: "0.30", inner: "0.65", effective: 0.195, color: "#f59e0b", isMax: true },
-    { axis: "URS", component: "LeadLag (카테고리 평균 - 본인 ret_63d)", outer: "0.15", inner: "0.40", effective: 0.060, color: "#8b5cf6" },
-    { axis: "URS", component: "AttnGap (vol_ratio_3d_10d - ret_5d pctile)", outer: "0.15", inner: "0.30", effective: 0.045, color: "#8b5cf6" },
-    { axis: "URS", component: "Drift (PEAD post-event drift)", outer: "0.15", inner: "0.20", effective: 0.030, color: "#8b5cf6" },
-    { axis: "URS", component: "Dispersion (cross-sectional rss_std)", outer: "0.15", inner: "0.10", effective: 0.015, color: "#8b5cf6" },
+    { axis: "TCS", component: "TCS_short (단기 추세 지속)", outer: "0.30", inner: "0.40", effective: 0.120, color: "#0A7D3F" },
+    { axis: "TCS", component: "TCS_long (장기 추세 지속)",  outer: "0.30", inner: "0.60", effective: 0.180, color: "#0A7D3F" },
+    { axis: "TFS", component: "TFS_short (단기 추세 형성)", outer: "0.25", inner: "0.50", effective: 0.125, color: "#0F5499" },
+    { axis: "TFS", component: "TFS_long (장기 추세 형성)",  outer: "0.25", inner: "0.50", effective: 0.125, color: "#0F5499" },
+    { axis: "RSS", component: "RSS_short (단기 상대강도)",  outer: "0.30", inner: "0.35", effective: 0.105, color: "#B85C00" },
+    { axis: "RSS", component: "RSS_long (장기 상대강도, 12-1M)", outer: "0.30", inner: "0.65", effective: 0.195, color: "#B85C00", isMax: true },
+    { axis: "URS", component: "LeadLag (카테고리 평균 - 본인 ret_63d)", outer: "0.15", inner: "0.40", effective: 0.060, color: "#7D5BA6" },
+    { axis: "URS", component: "AttnGap (vol_ratio_3d_10d - ret_5d pctile)", outer: "0.15", inner: "0.30", effective: 0.045, color: "#7D5BA6" },
+    { axis: "URS", component: "Drift (PEAD post-event drift)", outer: "0.15", inner: "0.20", effective: 0.030, color: "#7D5BA6" },
+    { axis: "URS", component: "Dispersion (cross-sectional rss_std)", outer: "0.15", inner: "0.10", effective: 0.015, color: "#7D5BA6" },
   ];
 
   const arrow = open ? "▼" : "▶";
 
   return (
-    <div className="border border-gray-800 rounded-lg overflow-hidden mb-2">
+    <div className="border border-[#E6D9CE] rounded-lg overflow-hidden mb-2">
       <button
-        className="w-full px-4 py-2 text-left text-xs font-semibold bg-[#111827] hover:bg-[#1f2937] flex justify-between items-center"
+        className="w-full px-4 py-2 text-left text-[14px] font-semibold bg-[#FFFFFF] hover:bg-[#F2E5D7] flex justify-between items-center"
         onClick={() => setOpen(!open)}
       >
-        <span className="text-gray-400">
+        <span className="text-[#66605C]">
           Composite Score 산출 공식
-          <span className="ml-2 text-[10px] text-gray-600">— 4축 통합 가중평균</span>
+          <span className="ml-2 text-[12px] text-[#857F7A]">— 4축 통합 가중평균</span>
         </span>
-        <span className="text-gray-500 text-[10px]">{arrow}</span>
+        <span className="text-[#857F7A] text-[12px]">{arrow}</span>
       </button>
       {open && (
-        <div className="bg-[#0d1117] p-4 space-y-4">
-          <div className="bg-[#111827] border border-cyan-900/40 rounded-lg p-3 text-center">
-            <div className="text-[10px] text-gray-500 uppercase tracking-wide mb-2">Main Formula</div>
-            <div className="font-mono text-sm text-cyan-300">
-              <span className="text-cyan-400 font-bold">Composite</span>
+        <div className="bg-[#FBEEE3] p-4 space-y-4">
+          <div className="bg-[#FFFFFF] border border-[#9CC3D5]/40 rounded-lg p-3 text-center">
+            <div className="text-[12px] text-[#857F7A] uppercase tracking-wide mb-2">Main Formula</div>
+            <div className="font-mono text-[16px] text-[#0D7680]">
+              <span className="text-[#0F5499] font-bold">Composite</span>
               {" = "}
-              <span className="text-green-400">0.30 × TCS</span>
+              <span className="text-[#0A7D3F]">0.30 × TCS</span>
               {" + "}
-              <span className="text-blue-400">0.25 × TFS</span>
+              <span className="text-[#0F5499]">0.25 × TFS</span>
               {" + "}
-              <span className="text-orange-400">0.30 × RSS</span>
+              <span className="text-[#C2701C]">0.30 × RSS</span>
               {" + "}
-              <span className="text-purple-400">0.15 × URS</span>
+              <span className="text-[#7D5BA6]">0.15 × URS</span>
             </div>
-            <div className="text-[10px] text-gray-500 mt-2">
-              각 축은 0-100. <strong className="text-gray-400">OER은 분류 전용</strong>으로 Composite에 미포함.
+            <div className="text-[12px] text-[#857F7A] mt-2">
+              각 축은 0-100. <strong className="text-[#66605C]">OER은 분류 전용</strong>으로 Composite에 미포함.
             </div>
           </div>
 
           <div>
-            <div className="text-xs font-semibold text-gray-300 mb-2">각 축의 단기/장기 분해</div>
-            <table className="w-full text-xs border-collapse">
+            <div className="text-[14px] font-semibold text-[#33302E] mb-2">각 축의 단기/장기 분해</div>
+            <table className="w-full text-[14px] border-collapse">
               <thead>
-                <tr className="border-b border-gray-700 bg-[#111827]">
-                  <th className="py-1.5 px-2 text-left text-gray-500">Axis</th>
-                  <th className="py-1.5 px-2 text-center text-gray-500">단기 weight</th>
-                  <th className="py-1.5 px-2 text-center text-gray-500">장기 weight</th>
-                  <th className="py-1.5 px-2 text-left text-gray-500">의미</th>
+                <tr className="border-b border-[#E6D9CE] bg-[#FFFFFF]">
+                  <th className="py-1.5 px-2 text-left text-[#857F7A]">Axis</th>
+                  <th className="py-1.5 px-2 text-center text-[#857F7A]">단기 weight</th>
+                  <th className="py-1.5 px-2 text-center text-[#857F7A]">장기 weight</th>
+                  <th className="py-1.5 px-2 text-left text-[#857F7A]">의미</th>
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-b border-gray-800/50">
-                  <td className="py-1.5 px-2 font-bold" style={{ color: "#22c55e" }}>TCS</td>
-                  <td className="py-1.5 px-2 text-center font-mono text-gray-300">0.40</td>
-                  <td className="py-1.5 px-2 text-center font-mono text-gray-300">0.60</td>
-                  <td className="py-1.5 px-2 text-gray-400">추세 지속성 (장기 가중)</td>
+                <tr className="border-b border-[#E6D9CE]/50">
+                  <td className="py-1.5 px-2 font-bold" style={{ color: "#0A7D3F" }}>TCS</td>
+                  <td className="py-1.5 px-2 text-center font-mono text-[#33302E]">0.40</td>
+                  <td className="py-1.5 px-2 text-center font-mono text-[#33302E]">0.60</td>
+                  <td className="py-1.5 px-2 text-[#66605C]">추세 지속성 (장기 가중)</td>
                 </tr>
-                <tr className="border-b border-gray-800/50">
-                  <td className="py-1.5 px-2 font-bold" style={{ color: "#3b82f6" }}>TFS</td>
-                  <td className="py-1.5 px-2 text-center font-mono text-gray-300">0.50</td>
-                  <td className="py-1.5 px-2 text-center font-mono text-gray-300">0.50</td>
-                  <td className="py-1.5 px-2 text-gray-400">추세 형성 신선도 (대칭)</td>
+                <tr className="border-b border-[#E6D9CE]/50">
+                  <td className="py-1.5 px-2 font-bold" style={{ color: "#0F5499" }}>TFS</td>
+                  <td className="py-1.5 px-2 text-center font-mono text-[#33302E]">0.50</td>
+                  <td className="py-1.5 px-2 text-center font-mono text-[#33302E]">0.50</td>
+                  <td className="py-1.5 px-2 text-[#66605C]">추세 형성 신선도 (대칭)</td>
                 </tr>
-                <tr className="border-b border-gray-800/50">
-                  <td className="py-1.5 px-2 font-bold" style={{ color: "#f59e0b" }}>RSS</td>
-                  <td className="py-1.5 px-2 text-center font-mono text-gray-300">0.35</td>
-                  <td className="py-1.5 px-2 text-center font-mono text-gray-300">0.65</td>
-                  <td className="py-1.5 px-2 text-gray-400">상대 강도 (장기 12-1M, Jegadeesh-Titman 1993)</td>
+                <tr className="border-b border-[#E6D9CE]/50">
+                  <td className="py-1.5 px-2 font-bold" style={{ color: "#B85C00" }}>RSS</td>
+                  <td className="py-1.5 px-2 text-center font-mono text-[#33302E]">0.35</td>
+                  <td className="py-1.5 px-2 text-center font-mono text-[#33302E]">0.65</td>
+                  <td className="py-1.5 px-2 text-[#66605C]">상대 강도 (장기 12-1M, Jegadeesh-Titman 1993)</td>
                 </tr>
                 <tr>
-                  <td className="py-1.5 px-2 font-bold" style={{ color: "#8b5cf6" }}>URS</td>
-                  <td className="py-1.5 px-2 text-center font-mono text-gray-500" colSpan={2}>4 sub-signals</td>
-                  <td className="py-1.5 px-2 text-gray-400">Underreaction (AQR, Hong-Stein 1999)</td>
+                  <td className="py-1.5 px-2 font-bold" style={{ color: "#7D5BA6" }}>URS</td>
+                  <td className="py-1.5 px-2 text-center font-mono text-[#857F7A]" colSpan={2}>4 sub-signals</td>
+                  <td className="py-1.5 px-2 text-[#66605C]">Underreaction (AQR, Hong-Stein 1999)</td>
                 </tr>
               </tbody>
             </table>
           </div>
 
           <div>
-            <div className="text-xs font-semibold text-gray-300 mb-2">URS (Underreaction Score) 내부 구성</div>
-            <table className="w-full text-xs border-collapse">
+            <div className="text-[14px] font-semibold text-[#33302E] mb-2">URS (Underreaction Score) 내부 구성</div>
+            <table className="w-full text-[14px] border-collapse">
               <thead>
-                <tr className="border-b border-gray-700 bg-[#111827]">
-                  <th className="py-1.5 px-2 text-left text-gray-500">Sub</th>
-                  <th className="py-1.5 px-2 text-center text-gray-500">Weight</th>
-                  <th className="py-1.5 px-2 text-left text-gray-500">의미</th>
+                <tr className="border-b border-[#E6D9CE] bg-[#FFFFFF]">
+                  <th className="py-1.5 px-2 text-left text-[#857F7A]">Sub</th>
+                  <th className="py-1.5 px-2 text-center text-[#857F7A]">Weight</th>
+                  <th className="py-1.5 px-2 text-left text-[#857F7A]">의미</th>
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-b border-gray-800/50">
-                  <td className="py-1.5 px-2 font-bold text-purple-400">LeadLag</td>
+                <tr className="border-b border-[#E6D9CE]/50">
+                  <td className="py-1.5 px-2 font-bold text-[#7D5BA6]">LeadLag</td>
                   <td className="py-1.5 px-2 text-center font-mono">0.40</td>
-                  <td className="py-1.5 px-2 text-gray-400">카테고리 평균 ret_63d − 본인 ret_63d (laggard 정도)</td>
+                  <td className="py-1.5 px-2 text-[#66605C]">카테고리 평균 ret_63d − 본인 ret_63d (laggard 정도)</td>
                 </tr>
-                <tr className="border-b border-gray-800/50">
-                  <td className="py-1.5 px-2 font-bold text-purple-400">AttnGap</td>
+                <tr className="border-b border-[#E6D9CE]/50">
+                  <td className="py-1.5 px-2 font-bold text-[#7D5BA6]">AttnGap</td>
                   <td className="py-1.5 px-2 text-center font-mono">0.30</td>
-                  <td className="py-1.5 px-2 text-gray-400">vol_ratio_3d_10d pctile − ret_5d pctile (관심은 있는데 가격 미반응)</td>
+                  <td className="py-1.5 px-2 text-[#66605C]">vol_ratio_3d_10d pctile − ret_5d pctile (관심은 있는데 가격 미반응)</td>
                 </tr>
-                <tr className="border-b border-gray-800/50">
-                  <td className="py-1.5 px-2 font-bold text-purple-400">Drift</td>
+                <tr className="border-b border-[#E6D9CE]/50">
+                  <td className="py-1.5 px-2 font-bold text-[#7D5BA6]">Drift</td>
                   <td className="py-1.5 px-2 text-center font-mono">0.20</td>
-                  <td className="py-1.5 px-2 text-gray-400">gap_drift_30d (Post-Event Announcement Drift, PEAD)</td>
+                  <td className="py-1.5 px-2 text-[#66605C]">gap_drift_30d (Post-Event Announcement Drift, PEAD)</td>
                 </tr>
                 <tr>
-                  <td className="py-1.5 px-2 font-bold text-purple-400">Dispersion</td>
+                  <td className="py-1.5 px-2 font-bold text-[#7D5BA6]">Dispersion</td>
                   <td className="py-1.5 px-2 text-center font-mono">0.10</td>
-                  <td className="py-1.5 px-2 text-gray-400">cross-sectional rss_std (정보 비대칭 정도)</td>
+                  <td className="py-1.5 px-2 text-[#66605C]">cross-sectional rss_std (정보 비대칭 정도)</td>
                 </tr>
               </tbody>
             </table>
           </div>
 
           <div>
-            <div className="text-xs font-semibold text-gray-300 mb-2">
+            <div className="text-[14px] font-semibold text-[#33302E] mb-2">
               Effective Weights — 최종 영향력 (outer × inner)
             </div>
-            <table className="w-full text-xs border-collapse">
+            <table className="w-full text-[14px] border-collapse">
               <thead>
-                <tr className="border-b border-gray-700 bg-[#111827]">
-                  <th className="py-1.5 px-2 text-left text-gray-500">Component</th>
-                  <th className="py-1.5 px-2 text-center text-gray-500">Outer</th>
-                  <th className="py-1.5 px-2 text-center text-gray-500">Inner</th>
-                  <th className="py-1.5 px-2 text-right text-gray-500">Effective</th>
-                  <th className="py-1.5 px-2 text-left text-gray-500">Bar</th>
+                <tr className="border-b border-[#E6D9CE] bg-[#FFFFFF]">
+                  <th className="py-1.5 px-2 text-left text-[#857F7A]">Component</th>
+                  <th className="py-1.5 px-2 text-center text-[#857F7A]">Outer</th>
+                  <th className="py-1.5 px-2 text-center text-[#857F7A]">Inner</th>
+                  <th className="py-1.5 px-2 text-right text-[#857F7A]">Effective</th>
+                  <th className="py-1.5 px-2 text-left text-[#857F7A]">Bar</th>
                 </tr>
               </thead>
               <tbody>
                 {effectiveWeights.map((w, i) => (
-                  <tr key={i} className="border-b border-gray-800/50">
+                  <tr key={i} className="border-b border-[#E6D9CE]/50">
                     <td className="py-1 px-2">
-                      <span className="font-mono text-[10px] mr-2 px-1 rounded" style={{ backgroundColor: w.color + "22", color: w.color }}>
+                      <span className="font-mono text-[12px] mr-2 px-1 rounded" style={{ backgroundColor: w.color + "22", color: w.color }}>
                         {w.axis}
                       </span>
-                      <span className="text-gray-300">{w.component}</span>
-                      {w.isMax && <span className="ml-2 text-[10px] text-yellow-400">MAX</span>}
+                      <span className="text-[#33302E]">{w.component}</span>
+                      {w.isMax && <span className="ml-2 text-[12px] text-[#B85C00]">MAX</span>}
                     </td>
-                    <td className="py-1 px-2 text-center font-mono text-gray-500">{w.outer}</td>
-                    <td className="py-1 px-2 text-center font-mono text-gray-500">{w.inner}</td>
+                    <td className="py-1 px-2 text-center font-mono text-[#857F7A]">{w.outer}</td>
+                    <td className="py-1 px-2 text-center font-mono text-[#857F7A]">{w.inner}</td>
                     <td className="py-1 px-2 text-right font-mono font-bold" style={{ color: w.color }}>
                       {w.effective.toFixed(3)}
                     </td>
@@ -558,11 +560,11 @@ function CompositeFormulaGuide() {
                     </td>
                   </tr>
                 ))}
-                <tr className="bg-[#111827]">
-                  <td className="py-1.5 px-2 font-bold text-cyan-400">합계</td>
+                <tr className="bg-[#FFFFFF]">
+                  <td className="py-1.5 px-2 font-bold text-[#0F5499]">합계</td>
                   <td className="py-1.5 px-2"></td>
                   <td className="py-1.5 px-2"></td>
-                  <td className="py-1.5 px-2 text-right font-mono font-bold text-cyan-400">1.000</td>
+                  <td className="py-1.5 px-2 text-right font-mono font-bold text-[#0F5499]">1.000</td>
                   <td className="py-1.5 px-2"></td>
                 </tr>
               </tbody>
@@ -570,41 +572,41 @@ function CompositeFormulaGuide() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            <div className="bg-[#111827] border border-gray-800 rounded p-2 text-[11px]">
-              <div className="text-gray-300 font-semibold mb-1">장기 vs 단기 비중</div>
-              <div className="text-gray-500">
-                장기 <span className="text-green-400 font-mono">0.500</span> vs 단기 <span className="text-orange-400 font-mono">0.350</span>
+            <div className="bg-[#FFFFFF] border border-[#E6D9CE] rounded p-2 text-[13px]">
+              <div className="text-[#33302E] font-semibold mb-1">장기 vs 단기 비중</div>
+              <div className="text-[#857F7A]">
+                장기 <span className="text-[#0A7D3F] font-mono">0.500</span> vs 단기 <span className="text-[#C2701C] font-mono">0.350</span>
                 <br />→ 단기 노이즈보다 지속 추세 우선
               </div>
             </div>
-            <div className="bg-[#111827] border border-gray-800 rounded p-2 text-[11px]">
-              <div className="text-gray-300 font-semibold mb-1">최대 가중치</div>
-              <div className="text-gray-500">
-                <span className="text-orange-400">RSS_long (19.5%)</span>
+            <div className="bg-[#FFFFFF] border border-[#E6D9CE] rounded p-2 text-[13px]">
+              <div className="text-[#33302E] font-semibold mb-1">최대 가중치</div>
+              <div className="text-[#857F7A]">
+                <span className="text-[#C2701C]">RSS_long (19.5%)</span>
                 <br />→ 12-1M 모멘텀 (Jegadeesh-Titman 1993)이 가장 강력한 신호
               </div>
             </div>
-            <div className="bg-[#111827] border border-gray-800 rounded p-2 text-[11px]">
-              <div className="text-gray-300 font-semibold mb-1">퍼센타일 기반</div>
-              <div className="text-gray-500">
-                <span className="text-orange-400">RSS</span>, <span className="text-purple-400">URS</span> 모두 cross-sectional 퍼센타일
+            <div className="bg-[#FFFFFF] border border-[#E6D9CE] rounded p-2 text-[13px]">
+              <div className="text-[#33302E] font-semibold mb-1">퍼센타일 기반</div>
+              <div className="text-[#857F7A]">
+                <span className="text-[#C2701C]">RSS</span>, <span className="text-[#7D5BA6]">URS</span> 모두 cross-sectional 퍼센타일
                 <br />→ 시장 환경에 robust (절대값이 아닌 상대 순위)
               </div>
             </div>
-            <div className="bg-[#111827] border border-gray-800 rounded p-2 text-[11px]">
-              <div className="text-gray-300 font-semibold mb-1">가격 + 행동학 통합</div>
-              <div className="text-gray-500">
+            <div className="bg-[#FFFFFF] border border-[#E6D9CE] rounded p-2 text-[13px]">
+              <div className="text-[#33302E] font-semibold mb-1">가격 + 행동학 통합</div>
+              <div className="text-[#857F7A]">
                 가격 신호 (TCS+TFS+RSS): <span className="font-mono">85%</span>
                 <br />행동학 보정 (URS): <span className="font-mono">15%</span>
               </div>
             </div>
           </div>
 
-          <div className="bg-[#111827] border border-cyan-900/40 rounded-lg p-3">
-            <div className="text-xs font-semibold text-cyan-300 mb-1">Momentum 자격 조건</div>
-            <div className="text-[11px] text-gray-400 leading-relaxed">
-              <code className="text-cyan-400">Composite ≥ 55</code> AND <code className="text-cyan-400">Bullish classification</code> (CONTINUATION/FORMATION/RECOVERY/OVEREXTENDED) AND <code className="text-cyan-400">ADV ≥ $5M</code>
-              <br /><span className="text-gray-500">→ 세 조건 모두 충족 시 Momentum 탭에 표시 (eligible=True)</span>
+          <div className="bg-[#FFFFFF] border border-[#9CC3D5]/40 rounded-lg p-3">
+            <div className="text-[14px] font-semibold text-[#0D7680] mb-1">Momentum 자격 조건</div>
+            <div className="text-[13px] text-[#66605C] leading-relaxed">
+              <code className="text-[#0F5499]">Composite ≥ 55</code> AND <code className="text-[#0F5499]">Bullish classification</code> (CONTINUATION/FORMATION/RECOVERY/OVEREXTENDED) AND <code className="text-[#0F5499]">ADV ≥ $5M</code>
+              <br /><span className="text-[#857F7A]">→ 세 조건 모두 충족 시 Momentum 탭에 표시 (eligible=True)</span>
             </div>
           </div>
         </div>
@@ -613,23 +615,23 @@ function CompositeFormulaGuide() {
   );
 }
 
-function ColumnDefinitions() {
+export function ColumnDefinitions() {
   const [open, setOpen] = useState(false);
   return (
-    <div className="border border-gray-800 rounded-lg overflow-hidden mb-2">
+    <div className="border border-[#E6D9CE] rounded-lg overflow-hidden mb-2">
       <button
-        className="w-full px-4 py-2 text-left text-xs font-semibold bg-[#111827] hover:bg-[#1f2937] flex justify-between items-center"
+        className="w-full px-4 py-2 text-left text-[14px] font-semibold bg-[#FFFFFF] hover:bg-[#F2E5D7] flex justify-between items-center"
         onClick={() => setOpen(!open)}
       >
-        <span className="text-gray-400">Column Definitions</span>
-        <span className="text-gray-500 text-[10px]">{open ? "\u25BC" : "\u25B6"}</span>
+        <span className="text-[#66605C]">Column Definitions</span>
+        <span className="text-[#857F7A] text-[12px]">{open ? "\u25BC" : "\u25B6"}</span>
       </button>
       {open && (
-        <div className="bg-[#0d1117] px-4 py-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-6 gap-y-1.5">
+        <div className="bg-[#FBEEE3] px-4 py-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-6 gap-y-1.5">
           {COLUMN_DEFS.map((d) => (
-            <div key={d.col} className="flex gap-2 text-[11px]">
-              <span className="text-cyan-400 font-semibold shrink-0 w-14">{d.col}</span>
-              <span className="text-gray-500">{d.desc}</span>
+            <div key={d.col} className="flex gap-2 text-[13px]">
+              <span className="text-[#0F5499] font-semibold shrink-0 w-auto min-w-16">{d.col}</span>
+              <span className="text-[#857F7A]">{d.desc}</span>
             </div>
           ))}
         </div>
@@ -642,7 +644,7 @@ function ColumnDefinitions() {
 // Momentum Table
 // ---------------------------------------------------------------------------
 
-function MomentumTable({
+export function MomentumTable({
   rows,
   onSelect,
 }: {
@@ -671,6 +673,7 @@ function MomentumTable({
     ret_21d: (r: Ticker) => r.ret_21d ?? 0,
     ret_63d: (r: Ticker) => r.ret_63d ?? 0,
     ret_126d: (r: Ticker) => r.ret_126d ?? 0,
+    ret_ytd: (r: Ticker) => r.ret_ytd ?? 0,
     ret_252d: (r: Ticker) => r.ret_252d ?? 0,
     ret_3y_ann: (r: Ticker) => r.ret_3y_ann ?? -999,
     ret_5y_ann: (r: Ticker) => r.ret_5y_ann ?? -999,
@@ -678,14 +681,14 @@ function MomentumTable({
   }), []);
   const { sorted, onSort, indicator } = useSort(rows, accessors);
 
-  if (!rows.length) return <p className="text-[10px] text-gray-600">No data</p>;
-  const headerCls = "py-1.5 px-2 text-gray-500 cursor-pointer select-none hover:text-gray-200 whitespace-nowrap";
+  if (!rows.length) return <p className="text-[12px] text-[#857F7A]">No data</p>;
+  const headerCls = "py-1.5 px-2 text-[#857F7A] cursor-pointer select-none hover:text-[#33302E] whitespace-nowrap";
   return (
-    <div className="overflow-auto border border-gray-800 rounded" style={{ maxHeight: "600px" }}>
-      <table className="w-full text-xs border-collapse">
-        <thead className="sticky top-0 z-10 bg-[#1f2937]">
-          <tr className="border-b border-gray-700">
-            <th className="py-1.5 px-2 text-left text-gray-500">#</th>
+    <div className="overflow-auto border border-[#E6D9CE] rounded" style={{ maxHeight: "600px" }}>
+      <table className="w-full text-[14px] border-collapse">
+        <thead className="sticky top-0 z-10 bg-[#F2E5D7]">
+          <tr className="border-b border-[#E6D9CE]">
+            <th className="py-1.5 px-2 text-left text-[#857F7A]">#</th>
             <th className={`${headerCls} text-left`} onClick={() => onSort("ticker")}>Ticker{indicator("ticker")}</th>
             <th className={`${headerCls} text-left`} onClick={() => onSort("name")}>Name{indicator("name")}</th>
             <th className={`${headerCls} text-left`} onClick={() => onSort("sector")}>Sector{indicator("sector")}</th>
@@ -707,6 +710,7 @@ function MomentumTable({
             <th className={`${headerCls} text-right`} onClick={() => onSort("ret_21d")}>1M{indicator("ret_21d")}</th>
             <th className={`${headerCls} text-right`} onClick={() => onSort("ret_63d")}>3M{indicator("ret_63d")}</th>
             <th className={`${headerCls} text-right`} onClick={() => onSort("ret_126d")}>6M{indicator("ret_126d")}</th>
+            <th className={`${headerCls} text-right`} onClick={() => onSort("ret_ytd")}>YTD{indicator("ret_ytd")}</th>
             <th className={`${headerCls} text-right`} onClick={() => onSort("ret_252d")}>1Y{indicator("ret_252d")}</th>
             <th className={`${headerCls} text-right`} onClick={() => onSort("ret_3y_ann")}>3Y/A{indicator("ret_3y_ann")}</th>
             <th className={`${headerCls} text-right`} onClick={() => onSort("ret_5y_ann")}>5Y/A{indicator("ret_5y_ann")}</th>
@@ -715,22 +719,22 @@ function MomentumTable({
         </thead>
         <tbody>
           {sorted.map((r, i) => (
-            <tr key={r.ticker} className="border-b border-gray-800/50 hover:bg-[#1f2937]/30">
-              <td className="py-1.5 px-2 text-gray-600">{i + 1}</td>
+            <tr key={r.ticker} className="border-b border-[#E6D9CE]/50 hover:bg-[#F2E5D7]/30">
+              <td className="py-1.5 px-2 text-[#857F7A]">{i + 1}</td>
               <td className="py-1.5 px-2">
                 <button
                   onClick={() => onSelect(r.ticker)}
-                  className="font-mono text-xs text-cyan-400 hover:underline font-bold"
+                  className="font-mono text-[14px] text-[#0F5499] hover:underline font-bold"
                 >
                   {r.ticker}
                 </button>
               </td>
-              <td className="py-1.5 px-2 text-gray-400 truncate max-w-[120px]">{r.name}</td>
-              <td className="py-1.5 px-2 text-gray-500 text-[10px]" title={`SubTheme: ${r.theme || "-"}`}>
+              <td className="py-1.5 px-2 text-[#66605C] truncate max-w-[120px]">{r.name}</td>
+              <td className="py-1.5 px-2 text-[#857F7A] text-[12px]" title={`SubTheme: ${r.theme || "-"}`}>
                 {r.sector || r.category}
               </td>
               <td className="py-1.5 px-2">
-                <span className="text-[10px]" style={{ color: CLASS_COLORS[r.classification] || C.gray }}>
+                <span className="text-[12px]" style={{ color: CLASS_COLORS[r.classification] || C.gray }}>
                   {r.classification}
                 </span>
               </td>
@@ -742,19 +746,19 @@ function MomentumTable({
                 return (
                   <td className="py-1.5 px-2 align-top" style={{ minWidth: "320px" }}>
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-[11px] font-bold whitespace-nowrap" style={{ color: d.color }}>
+                      <span className="text-[13px] font-bold whitespace-nowrap" style={{ color: d.color }}>
                         {d.action}
                       </span>
-                      <span className="text-[10px] text-gray-500 leading-snug whitespace-normal break-words">
+                      <span className="text-[12px] text-[#857F7A] leading-snug whitespace-normal break-words">
                         {d.rationale}
                       </span>
                     </div>
                   </td>
                 );
               })()}
-              <td className="py-1.5 px-2 text-right font-mono text-gray-300">{r.tcs}</td>
-              <td className="py-1.5 px-2 text-right font-mono text-gray-300">{r.tfs}</td>
-              <td className="py-1.5 px-2 text-right font-mono text-gray-300">{r.rss}</td>
+              <td className="py-1.5 px-2 text-right font-mono text-[#33302E]">{r.tcs}</td>
+              <td className="py-1.5 px-2 text-right font-mono text-[#33302E]">{r.tfs}</td>
+              <td className="py-1.5 px-2 text-right font-mono text-[#33302E]">{r.rss}</td>
               <td className="py-1.5 px-2 text-right font-mono" style={{ color: oerColor(r.oer) }}>
                 {r.oer}
               </td>
@@ -784,26 +788,27 @@ function MomentumTable({
                 {r.mom_age ?? 0}d
               </td>
               <td className="py-1.5 px-2 text-center">
-                <span className="text-[10px] font-semibold" style={{ color: signalColor(r.net_signal || "") }}>
+                <span className="text-[12px] font-semibold" style={{ color: signalColor(r.net_signal || "") }}>
                   {r.net_signal || "-"}
                 </span>
               </td>
-              <td className="py-1.5 px-2 text-right font-mono text-gray-400 text-[10px]">
-                <span className="text-green-400">{r.long_count ?? 0}</span>
-                <span className="text-gray-600">/</span>
-                <span className="text-red-400">{r.short_count ?? 0}</span>
+              <td className="py-1.5 px-2 text-right font-mono text-[#66605C] text-[12px]">
+                <span className="text-[#0A7D3F]">{r.long_count ?? 0}</span>
+                <span className="text-[#857F7A]">/</span>
+                <span className="text-[#CC0000]">{r.short_count ?? 0}</span>
               </td>
-              <td className="py-1.5 px-2 text-right font-mono text-gray-400">{r.rsi?.toFixed(0)}</td>
-              <td className="py-1.5 px-2 text-right font-mono text-gray-400">{r.trend_age}d</td>
+              <td className="py-1.5 px-2 text-right font-mono text-[#66605C]">{r.rsi?.toFixed(0)}</td>
+              <td className="py-1.5 px-2 text-right font-mono text-[#66605C]">{r.trend_age}d</td>
               <td className="py-1.5 px-2 text-right font-mono" style={{ color: retColor(r.ret_1d ?? 0) }}>{(r.ret_1d ?? 0).toFixed(1)}%</td>
               <td className="py-1.5 px-2 text-right font-mono" style={{ color: retColor(r.ret_5d ?? 0) }}>{(r.ret_5d ?? 0).toFixed(1)}%</td>
               <td className="py-1.5 px-2 text-right font-mono" style={{ color: retColor(r.ret_21d ?? 0) }}>{(r.ret_21d ?? 0).toFixed(1)}%</td>
               <td className="py-1.5 px-2 text-right font-mono" style={{ color: retColor(r.ret_63d ?? 0) }}>{(r.ret_63d ?? 0).toFixed(1)}%</td>
               <td className="py-1.5 px-2 text-right font-mono" style={{ color: retColor(r.ret_126d ?? 0) }}>{(r.ret_126d ?? 0).toFixed(1)}%</td>
+              <td className="py-1.5 px-2 text-right font-mono" style={{ color: retColor(r.ret_ytd ?? 0) }}>{r.ret_ytd != null ? `${r.ret_ytd.toFixed(1)}%` : "—"}</td>
               <td className="py-1.5 px-2 text-right font-mono" style={{ color: retColor(r.ret_252d ?? 0) }}>{(r.ret_252d ?? 0).toFixed(1)}%</td>
               <td className="py-1.5 px-2 text-right font-mono" style={{ color: r.ret_3y_ann == null ? C.gray : retColor(r.ret_3y_ann) }}>{r.ret_3y_ann == null ? "-" : `${r.ret_3y_ann.toFixed(1)}%`}</td>
               <td className="py-1.5 px-2 text-right font-mono" style={{ color: r.ret_5y_ann == null ? C.gray : retColor(r.ret_5y_ann) }}>{r.ret_5y_ann == null ? "-" : `${r.ret_5y_ann.toFixed(1)}%`}</td>
-              <td className="py-1.5 px-2 text-right font-mono text-gray-400">{r.vol_3y_ann == null ? "-" : `${r.vol_3y_ann.toFixed(1)}%`}</td>
+              <td className="py-1.5 px-2 text-right font-mono text-[#66605C]">{r.vol_3y_ann == null ? "-" : `${r.vol_3y_ann.toFixed(1)}%`}</td>
             </tr>
           ))}
         </tbody>
@@ -816,7 +821,7 @@ function MomentumTable({
 // Ticker Detail
 // ---------------------------------------------------------------------------
 
-function TickerDetail({ ticker, onClose }: { ticker: Ticker; onClose: () => void }) {
+export function TickerDetail({ ticker, onClose }: { ticker: Ticker; onClose: () => void }) {
   const axes = [
     { label: "TCS", value: ticker.tcs, desc: "Trend Continuation" },
     { label: "TFS", value: ticker.tfs, desc: "Trend Formation" },
@@ -828,35 +833,35 @@ function TickerDetail({ ticker, onClose }: { ticker: Ticker; onClose: () => void
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="text-lg font-bold text-cyan-400 font-mono">{ticker.ticker}</span>
-          <span className="text-sm text-gray-300">{ticker.name}</span>
-          <span className="text-[10px] px-2 py-0.5 rounded" style={{
+          <span className="text-[20px] font-bold text-[#0F5499] font-mono">{ticker.ticker}</span>
+          <span className="text-[16px] text-[#33302E]">{ticker.name}</span>
+          <span className="text-[12px] px-2 py-0.5 rounded" style={{
             backgroundColor: (CLASS_COLORS[ticker.classification] || C.gray) + "22",
             color: CLASS_COLORS[ticker.classification] || C.gray,
           }}>
             {ticker.classification}
           </span>
         </div>
-        <button onClick={onClose} className="text-[10px] text-gray-500 hover:text-gray-300 px-2 py-1 rounded border border-gray-800">
+        <button onClick={onClose} className="text-[12px] text-[#857F7A] hover:text-[#33302E] px-2 py-1 rounded border border-[#E6D9CE]">
           Close
         </button>
       </div>
 
       {/* Classification tags */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-gray-500">
-        <span>Sector: <span className="text-gray-300 font-semibold">{ticker.sector || ticker.category}</span></span>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-[#857F7A]">
+        <span>Sector: <span className="text-[#33302E] font-semibold">{ticker.sector || ticker.category}</span></span>
         {ticker.theme && ticker.theme !== "-" && (
-          <span>SubTheme: <span className="text-gray-300">{ticker.theme}</span></span>
+          <span>SubTheme: <span className="text-[#33302E]">{ticker.theme}</span></span>
         )}
       </div>
 
       {/* Score Axes */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {axes.map((a) => (
-          <div key={a.label} className="bg-[#111827] border border-gray-800 rounded-lg p-3"
+          <div key={a.label} className="bg-[#FFFFFF] border border-[#E6D9CE] rounded-lg p-3"
                title={a.label === "QVR" ? `Q ${ticker.qvr_q ?? "-"} | V ${ticker.qvr_v ?? "-"} | R ${ticker.qvr_r ?? "-"}` : undefined}>
-            <div className="text-[10px] text-gray-500">{a.desc}</div>
-            <div className="text-xl font-bold font-mono mt-1" style={{
+            <div className="text-[12px] text-[#857F7A]">{a.desc}</div>
+            <div className="text-[22px] font-bold font-mono mt-1" style={{
               color: a.label === "OER" ? oerColor(a.value)
                    : a.label === "QVR" ? qvrColor(a.value)
                    : compColor(a.value),
@@ -868,29 +873,29 @@ function TickerDetail({ ticker, onClose }: { ticker: Ticker; onClose: () => void
       </div>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-3 md:grid-cols-6 gap-2 text-xs">
-        <div className="bg-[#111827] rounded p-2">
-          <div className="text-[10px] text-gray-500">Composite</div>
+      <div className="grid grid-cols-3 md:grid-cols-6 gap-2 text-[14px]">
+        <div className="bg-[#FFFFFF] rounded p-2">
+          <div className="text-[12px] text-[#857F7A]">Composite</div>
           <div className="font-mono font-bold" style={{ color: compColor(ticker.composite) }}>{ticker.composite.toFixed(1)}</div>
         </div>
-        <div className="bg-[#111827] rounded p-2">
-          <div className="text-[10px] text-gray-500">Signal</div>
+        <div className="bg-[#FFFFFF] rounded p-2">
+          <div className="text-[12px] text-[#857F7A]">Signal</div>
           <div className="font-semibold" style={{ color: signalColor(ticker.net_signal || "") }}>{ticker.net_signal || "-"}</div>
         </div>
-        <div className="bg-[#111827] rounded p-2">
-          <div className="text-[10px] text-gray-500">RSI</div>
+        <div className="bg-[#FFFFFF] rounded p-2">
+          <div className="text-[12px] text-[#857F7A]">RSI</div>
           <div className="font-mono">{ticker.rsi?.toFixed(0)}</div>
         </div>
-        <div className="bg-[#111827] rounded p-2">
-          <div className="text-[10px] text-gray-500">Trend Age</div>
+        <div className="bg-[#FFFFFF] rounded p-2">
+          <div className="text-[12px] text-[#857F7A]">Trend Age</div>
           <div className="font-mono">{ticker.trend_age}d</div>
         </div>
-        <div className="bg-[#111827] rounded p-2">
-          <div className="text-[10px] text-gray-500">SMA50 Dist</div>
+        <div className="bg-[#FFFFFF] rounded p-2">
+          <div className="text-[12px] text-[#857F7A]">SMA50 Dist</div>
           <div className="font-mono">{ticker.sma50_dist?.toFixed(1)}%</div>
         </div>
-        <div className="bg-[#111827] rounded p-2">
-          <div className="text-[10px] text-gray-500">Ret 1M</div>
+        <div className="bg-[#FFFFFF] rounded p-2">
+          <div className="text-[12px] text-[#857F7A]">Ret 1M</div>
           <div className="font-mono" style={{ color: retColor(ticker.ret_1m) }}>{ticker.ret_1m?.toFixed(1)}%</div>
         </div>
       </div>
@@ -915,13 +920,13 @@ const STRATEGIES = [
 
 function stratColor(v: number): string {
   if (v >= 70) return C.green;
-  if (v >= 60) return "#86efac";
+  if (v >= 60) return "#0A7D3F";
   if (v >= 40) return C.gray;
-  if (v >= 30) return "#fca5a5";
+  if (v >= 30) return "#CC0000";
   return C.red;
 }
 
-function StrategyTable({ rows }: { rows: Ticker[] }) {
+export function StrategyTable({ rows }: { rows: Ticker[] }) {
   const accessors = useMemo(() => {
     const acc: Record<string, (r: Ticker) => any> = {
       ticker: (r) => r.ticker,
@@ -938,62 +943,62 @@ function StrategyTable({ rows }: { rows: Ticker[] }) {
   }, []);
   const { sorted, onSort, indicator } = useSort(rows, accessors);
 
-  if (!rows.length) return <p className="text-[10px] text-gray-600">No data</p>;
-  const headerCls = "cursor-pointer select-none hover:text-gray-200";
+  if (!rows.length) return <p className="text-[12px] text-[#857F7A]">No data</p>;
+  const headerCls = "cursor-pointer select-none hover:text-[#33302E]";
   return (
-    <div className="overflow-auto border border-gray-800 rounded" style={{ maxHeight: "600px" }}>
-      <table className="w-full text-xs border-collapse">
-        <thead className="sticky top-0 z-10 bg-[#1f2937]">
-          <tr className="border-b border-gray-700">
-            <th className="py-1.5 px-2 text-left text-gray-500">#</th>
-            <th className={`py-1.5 px-2 text-left text-gray-500 ${headerCls}`} onClick={() => onSort("ticker")}>Ticker{indicator("ticker")}</th>
-            <th className={`py-1.5 px-2 text-left text-gray-500 ${headerCls}`} onClick={() => onSort("name")}>Name{indicator("name")}</th>
+    <div className="overflow-auto border border-[#E6D9CE] rounded" style={{ maxHeight: "600px" }}>
+      <table className="w-full text-[14px] border-collapse">
+        <thead className="sticky top-0 z-10 bg-[#F2E5D7]">
+          <tr className="border-b border-[#E6D9CE]">
+            <th className="py-1.5 px-2 text-left text-[#857F7A]">#</th>
+            <th className={`py-1.5 px-2 text-left text-[#857F7A] ${headerCls}`} onClick={() => onSort("ticker")}>Ticker{indicator("ticker")}</th>
+            <th className={`py-1.5 px-2 text-left text-[#857F7A] ${headerCls}`} onClick={() => onSort("name")}>Name{indicator("name")}</th>
             {STRATEGIES.map((s) => (
-              <th key={s.key} colSpan={2} className="py-1.5 px-1 text-center text-gray-500 border-l border-gray-800/50">
+              <th key={s.key} colSpan={2} className="py-1.5 px-1 text-center text-[#857F7A] border-l border-[#E6D9CE]/50">
                 {s.label}
               </th>
             ))}
-            <th className="py-1.5 px-1 text-center text-gray-500 border-l border-gray-800/50" colSpan={2}>Combined</th>
-            <th className={`py-1.5 px-2 text-center text-gray-500 border-l border-gray-800/50 ${headerCls}`} onClick={() => onSort("signal")}>
+            <th className="py-1.5 px-1 text-center text-[#857F7A] border-l border-[#E6D9CE]/50" colSpan={2}>Combined</th>
+            <th className={`py-1.5 px-2 text-center text-[#857F7A] border-l border-[#E6D9CE]/50 ${headerCls}`} onClick={() => onSort("signal")}>
               Signal{indicator("signal")}
             </th>
           </tr>
-          <tr className="border-b border-gray-700">
+          <tr className="border-b border-[#E6D9CE]">
             <th colSpan={3} />
             {STRATEGIES.map((s) => (
               <React.Fragment key={s.key}>
-                <th className={`py-1 px-1 text-[9px] text-green-600 border-l border-gray-800/50 ${headerCls}`} onClick={() => onSort(`${s.key}_long`)}>L{indicator(`${s.key}_long`)}</th>
-                <th className={`py-1 px-1 text-[9px] text-red-600 ${headerCls}`} onClick={() => onSort(`${s.key}_short`)}>S{indicator(`${s.key}_short`)}</th>
+                <th className={`py-1 px-1 text-[11px] text-[#0A7D3F] border-l border-[#E6D9CE]/50 ${headerCls}`} onClick={() => onSort(`${s.key}_long`)}>L{indicator(`${s.key}_long`)}</th>
+                <th className={`py-1 px-1 text-[11px] text-[#CC0000] ${headerCls}`} onClick={() => onSort(`${s.key}_short`)}>S{indicator(`${s.key}_short`)}</th>
               </React.Fragment>
             ))}
-            <th className={`py-1 px-1 text-[9px] text-green-600 border-l border-gray-800/50 ${headerCls}`} onClick={() => onSort("combined_long")}>L{indicator("combined_long")}</th>
-            <th className={`py-1 px-1 text-[9px] text-red-600 ${headerCls}`} onClick={() => onSort("combined_short")}>S{indicator("combined_short")}</th>
-            <th className="border-l border-gray-800/50" />
+            <th className={`py-1 px-1 text-[11px] text-[#0A7D3F] border-l border-[#E6D9CE]/50 ${headerCls}`} onClick={() => onSort("combined_long")}>L{indicator("combined_long")}</th>
+            <th className={`py-1 px-1 text-[11px] text-[#CC0000] ${headerCls}`} onClick={() => onSort("combined_short")}>S{indicator("combined_short")}</th>
+            <th className="border-l border-[#E6D9CE]/50" />
           </tr>
         </thead>
         <tbody>
           {sorted.map((r, i) => (
-            <tr key={r.ticker} className="border-b border-gray-800/50 hover:bg-[#1f2937]/30">
-              <td className="py-1 px-2 text-gray-600">{i + 1}</td>
-              <td className="py-1 px-2 font-mono text-cyan-400 font-bold text-[10px]">{r.ticker}</td>
-              <td className="py-1 px-2 text-gray-400 truncate max-w-[100px] text-[10px]">{r.name}</td>
+            <tr key={r.ticker} className="border-b border-[#E6D9CE]/50 hover:bg-[#F2E5D7]/30">
+              <td className="py-1 px-2 text-[#857F7A]">{i + 1}</td>
+              <td className="py-1 px-2 font-mono text-[#0F5499] font-bold text-[12px]">{r.ticker}</td>
+              <td className="py-1 px-2 text-[#66605C] truncate max-w-[100px] text-[12px]">{r.name}</td>
               {STRATEGIES.map((s) => {
                 const lv = (r as any)[`${s.key}_long`] ?? 0;
                 const sv = (r as any)[`${s.key}_short`] ?? 0;
                 return (
                   <React.Fragment key={s.key}>
-                    <td className="py-1 px-1 text-center font-mono text-[10px] border-l border-gray-800/50"
+                    <td className="py-1 px-1 text-center font-mono text-[12px] border-l border-[#E6D9CE]/50"
                         style={{ color: stratColor(lv) }}>{Math.round(lv)}</td>
-                    <td className="py-1 px-1 text-center font-mono text-[10px]"
+                    <td className="py-1 px-1 text-center font-mono text-[12px]"
                         style={{ color: stratColor(100 - sv) }}>{Math.round(sv)}</td>
                   </React.Fragment>
                 );
               })}
-              <td className="py-1 px-1 text-center font-mono font-bold text-[10px] border-l border-gray-800/50"
+              <td className="py-1 px-1 text-center font-mono font-bold text-[12px] border-l border-[#E6D9CE]/50"
                   style={{ color: stratColor(r.combined_long) }}>{Math.round(r.combined_long)}</td>
-              <td className="py-1 px-1 text-center font-mono font-bold text-[10px]"
+              <td className="py-1 px-1 text-center font-mono font-bold text-[12px]"
                   style={{ color: stratColor(100 - r.combined_short) }}>{Math.round(r.combined_short)}</td>
-              <td className="py-1 px-2 text-center font-semibold text-[10px] border-l border-gray-800/50"
+              <td className="py-1 px-2 text-center font-semibold text-[12px] border-l border-[#E6D9CE]/50"
                   style={{ color: signalColor(r.net_signal || "") }}>{r.net_signal || "-"}</td>
             </tr>
           ))}
@@ -1048,7 +1053,7 @@ export function MomentumTab({ filters, totalUniverse, mlMode = false }:
     [selected, allData]
   );
 
-  if (loading) return <div className="text-gray-500 p-8">Loading momentum data...</div>;
+  if (loading) return <div className="text-[#857F7A] p-8">Loading momentum data...</div>;
 
   const avgComp = eligible.length
     ? eligible.reduce((s, t) => s + t.composite, 0) / eligible.length
@@ -1074,7 +1079,7 @@ export function MomentumTab({ filters, totalUniverse, mlMode = false }:
         {classDist.map(([cls, count]) => (
           <span
             key={cls}
-            className="text-[10px] px-2 py-1 rounded border border-gray-800"
+            className="text-[12px] px-2 py-1 rounded border border-[#E6D9CE]"
             style={{ color: CLASS_COLORS[cls] || C.gray, borderColor: (CLASS_COLORS[cls] || C.gray) + "44" }}
           >
             {cls} <span className="font-mono font-bold ml-1">{count}</span>
@@ -1090,13 +1095,13 @@ export function MomentumTab({ filters, totalUniverse, mlMode = false }:
       {/* ── ETF + Stock side by side ── */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         <div>
-          <h3 className="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-2">
+          <h3 className="text-[14px] font-semibold text-[#0F5499] uppercase tracking-wide mb-2">
             ETF ({etf.length})
           </h3>
           <MomentumTable rows={etf} onSelect={setSelected} />
         </div>
         <div>
-          <h3 className="text-xs font-semibold text-green-400 uppercase tracking-wide mb-2">
+          <h3 className="text-[14px] font-semibold text-[#0A7D3F] uppercase tracking-wide mb-2">
             Stock ({stock.length})
           </h3>
           <MomentumTable rows={stock} onSelect={setSelected} />
@@ -1112,7 +1117,7 @@ export function MomentumTab({ filters, totalUniverse, mlMode = false }:
 
       {/* ── Hedge Strategy Scores ── */}
       <Section title="Hedge Strategy Scores" badge={`${eligible.length} tickers × 8 strategies`}>
-        <p className="text-[11px] text-gray-500 mb-3">
+        <p className="text-[13px] text-[#857F7A] mb-3">
           8개 hedge strategy별 Long/Short 점수 (0-100). 60 이상이면 해당 방향 시그널로 카운트.
         </p>
         <StrategyTable rows={eligible} />

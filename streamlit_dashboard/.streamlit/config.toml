@@ -1,0 +1,16 @@
+[server]
+port = 8501
+headless = true
+runOnSave = true
+
+[browser]
+gatherUsageStats = false
+
+[theme]
+# Default dark theme — user can toggle to light via sidebar
+base = "dark"
+primaryColor = "#22b8cf"
+backgroundColor = "#0f1419"
+secondaryBackgroundColor = "#1a1f2e"
+textColor = "#e2e6ee"
+font = "sans serif"

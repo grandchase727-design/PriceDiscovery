@@ -142,20 +142,93 @@ def _compute_momentum_signal(prices: pd.DataFrame, t_idx: int) -> pd.Series:
     return sig.dropna()
 
 
+def _compute_rsi(s: pd.Series, period: int = 14) -> float:
+    """RSI(14) from close-only series. Returns last value 0-100.
+
+    Standard Wilder smoothing.
+    """
+    s = s.dropna()
+    if len(s) < period + 1:
+        return 50.0
+    delta = s.diff().iloc[1:]
+    gain = delta.clip(lower=0)
+    loss = -delta.clip(upper=0)
+    avg_gain = gain.rolling(period).mean()
+    avg_loss = loss.rolling(period).mean()
+    rs = avg_gain.iloc[-1] / avg_loss.iloc[-1] if avg_loss.iloc[-1] > 0 else 100.0
+    rsi = 100.0 - (100.0 / (1.0 + rs)) if avg_loss.iloc[-1] > 0 else 100.0
+    return float(rsi)
+
+
+def _compute_oer_signal(daily_prices: pd.DataFrame,
+                       as_of: pd.Timestamp) -> pd.Series:
+    """OER (Overextension Risk) per sector at as_of date. Close-only mode.
+
+    Mirrors price_discovery.py:NaiveDiscoveryDetector.score_oer logic,
+    minus reversal_pctile (which requires 36-12M return percentile data —
+    derivable from daily prices but omitted for backtest simplicity).
+
+    Returns 0-100 score.
+    """
+    px = daily_prices.loc[:as_of].dropna(how="all")
+    if len(px) < 200:
+        return pd.Series(dtype=float)
+    tickers = list(px.columns)
+    oer = pd.Series(0.0, index=tickers, dtype=float)
+    for tk in tickers:
+        s = px[tk].dropna()
+        if len(s) < 252:
+            continue
+        last = float(s.iloc[-1])
+        sma20 = float(s.rolling(20).mean().iloc[-1])
+        sma50 = float(s.rolling(50).mean().iloc[-1])
+        pts = 0
+        # Short-term overextension (SMA20)
+        sd = (last / sma20 - 1.0) * 100 if sma20 > 0 else 0.0
+        if sd > 8:    pts += 15
+        elif sd > 5:  pts += 8
+        # Long-term overextension (SMA50)
+        ld = (last / sma50 - 1.0) * 100 if sma50 > 0 else 0.0
+        if ld > 15:   pts += 35
+        elif ld > 10: pts += 25
+        elif ld > 5:  pts += 12
+        # RSI
+        rsi = _compute_rsi(s, 14)
+        if rsi > 80:   pts += 25
+        elif rsi > 70: pts += 12
+        # 52-week high proximity (pct_from_high)
+        win252 = s.iloc[-252:]
+        hi = float(win252.max())
+        pfh = (last / hi - 1.0) * 100 if hi > 0 else -100.0
+        if pfh > -2: pts += 15
+        oer[tk] = float(min(100, pts))
+    return oer
+
+
 def _compute_composite_signal(daily_prices: pd.DataFrame,
                               as_of: pd.Timestamp) -> pd.Series:
     """Composite-equivalent score per sector at as_of date.
 
     Reconstructs a simplified TCS / TFS / RSS / URS using daily prices
     available *up to and including* as_of, then combines them with the
-    same weights as the live engine:
-        composite = 0.30·TCS + 0.25·TFS + 0.30·RSS + 0.15·URS
+    same logic as the live engine (UPDATED 2026-05):
+
+        base      = 0.30·TCS + 0.25·TFS_resid + 0.30·RSS + 0.15·URS
+        composite = base − 0.10 · max(0, OER − 40)
+
+    Updates vs the original close-only port:
+      • TFS_resid : TFS residualized against TCS via cross-sectional OLS
+                    (removes TCS-TFS info overlap)
+      • OER       : Overextension Risk now computed (was previously omitted);
+                    applied as soft penalty to Composite
 
     Simplifications vs the live engine (data-driven, not by choice):
       • TCS uses SMA20/50/200 distance + slope only (no trend-age buckets)
       • TFS uses 60d range position + 5d-vs-21d acceleration
       • RSS uses cross-sectional percentile of 5d / 21d / 63d / 252d returns
+      • RSS within-sector hybrid: degenerate (11-sector universe is the sector)
       • URS held neutral (50) — needs OHLCV + universe-wide signals
+      • Sticky FLAT hysteresis: off (monthly rebalance, low oscillation risk)
     """
     px = daily_prices.loc[:as_of]
     px = px.dropna(how="all")
@@ -205,6 +278,20 @@ def _compute_composite_signal(daily_prices: pd.DataFrame,
         accel = r5 - (r21 / 4.2)
         tfs[tk] = max(0.0, min(100.0, 35.0 + range_pos * 30.0 + accel * 400.0))
 
+    # ── TFS residualization (cross-sectional OLS against TCS) ──
+    # Removes TCS-TFS information overlap. Centered at 50, clipped 0-100.
+    try:
+        tcs_arr = tcs.values.astype(float)
+        tfs_arr = tfs.values.astype(float)
+        if len(tickers) >= 5:    # need at least 5 obs for stable OLS
+            b_coef, a_coef = np.polyfit(tcs_arr, tfs_arr, 1)
+            resid = tfs_arr - (a_coef + b_coef * tcs_arr)
+            tfs_resid = pd.Series(np.clip(50.0 + resid, 0.0, 100.0), index=tickers)
+        else:
+            tfs_resid = tfs
+    except Exception:
+        tfs_resid = tfs
+
     # ── RSS: cross-sectional percentile of multi-period returns ──
     def _ret(s: pd.Series, n: int) -> float:
         s = s.dropna()
@@ -227,7 +314,14 @@ def _compute_composite_signal(daily_prices: pd.DataFrame,
     # ── URS: held neutral (no OHLCV / breadth available here) ──
     urs = pd.Series(50.0, index=tickers, dtype=float)
 
-    composite = 0.30 * tcs + 0.25 * tfs + 0.30 * rss + 0.15 * urs
+    # ── OER: Overextension Risk (Composite penalty applied below) ──
+    oer = _compute_oer_signal(daily_prices, as_of)
+    oer = oer.reindex(tickers).fillna(0.0)
+
+    # ── Composite with TFS_resid + OER penalty (live-engine parity) ──
+    base = 0.30 * tcs + 0.25 * tfs_resid + 0.30 * rss + 0.15 * urs
+    oer_penalty = 0.10 * (oer - 40.0).clip(lower=0.0)
+    composite = (base - oer_penalty).clip(lower=0.0, upper=100.0)
     # Drop tickers with no usable history
     valid_idx = px.dropna(axis=1, thresh=200).columns
     composite = composite.loc[composite.index.intersection(valid_idx)]

@@ -45,6 +45,7 @@ interface Candidate {
   ret_21d?: number;
   ret_63d?: number;
   ret_126d?: number;
+  ret_ytd?: number | null;
   ret_252d?: number;
   ret_3y_ann?: number | null;
   ret_5y_ann?: number | null;
@@ -125,8 +126,8 @@ function agentScoreColor(score: number): string {
 
 function retColor(v: number): string {
   if (v > 3) return C.green;
-  if (v > 0) return "#86efac";
-  if (v > -3) return "#fca5a5";
+  if (v > 0) return "#0A7D3F";
+  if (v > -3) return "#CC0000";
   return C.red;
 }
 
@@ -188,7 +189,7 @@ function decidePMAction(c: Candidate): PMDecision {
     return {
       action: "STAGNANT",
       rationale: `장기 PM 상태(${age}d)이나 agreement ${agreePct.toFixed(0)}% → 돌파 동력 부족, 우선순위 낮춤`,
-      color: "#a87c5a",
+      color: "#8A6D3B",
       rank: 7,
     };
   }
@@ -214,7 +215,7 @@ function decidePMAction(c: Candidate): PMDecision {
     return {
       action: "PREPARE",
       rationale: `Strong agreement이나 PM ${pmScore.toFixed(0)} → 점진 매집 후보, 신호 강화 대기`,
-      color: "#86efac",
+      color: "#0A7D3F",
       rank: 3,
     };
   }
@@ -240,7 +241,7 @@ function decidePMAction(c: Candidate): PMDecision {
     return {
       action: "TRACK",
       rationale: `Moderate agreement이나 PM ${pmScore.toFixed(0)} 미달 → 후순위 관찰`,
-      color: "#86efac",
+      color: "#0A7D3F",
       rank: 6,
     };
   }
@@ -289,22 +290,22 @@ function Section({
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="border border-gray-800 rounded-lg overflow-hidden">
+    <div className="border border-[#E6D9CE] rounded-lg overflow-hidden">
       <button
-        className="w-full px-4 py-3 text-left text-sm font-semibold bg-[#111827] hover:bg-[#1f2937] flex justify-between items-center"
+        className="w-full px-4 py-3 text-left text-[16px] font-semibold bg-[#FFFFFF] hover:bg-[#F2E5D7] flex justify-between items-center"
         onClick={() => setOpen(!open)}
       >
         <span className="flex items-center gap-2">
           {title}
           {badge && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-900/50 text-cyan-400">
+            <span className="text-[12px] px-2.5 py-0.5 rounded bg-[#E3EEF5]/50 text-[#0F5499]">
               {badge}
             </span>
           )}
         </span>
-        <span className="text-gray-500 text-xs">{open ? "▼" : "▶"}</span>
+        <span className="text-[#857F7A] text-[14px]">{open ? "▼" : "▶"}</span>
       </button>
-      {open && <div className="p-4 bg-[#0d1117] space-y-4">{children}</div>}
+      {open && <div className="p-4 bg-[#FBEEE3] space-y-4">{children}</div>}
     </div>
   );
 }
@@ -317,7 +318,7 @@ function AgentTypeBadge({ type }: { type: string }) {
   const isQuant = type.toLowerCase() === "quant";
   return (
     <span
-      className="text-[10px] px-1.5 py-0.5 rounded font-semibold"
+      className="text-[12px] px-2.5 py-0.5 rounded font-semibold"
       style={{
         backgroundColor: (isQuant ? C.blue : C.purple) + "22",
         color: isQuant ? C.blue : C.purple,
@@ -339,7 +340,7 @@ function MethodologyBanner({
 }) {
   return (
     <Section title="Methodology: Pre-Momentum Detection" defaultOpen>
-      <p className="text-sm text-gray-400 leading-relaxed max-w-4xl">
+      <p className="text-[16px] text-[#66605C] leading-relaxed max-w-4xl">
         {methodology.description}
       </p>
 
@@ -348,21 +349,21 @@ function MethodologyBanner({
         {methodology.agents.map((agent) => (
           <div
             key={agent.name}
-            className="bg-[#111827] border border-gray-800 rounded-lg p-4"
+            className="bg-[#FFFFFF] border border-[#E6D9CE] rounded-lg p-4"
           >
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-semibold text-gray-200">
+              <span className="text-[16px] font-semibold text-[#33302E]">
                 {agent.name}
               </span>
               <AgentTypeBadge type={agent.type} />
             </div>
-            <div className="text-[10px] text-gray-500 mb-2">
+            <div className="text-[12px] text-[#857F7A] mb-2">
               Weight:{" "}
-              <span className="text-cyan-400 font-mono">
+              <span className="text-[#0F5499] font-mono">
                 {(agent.weight * 100).toFixed(0)}%
               </span>
             </div>
-            <p className="text-[11px] text-gray-500 leading-relaxed">
+            <p className="text-[13px] text-[#857F7A] leading-relaxed">
               {agent.description}
             </p>
           </div>
@@ -371,7 +372,7 @@ function MethodologyBanner({
 
       {/* Agreement Tier Thresholds */}
       <div className="mt-4">
-        <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+        <h4 className="text-[14px] font-semibold text-[#857F7A] uppercase tracking-wide mb-2">
           Agreement Tier Thresholds
         </h4>
         <div className="flex flex-wrap gap-3">
@@ -384,11 +385,11 @@ function MethodologyBanner({
               return (
                 <div
                   key={level}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-[#111827] border border-gray-800 rounded text-xs"
+                  className="flex items-center gap-2 px-3 py-1.5 bg-[#FFFFFF] border border-[#E6D9CE] rounded text-[14px]"
                 >
                   <span className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
                   <span className="font-semibold uppercase" style={{ color }}>{level}</span>
-                  <span className="text-gray-500">{desc}</span>
+                  <span className="text-[#857F7A]">{desc}</span>
                 </div>
               );
             }
@@ -421,8 +422,8 @@ function AgreementDistributionChart({
   });
 
   return (
-    <div className="bg-[#111827] border border-gray-800 rounded-lg p-4">
-      <h3 className="text-sm font-semibold text-gray-400 mb-3">
+    <div className="bg-[#FFFFFF] border border-[#E6D9CE] rounded-lg p-4">
+      <h3 className="text-[16px] font-semibold text-[#66605C] mb-3">
         Agent Agreement Distribution
       </h3>
       <Plot
@@ -446,15 +447,15 @@ function AgreementDistributionChart({
           margin: { t: 10, b: 30, l: 90, r: 50 },
           xaxis: {
             title: "Number of Tickers",
-            gridcolor: "#1f2937",
-            color: "#9ca3af",
+            gridcolor: "#F2E5D7",
+            color: "#66605C",
           },
-          yaxis: { automargin: true, color: "#9ca3af" },
+          yaxis: { automargin: true, color: "#66605C" },
         }}
         config={{ displayModeBar: false, responsive: true }}
         style={{ width: "100%" }}
       />
-      <p className="text-[10px] text-gray-600 mt-2">
+      <p className="text-[12px] text-[#857F7A] mt-2">
         How many tickers have 0, 1, 2, 3, 4, or 5 agents signaling pre-momentum.
         Higher agreement_ratio = broader cross-agent confirmation.
       </p>
@@ -485,8 +486,8 @@ function TopSectorsChart({
   });
 
   return (
-    <div className="bg-[#111827] border border-gray-800 rounded-lg p-4">
-      <h3 className="text-sm font-semibold text-gray-400 mb-3">
+    <div className="bg-[#FFFFFF] border border-[#E6D9CE] rounded-lg p-4">
+      <h3 className="text-[16px] font-semibold text-[#66605C] mb-3">
         Top Sectors by Candidate Count
       </h3>
       <Plot
@@ -512,15 +513,15 @@ function TopSectorsChart({
           margin: { t: 10, b: 30, l: 140, r: 80 },
           xaxis: {
             title: "Candidate Count",
-            gridcolor: "#1f2937",
-            color: "#9ca3af",
+            gridcolor: "#F2E5D7",
+            color: "#66605C",
           },
-          yaxis: { automargin: true, color: "#9ca3af" },
+          yaxis: { automargin: true, color: "#66605C" },
         }}
         config={{ displayModeBar: false, responsive: true }}
         style={{ width: "100%" }}
       />
-      <p className="text-[10px] text-gray-600 mt-2">
+      <p className="text-[12px] text-[#857F7A] mt-2">
         Sectors with the most strong/moderate-agreement pre-momentum candidates.
         Color intensity reflects average pre-momentum score.
       </p>
@@ -557,9 +558,9 @@ function AgentRadarChart({ candidates }: { candidates: Candidate[] }) {
     C.orange,
     C.blue,
     C.red,
-    "#22d3ee",
-    "#a78bfa",
-    "#fb923c",
+    "#0D7680",
+    "#7D5BA6",
+    "#C2701C",
   ];
 
   const traces = top10.map((c, idx) => ({
@@ -575,8 +576,8 @@ function AgentRadarChart({ candidates }: { candidates: Candidate[] }) {
   }));
 
   return (
-    <div className="bg-[#111827] border border-gray-800 rounded-lg p-4">
-      <h3 className="text-sm font-semibold text-gray-400 mb-3">
+    <div className="bg-[#FFFFFF] border border-[#E6D9CE] rounded-lg p-4">
+      <h3 className="text-[16px] font-semibold text-[#66605C] mb-3">
         Agent Score Radar — Top 10 Candidates
       </h3>
       <Plot
@@ -590,13 +591,13 @@ function AgentRadarChart({ candidates }: { candidates: Candidate[] }) {
             radialaxis: {
               visible: true,
               range: [0, 100],
-              gridcolor: "#1f2937",
-              color: "#9ca3af",
+              gridcolor: "#F2E5D7",
+              color: "#66605C",
               tickfont: { size: 9 },
             },
             angularaxis: {
-              gridcolor: "#1f2937",
-              color: "#9ca3af",
+              gridcolor: "#F2E5D7",
+              color: "#66605C",
               tickfont: { size: 10 },
             },
           },
@@ -678,8 +679,8 @@ function AgentSignalHeatmap({ candidates }: { candidates: Candidate[] }) {
   }
 
   return (
-    <div className="bg-[#111827] border border-gray-800 rounded-lg p-4">
-      <h3 className="text-sm font-semibold text-gray-400 mb-3">
+    <div className="bg-[#FFFFFF] border border-[#E6D9CE] rounded-lg p-4">
+      <h3 className="text-[16px] font-semibold text-[#66605C] mb-3">
         Agent Sub-Signal Heatmap — Top 15 Candidates
       </h3>
       <Plot
@@ -690,10 +691,10 @@ function AgentSignalHeatmap({ candidates }: { candidates: Candidate[] }) {
             x: signalCols.map((c) => `${c.agentLabel}:${c.signal}`),
             y: tickers,
             colorscale: [
-              [0, "#111827"],
+              [0, "#FFFFFF"],
               [0.25, "#1e3a5f"],
               [0.5, C.cyan],
-              [0.75, "#22d3ee"],
+              [0.75, "#0D7680"],
               [1, C.green],
             ],
             hovertext: hoverText,
@@ -711,18 +712,18 @@ function AgentSignalHeatmap({ candidates }: { candidates: Candidate[] }) {
           margin: { t: 10, b: 80, l: 70, r: 20 },
           xaxis: {
             tickangle: -45,
-            tickfont: { size: 9, color: "#9ca3af" },
-            gridcolor: "#1f2937",
+            tickfont: { size: 9, color: "#66605C" },
+            gridcolor: "#F2E5D7",
           },
           yaxis: {
             automargin: true,
-            tickfont: { size: 10, color: "#9ca3af" },
+            tickfont: { size: 10, color: "#66605C" },
           },
         }}
         config={{ displayModeBar: false, responsive: true }}
         style={{ width: "100%" }}
       />
-      <p className="text-[10px] text-gray-600 mt-2">
+      <p className="text-[12px] text-[#857F7A] mt-2">
         Each cell shows the sub-signal score from the respective agent. Brighter
         = stronger signal. Columns grouped by agent.
       </p>
@@ -751,10 +752,10 @@ function CandidateDetail({ candidate }: { candidate: Candidate }) {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center gap-4 flex-wrap">
-        <span className="text-lg font-bold text-cyan-400 font-mono">
+        <span className="text-[20px] font-bold text-[#0F5499] font-mono">
           {candidate.ticker}
         </span>
-        <span className="text-sm text-gray-300">{candidate.name}</span>
+        <span className="text-[16px] text-[#33302E]">{candidate.name}</span>
         {(() => {
           const ratio = candidate.agreement_ratio || 0;
           const tier = ratio >= 0.6 ? "STRONG"
@@ -764,14 +765,14 @@ function CandidateDetail({ candidate }: { candidate: Candidate }) {
           const color = agreementColor(ratio);
           return (
             <span
-              className="text-[10px] px-2 py-0.5 rounded font-semibold"
+              className="text-[12px] px-3 py-0.5 rounded font-semibold"
               style={{ backgroundColor: color + "22", color }}
             >
               {tier} AGREEMENT ({(ratio * 100).toFixed(0)}%)
             </span>
           );
         })()}
-        <span className="text-xs text-gray-500">
+        <span className="text-[14px] text-[#857F7A]">
           Pre-Mom Score:{" "}
           <span
             className="font-mono font-bold"
@@ -780,37 +781,37 @@ function CandidateDetail({ candidate }: { candidate: Candidate }) {
             {candidate.pre_momentum_score.toFixed(1)}
           </span>
         </span>
-        <span className="text-xs text-gray-500">
+        <span className="text-[14px] text-[#857F7A]">
           Agreement:{" "}
-          <span className="font-mono text-gray-300">
+          <span className="font-mono text-[#33302E]">
             {(candidate.agreement_ratio * 100).toFixed(0)}%
           </span>
         </span>
       </div>
 
       {/* Meta row */}
-      <div className="flex flex-wrap gap-4 text-xs text-gray-500">
+      <div className="flex flex-wrap gap-4 text-[14px] text-[#857F7A]">
         <span>
-          Sector: <span className="text-gray-300 font-semibold">{candidate.sector || candidate.category}</span>
+          Sector: <span className="text-[#33302E] font-semibold">{candidate.sector || candidate.category}</span>
         </span>
         <span>
-          SubTheme: <span className="text-gray-300">{candidate.theme}</span>
+          SubTheme: <span className="text-[#33302E]">{candidate.theme}</span>
         </span>
         <span>
           Classification:{" "}
-          <span className="text-gray-300">
+          <span className="text-[#33302E]">
             {candidate.current_classification}
           </span>
         </span>
         <span>
           Composite:{" "}
-          <span className="text-gray-300 font-mono">
+          <span className="text-[#33302E] font-mono">
             {candidate.current_composite.toFixed(1)}
           </span>
         </span>
         <span>
           Timeline:{" "}
-          <span className="text-gray-300">{candidate.expected_timeline}</span>
+          <span className="text-[#33302E]">{candidate.expected_timeline}</span>
         </span>
       </div>
 
@@ -822,20 +823,20 @@ function CandidateDetail({ candidate }: { candidate: Candidate }) {
           return (
             <div
               key={key}
-              className="bg-[#111827] border border-gray-800 rounded-lg p-3"
+              className="bg-[#FFFFFF] border border-[#E6D9CE] rounded-lg p-3"
             >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold" style={{ color }}>
+                <span className="text-[14px] font-semibold" style={{ color }}>
                   {label}
                 </span>
                 <span
-                  className="text-sm font-bold font-mono"
+                  className="text-[16px] font-bold font-mono"
                   style={{ color: agentScoreColor(agent.score) }}
                 >
                   {agent.score.toFixed(1)}
                 </span>
               </div>
-              <p className="text-[10px] text-gray-500 mb-2 leading-relaxed line-clamp-3">
+              <p className="text-[12px] text-[#857F7A] mb-2 leading-relaxed line-clamp-3">
                 {agent.summary}
               </p>
               {/* Sub-signals */}
@@ -844,10 +845,10 @@ function CandidateDetail({ candidate }: { candidate: Candidate }) {
                   const pct = Math.min(Math.max(val, 0), 100);
                   return (
                     <div key={sig} className="flex items-center gap-2">
-                      <span className="text-[9px] text-gray-600 w-24 truncate">
+                      <span className="text-[11px] text-[#857F7A] w-24 truncate">
                         {sig}
                       </span>
-                      <div className="flex-1 h-1.5 rounded-full bg-gray-800 overflow-hidden">
+                      <div className="flex-1 h-1.5 rounded-full bg-[#F2E5D7] overflow-hidden">
                         <div
                           className="h-full rounded-full transition-all"
                           style={{
@@ -856,7 +857,7 @@ function CandidateDetail({ candidate }: { candidate: Candidate }) {
                           }}
                         />
                       </div>
-                      <span className="text-[9px] text-gray-500 font-mono w-8 text-right">
+                      <span className="text-[11px] text-[#857F7A] font-mono w-8 text-right">
                         {val.toFixed(0)}
                       </span>
                     </div>
@@ -870,8 +871,8 @@ function CandidateDetail({ candidate }: { candidate: Candidate }) {
 
       {/* Key Catalysts & Risk Factors */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-[#111827] border border-gray-800 rounded-lg p-3">
-          <h4 className="text-xs font-semibold text-green-400 uppercase tracking-wide mb-2">
+        <div className="bg-[#FFFFFF] border border-[#E6D9CE] rounded-lg p-3">
+          <h4 className="text-[14px] font-semibold text-[#0A7D3F] uppercase tracking-wide mb-2">
             Key Catalysts
           </h4>
           {candidate.key_catalysts.length > 0 ? (
@@ -879,19 +880,19 @@ function CandidateDetail({ candidate }: { candidate: Candidate }) {
               {candidate.key_catalysts.map((cat, i) => (
                 <li
                   key={i}
-                  className="text-[11px] text-gray-400 flex items-start gap-2"
+                  className="text-[13px] text-[#66605C] flex items-start gap-2"
                 >
-                  <span className="text-green-500 mt-0.5 shrink-0">+</span>
+                  <span className="text-[#0A7D3F] mt-0.5 shrink-0">+</span>
                   {cat}
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-[11px] text-gray-600">No catalysts identified.</p>
+            <p className="text-[13px] text-[#857F7A]">No catalysts identified.</p>
           )}
         </div>
-        <div className="bg-[#111827] border border-gray-800 rounded-lg p-3">
-          <h4 className="text-xs font-semibold text-red-400 uppercase tracking-wide mb-2">
+        <div className="bg-[#FFFFFF] border border-[#E6D9CE] rounded-lg p-3">
+          <h4 className="text-[14px] font-semibold text-[#CC0000] uppercase tracking-wide mb-2">
             Risk Factors
           </h4>
           {candidate.risk_factors.length > 0 ? (
@@ -899,15 +900,15 @@ function CandidateDetail({ candidate }: { candidate: Candidate }) {
               {candidate.risk_factors.map((risk, i) => (
                 <li
                   key={i}
-                  className="text-[11px] text-gray-400 flex items-start gap-2"
+                  className="text-[13px] text-[#66605C] flex items-start gap-2"
                 >
-                  <span className="text-red-500 mt-0.5 shrink-0">!</span>
+                  <span className="text-[#CC0000] mt-0.5 shrink-0">!</span>
                   {risk}
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-[11px] text-gray-600">No risk factors identified.</p>
+            <p className="text-[13px] text-[#857F7A]">No risk factors identified.</p>
           )}
         </div>
       </div>
@@ -956,6 +957,7 @@ const TABLE_COL_DEFS = [
   { col: "1M", desc: "1-month return (%) \u2014 21 trading days" },
   { col: "3M", desc: "3-month return (%) \u2014 63 trading days" },
   { col: "6M", desc: "6-month return (%) \u2014 126 trading days" },
+  { col: "YTD", desc: "Year-to-date return (%) \u2014 prior year-end close to today" },
   { col: "1Y", desc: "1-year return (%) \u2014 252 trading days" },
   { col: "3Y/A", desc: "3-year annualized return (%)" },
   { col: "5Y/A", desc: "5-year annualized return (%)" },
@@ -974,10 +976,10 @@ function buildColumns(
       cell: ({ row }) => (
         <button
           onClick={() => onSelect(row.original.ticker)}
-          className={`font-mono text-xs hover:underline ${
+          className={`font-mono text-[14px] hover:underline ${
             selectedTicker === row.original.ticker
-              ? "text-cyan-300 font-bold"
-              : "text-cyan-400"
+              ? "text-[#0D7680] font-bold"
+              : "text-[#0F5499]"
           }`}
         >
           {row.original.ticker}
@@ -988,7 +990,7 @@ function buildColumns(
       accessorKey: "name",
       header: "Name",
       cell: ({ getValue }) => (
-        <span className="text-gray-300 text-xs max-w-[120px] truncate block">
+        <span className="text-[#33302E] text-[14px] max-w-[120px] truncate block">
           {getValue() as string}
         </span>
       ),
@@ -998,7 +1000,7 @@ function buildColumns(
       header: "Sector",
       cell: ({ row }) => (
         <span
-          className="text-gray-300 text-xs"
+          className="text-[#33302E] text-[14px]"
           title={`SubTheme: ${row.original.theme || "-"}`}
         >
           {(row.original as any).sector || row.original.category}
@@ -1009,7 +1011,7 @@ function buildColumns(
       accessorKey: "theme",
       header: "SubTheme",
       cell: ({ getValue }) => (
-        <span className="text-gray-500 text-xs max-w-[120px] truncate block">
+        <span className="text-[#857F7A] text-[14px] max-w-[120px] truncate block">
           {getValue() as string}
         </span>
       ),
@@ -1018,7 +1020,7 @@ function buildColumns(
       accessorKey: "current_classification",
       header: "Class",
       cell: ({ getValue }) => (
-        <span className="text-[10px] text-gray-400">
+        <span className="text-[12px] text-[#66605C]">
           {getValue() as string}
         </span>
       ),
@@ -1029,7 +1031,7 @@ function buildColumns(
       cell: ({ getValue }) => {
         const v = getValue() as number;
         return (
-          <span className="text-xs font-mono text-gray-300">
+          <span className="text-[14px] font-mono text-[#33302E]">
             {v.toFixed(1)}
           </span>
         );
@@ -1042,7 +1044,7 @@ function buildColumns(
         const v = getValue() as number;
         return (
           <span
-            className="text-xs font-mono font-bold"
+            className="text-[14px] font-mono font-bold"
             style={{ color: scoreColor(v) }}
           >
             {v.toFixed(1)}
@@ -1062,7 +1064,7 @@ function buildColumns(
         const color = agreementColor(ratio);
         return (
           <span
-            className="text-[10px] px-1.5 py-0.5 rounded font-semibold"
+            className="text-[12px] px-2.5 py-0.5 rounded font-semibold"
             style={{ backgroundColor: color + "22", color }}
             title={`${tier} (${(ratio * 100).toFixed(0)}%)`}
           >
@@ -1078,7 +1080,7 @@ function buildColumns(
         const v = (getValue() as number) ?? 0;
         const color = v >= 14 ? C.green : v >= 7 ? C.cyan : v >= 3 ? C.yellow : C.gray;
         return (
-          <span className="text-xs font-mono font-semibold" style={{ color }}>
+          <span className="text-[14px] font-mono font-semibold" style={{ color }}>
             {v}d
           </span>
         );
@@ -1091,7 +1093,7 @@ function buildColumns(
         const v = getValue() as number;
         const pct = (v * 100).toFixed(0);
         return (
-          <span className="text-xs font-mono text-gray-300">{pct}%</span>
+          <span className="text-[14px] font-mono text-[#33302E]">{pct}%</span>
         );
       },
     },
@@ -1103,7 +1105,7 @@ function buildColumns(
         const v = getValue() as number;
         return (
           <span
-            className="text-xs font-mono"
+            className="text-[14px] font-mono"
             style={{ color: agentScoreColor(v) }}
           >
             {v.toFixed(0)}
@@ -1119,7 +1121,7 @@ function buildColumns(
         const v = getValue() as number;
         return (
           <span
-            className="text-xs font-mono"
+            className="text-[14px] font-mono"
             style={{ color: agentScoreColor(v) }}
           >
             {v.toFixed(0)}
@@ -1135,7 +1137,7 @@ function buildColumns(
         const v = getValue() as number;
         return (
           <span
-            className="text-xs font-mono"
+            className="text-[14px] font-mono"
             style={{ color: agentScoreColor(v) }}
           >
             {v.toFixed(0)}
@@ -1151,7 +1153,7 @@ function buildColumns(
         const v = getValue() as number;
         return (
           <span
-            className="text-xs font-mono"
+            className="text-[14px] font-mono"
             style={{ color: agentScoreColor(v) }}
           >
             {v.toFixed(0)}
@@ -1163,7 +1165,7 @@ function buildColumns(
       accessorKey: "expected_timeline",
       header: "Timeline",
       cell: ({ getValue }) => (
-        <span className="text-[10px] text-gray-500">{getValue() as string}</span>
+        <span className="text-[12px] text-[#857F7A]">{getValue() as string}</span>
       ),
     },
     {
@@ -1172,7 +1174,7 @@ function buildColumns(
       accessorFn: (row) =>
         row.key_catalysts?.length ? row.key_catalysts[0] : "-",
       cell: ({ getValue }) => (
-        <span className="text-[10px] text-gray-500 max-w-[160px] truncate block">
+        <span className="text-[12px] text-[#857F7A] max-w-[160px] truncate block">
           {getValue() as string}
         </span>
       ),
@@ -1185,22 +1187,22 @@ function buildColumns(
 // ---------------------------------------------------------------------------
 
 function ConversionTable({ rows, variant }: { rows: ConversionEntry[]; variant: "graduated" | "failed" | "in_progress" }) {
-  if (!rows.length) return <p className="text-[10px] text-gray-600">No data</p>;
+  if (!rows.length) return <p className="text-[12px] text-[#857F7A]">No data</p>;
   const isGrad = variant === "graduated";
   const isFail = variant === "failed";
   return (
-    <div className="overflow-x-auto border border-gray-800 rounded">
-      <table className="w-full text-xs border-collapse">
+    <div className="overflow-x-auto border border-[#E6D9CE] rounded">
+      <table className="w-full text-[14px] border-collapse">
         <thead>
-          <tr className="border-b border-gray-700 bg-[#111827]">
-            <th className="py-1.5 px-2 text-left text-gray-500">#</th>
-            <th className="py-1.5 px-2 text-left text-gray-500">Ticker</th>
-            <th className="py-1.5 px-2 text-left text-gray-500">Name</th>
-            <th className="py-1.5 px-2 text-left text-gray-500">Category</th>
-            <th className="py-1.5 px-2 text-right text-gray-500">1M Ago</th>
-            <th className="py-1.5 px-2 text-right text-gray-500">Now</th>
-            <th className="py-1.5 px-2 text-right text-gray-500">Change</th>
-            <th className="py-1.5 px-2 text-left text-gray-500">Current Class</th>
+          <tr className="border-b border-[#E6D9CE] bg-[#FFFFFF]">
+            <th className="py-1.5 px-2 text-left text-[#857F7A]">#</th>
+            <th className="py-1.5 px-2 text-left text-[#857F7A]">Ticker</th>
+            <th className="py-1.5 px-2 text-left text-[#857F7A]">Name</th>
+            <th className="py-1.5 px-2 text-left text-[#857F7A]">Category</th>
+            <th className="py-1.5 px-2 text-right text-[#857F7A]">1M Ago</th>
+            <th className="py-1.5 px-2 text-right text-[#857F7A]">Now</th>
+            <th className="py-1.5 px-2 text-right text-[#857F7A]">Change</th>
+            <th className="py-1.5 px-2 text-left text-[#857F7A]">Current Class</th>
           </tr>
         </thead>
         <tbody>
@@ -1208,17 +1210,17 @@ function ConversionTable({ rows, variant }: { rows: ConversionEntry[]; variant: 
             const changeColor = r.score_change > 20 ? C.green : r.score_change > 0 ? C.cyan : r.score_change > -10 ? C.yellow : C.red;
             const tickerColor = isGrad ? C.green : isFail ? C.red : C.cyan;
             return (
-              <tr key={r.ticker} className="border-b border-gray-800/50 hover:bg-[#1f2937]/30">
-                <td className="py-1.5 px-2 text-gray-600">{i + 1}</td>
+              <tr key={r.ticker} className="border-b border-[#E6D9CE]/50 hover:bg-[#F2E5D7]/30">
+                <td className="py-1.5 px-2 text-[#857F7A]">{i + 1}</td>
                 <td className="py-1.5 px-2 font-mono font-bold" style={{ color: tickerColor }}>{r.ticker}</td>
-                <td className="py-1.5 px-2 text-gray-400 truncate max-w-[120px]">{r.name}</td>
-                <td className="py-1.5 px-2 text-gray-500 text-[10px]">{r.category}</td>
-                <td className="py-1.5 px-2 text-right font-mono text-gray-500">{r.score_1m_ago.toFixed(1)}</td>
-                <td className="py-1.5 px-2 text-right font-mono text-gray-300">{r.current_composite.toFixed(1)}</td>
+                <td className="py-1.5 px-2 text-[#66605C] truncate max-w-[120px]">{r.name}</td>
+                <td className="py-1.5 px-2 text-[#857F7A] text-[12px]">{r.category}</td>
+                <td className="py-1.5 px-2 text-right font-mono text-[#857F7A]">{r.score_1m_ago.toFixed(1)}</td>
+                <td className="py-1.5 px-2 text-right font-mono text-[#33302E]">{r.current_composite.toFixed(1)}</td>
                 <td className="py-1.5 px-2 text-right font-mono font-semibold" style={{ color: changeColor }}>
                   {r.score_change > 0 ? "+" : ""}{r.score_change.toFixed(1)}
                 </td>
-                <td className="py-1.5 px-2 text-[10px] text-gray-400">{r.current_class}</td>
+                <td className="py-1.5 px-2 text-[12px] text-[#66605C]">{r.current_class}</td>
               </tr>
             );
           })}
@@ -1233,7 +1235,7 @@ function ConversionTracking({ conversion }: { conversion: ConversionData }) {
 
   return (
     <div className="space-y-4">
-      <p className="text-[11px] text-gray-500">
+      <p className="text-[13px] text-[#857F7A]">
         1개월 전 pre-momentum 상태(not eligible, composite 25-54)였던 종목들의 현재 전환 결과.
       </p>
 
@@ -1248,7 +1250,7 @@ function ConversionTracking({ conversion }: { conversion: ConversionData }) {
 
       {/* Graduated */}
       <div>
-        <h4 className="text-xs font-semibold text-green-400 uppercase tracking-wide mb-2">
+        <h4 className="text-[14px] font-semibold text-[#0A7D3F] uppercase tracking-wide mb-2">
           Graduated — PM → Momentum ({graduated.length})
         </h4>
         <ConversionTable rows={graduated.slice(0, 30)} variant="graduated" />
@@ -1257,7 +1259,7 @@ function ConversionTracking({ conversion }: { conversion: ConversionData }) {
       {/* In Progress */}
       {in_progress.length > 0 && (
         <div>
-          <h4 className="text-xs font-semibold text-cyan-400 uppercase tracking-wide mb-2">
+          <h4 className="text-[14px] font-semibold text-[#0F5499] uppercase tracking-wide mb-2">
             In Progress — Still Building ({in_progress.length})
           </h4>
           <ConversionTable rows={in_progress.slice(0, 20)} variant="in_progress" />
@@ -1267,7 +1269,7 @@ function ConversionTracking({ conversion }: { conversion: ConversionData }) {
       {/* Failed */}
       {failed.length > 0 && (
         <div>
-          <h4 className="text-xs font-semibold text-red-400 uppercase tracking-wide mb-2">
+          <h4 className="text-[14px] font-semibold text-[#CC0000] uppercase tracking-wide mb-2">
             Failed — PM → Bearish ({failed.length})
           </h4>
           <ConversionTable rows={failed.slice(0, 20)} variant="failed" />
@@ -1300,16 +1302,16 @@ function AgentScoreBoxPlot({ candidates }: { candidates: Candidate[] }) {
     fillcolor: color + "22",
   }));
   return (
-    <div className="bg-[#111827] border border-gray-800 rounded-lg p-4">
-      <h3 className="text-sm font-semibold text-gray-400 mb-1">Agent Score Distribution</h3>
-      <p className="text-[10px] text-gray-600 mb-3">전체 후보 대상 에이전트별 점수 분포. 박스: Q1-Q3, 선: 중앙값, 다이아몬드: 평균±σ</p>
+    <div className="bg-[#FFFFFF] border border-[#E6D9CE] rounded-lg p-4">
+      <h3 className="text-[16px] font-semibold text-[#66605C] mb-1">Agent Score Distribution</h3>
+      <p className="text-[12px] text-[#857F7A] mb-3">전체 후보 대상 에이전트별 점수 분포. 박스: Q1-Q3, 선: 중앙값, 다이아몬드: 평균±σ</p>
       <Plot
         data={traces}
         layout={{
           ...DARK_LAYOUT,
           height: 320,
           margin: { t: 10, b: 40, l: 50, r: 20 },
-          yaxis: { title: "Score", range: [0, 105], gridcolor: "#1f2937", color: "#9ca3af" },
+          yaxis: { title: "Score", range: [0, 105], gridcolor: "#F2E5D7", color: "#66605C" },
           showlegend: false,
           boxgap: 0.3,
         }}
@@ -1359,9 +1361,9 @@ function SubSignalAverageChart({ candidates }: { candidates: Candidate[] }) {
     });
   }
   return (
-    <div className="bg-[#111827] border border-gray-800 rounded-lg p-4">
-      <h3 className="text-sm font-semibold text-gray-400 mb-1">Sub-Signal Average by Agent</h3>
-      <p className="text-[10px] text-gray-600 mb-3">전체 후보의 서브시그널 평균. 어떤 시그널이 전반적으로 강한지/약한지를 파악</p>
+    <div className="bg-[#FFFFFF] border border-[#E6D9CE] rounded-lg p-4">
+      <h3 className="text-[16px] font-semibold text-[#66605C] mb-1">Sub-Signal Average by Agent</h3>
+      <p className="text-[12px] text-[#857F7A] mb-3">전체 후보의 서브시그널 평균. 어떤 시그널이 전반적으로 강한지/약한지를 파악</p>
       <Plot
         data={traces}
         layout={{
@@ -1369,8 +1371,8 @@ function SubSignalAverageChart({ candidates }: { candidates: Candidate[] }) {
           height: 360,
           margin: { t: 10, b: 100, l: 50, r: 20 },
           barmode: "group",
-          xaxis: { tickangle: -35, tickfont: { size: 9, color: "#9ca3af" }, gridcolor: "#1f2937" },
-          yaxis: { title: "Avg Score", range: [0, 105], gridcolor: "#1f2937", color: "#9ca3af" },
+          xaxis: { tickangle: -35, tickfont: { size: 9, color: "#66605C" }, gridcolor: "#F2E5D7" },
+          yaxis: { title: "Avg Score", range: [0, 105], gridcolor: "#F2E5D7", color: "#66605C" },
           legend: { font: { size: 10, color: C.text }, bgcolor: "rgba(0,0,0,0)", x: 0.7, y: 1.0 },
         }}
         config={{ displayModeBar: false, responsive: true }}
@@ -1417,11 +1419,11 @@ function AgentScatterMatrix({ candidates }: { candidates: Candidate[] }) {
       yaxis: `y${idx === 0 ? "" : idx + 1}`,
     }));
   }).flat();
-  const axisBase = { gridcolor: "#1f2937", color: "#9ca3af", range: [0, 100], tickfont: { size: 9 } };
+  const axisBase = { gridcolor: "#F2E5D7", color: "#66605C", range: [0, 100], tickfont: { size: 9 } };
   return (
-    <div className="bg-[#111827] border border-gray-800 rounded-lg p-4">
-      <h3 className="text-sm font-semibold text-gray-400 mb-1">Agent Score Scatter — Pairwise</h3>
-      <p className="text-[10px] text-gray-600 mb-3">에이전트 간 점수 상관관계. 색상 = Agreement tier (STRONG/MODERATE/WEAK/NONE). 우상단 클러스터 = 양쪽 모두 강한 시그널</p>
+    <div className="bg-[#FFFFFF] border border-[#E6D9CE] rounded-lg p-4">
+      <h3 className="text-[16px] font-semibold text-[#66605C] mb-1">Agent Score Scatter — Pairwise</h3>
+      <p className="text-[12px] text-[#857F7A] mb-3">에이전트 간 점수 상관관계. 색상 = Agreement tier (STRONG/MODERATE/WEAK/NONE). 우상단 클러스터 = 양쪽 모두 강한 시그널</p>
       <Plot
         data={subplots}
         layout={{
@@ -1479,9 +1481,9 @@ function ConvictionProfileChart({ candidates }: { candidates: Candidate[] }) {
     };
   });
   return (
-    <div className="bg-[#111827] border border-gray-800 rounded-lg p-4">
-      <h3 className="text-sm font-semibold text-gray-400 mb-1">Agreement Profile — Agent Contribution</h3>
-      <p className="text-[10px] text-gray-600 mb-3">Agreement tier (STRONG/MODERATE/WEAK/NONE)별 에이전트 평균 점수. STRONG agreement에서 어떤 에이전트가 가장 기여하는지 비교</p>
+    <div className="bg-[#FFFFFF] border border-[#E6D9CE] rounded-lg p-4">
+      <h3 className="text-[16px] font-semibold text-[#66605C] mb-1">Agreement Profile — Agent Contribution</h3>
+      <p className="text-[12px] text-[#857F7A] mb-3">Agreement tier (STRONG/MODERATE/WEAK/NONE)별 에이전트 평균 점수. STRONG agreement에서 어떤 에이전트가 가장 기여하는지 비교</p>
       <Plot
         data={traces}
         layout={{
@@ -1489,8 +1491,8 @@ function ConvictionProfileChart({ candidates }: { candidates: Candidate[] }) {
           height: 320,
           margin: { t: 10, b: 40, l: 50, r: 20 },
           barmode: "group",
-          xaxis: { color: "#9ca3af" },
-          yaxis: { title: "Avg Score", range: [0, 105], gridcolor: "#1f2937", color: "#9ca3af" },
+          xaxis: { color: "#66605C" },
+          yaxis: { title: "Avg Score", range: [0, 105], gridcolor: "#F2E5D7", color: "#66605C" },
           legend: { font: { size: 10, color: C.text }, bgcolor: "rgba(0,0,0,0)", orientation: "h" as const, y: 1.12 },
         }}
         config={{ displayModeBar: false, responsive: true }}
@@ -1528,9 +1530,9 @@ function SubSignalContributionChart({ candidates }: { candidates: Candidate[] })
     hovertemplate: `%{y}<br>${label}: %{x:.1f}<extra></extra>`,
   }));
   return (
-    <div className="bg-[#111827] border border-gray-800 rounded-lg p-4">
-      <h3 className="text-sm font-semibold text-gray-400 mb-1">Weighted Agent Contribution — Top 20</h3>
-      <p className="text-[10px] text-gray-600 mb-3">최종 Pre-Mom Score에 대한 에이전트별 가중 기여도. 각 바의 총 길이 = Pre-Momentum Score</p>
+    <div className="bg-[#FFFFFF] border border-[#E6D9CE] rounded-lg p-4">
+      <h3 className="text-[16px] font-semibold text-[#66605C] mb-1">Weighted Agent Contribution — Top 20</h3>
+      <p className="text-[12px] text-[#857F7A] mb-3">최종 Pre-Mom Score에 대한 에이전트별 가중 기여도. 각 바의 총 길이 = Pre-Momentum Score</p>
       <Plot
         data={traces}
         layout={{
@@ -1538,8 +1540,8 @@ function SubSignalContributionChart({ candidates }: { candidates: Candidate[] })
           height: Math.max(400, top.length * 24 + 80),
           margin: { t: 10, b: 40, l: 70, r: 20 },
           barmode: "stack",
-          xaxis: { title: "Weighted Score Contribution", gridcolor: "#1f2937", color: "#9ca3af" },
-          yaxis: { automargin: true, tickfont: { size: 10, color: "#9ca3af" } },
+          xaxis: { title: "Weighted Score Contribution", gridcolor: "#F2E5D7", color: "#66605C" },
+          yaxis: { automargin: true, tickfont: { size: 10, color: "#66605C" } },
           legend: { font: { size: 10, color: C.text }, bgcolor: "rgba(0,0,0,0)", orientation: "h" as const, y: 1.05 },
         }}
         config={{ displayModeBar: false, responsive: true }}
@@ -1571,9 +1573,9 @@ function AgentHistograms({ candidates }: { candidates: Candidate[] }) {
     hovertemplate: `${label}<br>Score: %{x}<br>Count: %{y}<extra></extra>`,
   }));
   return (
-    <div className="bg-[#111827] border border-gray-800 rounded-lg p-4">
-      <h3 className="text-sm font-semibold text-gray-400 mb-1">Agent Score Histograms</h3>
-      <p className="text-[10px] text-gray-600 mb-3">에이전트별 점수 분포. 50점 기준선(시그널 임계값) 대비 분포를 통해 각 에이전트의 전반적 활성도 파악</p>
+    <div className="bg-[#FFFFFF] border border-[#E6D9CE] rounded-lg p-4">
+      <h3 className="text-[16px] font-semibold text-[#66605C] mb-1">Agent Score Histograms</h3>
+      <p className="text-[12px] text-[#857F7A] mb-3">에이전트별 점수 분포. 50점 기준선(시그널 임계값) 대비 분포를 통해 각 에이전트의 전반적 활성도 파악</p>
       <Plot
         data={traces}
         layout={{
@@ -1581,11 +1583,11 @@ function AgentHistograms({ candidates }: { candidates: Candidate[] }) {
           height: 300,
           margin: { t: 10, b: 40, l: 50, r: 20 },
           barmode: "overlay",
-          xaxis: { title: "Score", range: [0, 100], gridcolor: "#1f2937", color: "#9ca3af" },
-          yaxis: { title: "Count", gridcolor: "#1f2937", color: "#9ca3af" },
+          xaxis: { title: "Score", range: [0, 100], gridcolor: "#F2E5D7", color: "#66605C" },
+          yaxis: { title: "Count", gridcolor: "#F2E5D7", color: "#66605C" },
           legend: { font: { size: 10, color: C.text }, bgcolor: "rgba(0,0,0,0)", orientation: "h" as const, y: 1.12 },
-          shapes: [{ type: "line", x0: 50, x1: 50, y0: 0, y1: 1, yref: "paper", line: { color: "#ef4444", width: 1, dash: "dot" } }],
-          annotations: [{ x: 51, y: 1, yref: "paper", text: "Threshold", showarrow: false, font: { color: "#ef4444", size: 9 } }],
+          shapes: [{ type: "line", x0: 50, x1: 50, y0: 0, y1: 1, yref: "paper", line: { color: "#CC0000", width: 1, dash: "dot" } }],
+          annotations: [{ x: 51, y: 1, yref: "paper", text: "Threshold", showarrow: false, font: { color: "#CC0000", size: 9 } }],
         }}
         config={{ displayModeBar: false, responsive: true }}
         style={{ width: "100%" }}
@@ -1605,109 +1607,109 @@ function CompPmScoreGuide() {
       label: "A. 좋은 후보",
       comp: "35 ~ 50",
       pm: "60+",
-      compColor: "text-yellow-400",
-      pmColor: "text-green-400",
-      caseColor: "text-green-300",
+      compColor: "text-[#B85C00]",
+      pmColor: "text-[#0A7D3F]",
+      caseColor: "text-[#0A7D3F]",
       action: "WATCH / PREPARE",
-      actionColor: "text-green-400",
+      actionColor: "text-[#0A7D3F]",
       desc: "가격은 아직 도달 안 했으나 구조적 조건 갖춰짐 — 1-2주 내 돌파 예상",
     },
     {
       label: "B. 약한 신호",
       comp: "35 ~ 50",
       pm: "30 ~ 50",
-      compColor: "text-yellow-400",
-      pmColor: "text-gray-400",
-      caseColor: "text-gray-400",
+      compColor: "text-[#B85C00]",
+      pmColor: "text-[#66605C]",
+      caseColor: "text-[#66605C]",
       action: "IGNORE",
-      actionColor: "text-gray-500",
+      actionColor: "text-[#857F7A]",
       desc: "양쪽 모두 약함 — 관심 대상 아님",
     },
     {
       label: "C. 함정 (Trap)",
       comp: "50 ~ 54",
       pm: "<40",
-      compColor: "text-cyan-400",
-      pmColor: "text-red-400",
-      caseColor: "text-orange-300",
+      compColor: "text-[#0F5499]",
+      pmColor: "text-[#CC0000]",
+      caseColor: "text-[#C2701C]",
       action: "AVOID",
-      actionColor: "text-orange-400",
+      actionColor: "text-[#C2701C]",
       desc: "가격은 거의 eligible 임계 도달했으나 구조 약함 — 진입 보류 (false positive 위험)",
     },
     {
       label: "D. Prime Candidate",
       comp: "30 ~ 40",
       pm: "70+ (HIGH)",
-      compColor: "text-yellow-400",
-      pmColor: "text-green-400",
-      caseColor: "text-cyan-300",
+      compColor: "text-[#B85C00]",
+      pmColor: "text-[#0A7D3F]",
+      caseColor: "text-[#0D7680]",
       action: "PREPARE — Top Priority",
-      actionColor: "text-cyan-400",
+      actionColor: "text-[#0F5499]",
       desc: "강한 압축 + 매크로 우호 — coiled spring, 즉시 관찰 시작",
     },
   ];
 
   return (
-    <div className="border border-gray-800 rounded-lg overflow-hidden">
+    <div className="border border-[#E6D9CE] rounded-lg overflow-hidden">
       <button
-        className="w-full px-4 py-2 text-left text-xs font-semibold bg-[#111827] hover:bg-[#1f2937] flex justify-between items-center"
+        className="w-full px-4 py-2 text-left text-[14px] font-semibold bg-[#FFFFFF] hover:bg-[#F2E5D7] flex justify-between items-center"
         onClick={() => setOpen(!open)}
       >
-        <span className="text-gray-400">
+        <span className="text-[#66605C]">
           Composite vs Pre-Mom Score 해석 가이드
-          <span className="ml-2 text-[10px] text-gray-600">— 두 점수 조합으로 종목 단계 판정</span>
+          <span className="ml-2 text-[12px] text-[#857F7A]">— 두 점수 조합으로 종목 단계 판정</span>
         </span>
-        <span className="text-gray-500 text-[10px]">{open ? "▼" : "▶"}</span>
+        <span className="text-[#857F7A] text-[12px]">{open ? "▼" : "▶"}</span>
       </button>
       {open && (
-        <div className="bg-[#0d1117] p-4 space-y-3">
-          <p className="text-[11px] text-gray-500 leading-relaxed">
-            <strong className="text-gray-300">Composite</strong>는 "지금" 가격 모멘텀을 측정하고 (PD 스캐너:
-            0.35×TCS + 0.30×TFS + 0.35×RSS), <strong className="text-gray-300">Pre-Mom Score</strong>는 "곧"
+        <div className="bg-[#FBEEE3] p-4 space-y-3">
+          <p className="text-[13px] text-[#857F7A] leading-relaxed">
+            <strong className="text-[#33302E]">Composite</strong>는 "지금" 가격 모멘텀을 측정하고 (PD 스캐너:
+            0.35×TCS + 0.30×TFS + 0.35×RSS), <strong className="text-[#33302E]">Pre-Mom Score</strong>는 "곧"
             모멘텀이 형성될 구조적 조건을 측정합니다 (4-Agent: Micro/Macro/Graph/Catalyst).
-            Pre-Momentum 탭은 <code className="text-cyan-400">eligible=False AND composite&lt;55</code> 종목만 표시되므로,
+            Pre-Momentum 탭은 <code className="text-[#0F5499]">eligible=False AND composite&lt;55</code> 종목만 표시되므로,
             두 점수의 조합으로 종목의 단계를 판정합니다.
           </p>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-xs border-collapse">
+            <table className="w-full text-[14px] border-collapse">
               <thead>
-                <tr className="border-b border-gray-700 bg-[#111827]">
-                  <th className="py-2 px-2 text-left text-gray-500 font-semibold">케이스</th>
-                  <th className="py-2 px-2 text-center text-gray-500 font-semibold">Composite</th>
-                  <th className="py-2 px-2 text-center text-gray-500 font-semibold">PM Score</th>
-                  <th className="py-2 px-2 text-left text-gray-500 font-semibold">Action</th>
-                  <th className="py-2 px-2 text-left text-gray-500 font-semibold">해석</th>
+                <tr className="border-b border-[#E6D9CE] bg-[#FFFFFF]">
+                  <th className="py-2 px-2 text-left text-[#857F7A] font-semibold">케이스</th>
+                  <th className="py-2 px-2 text-center text-[#857F7A] font-semibold">Composite</th>
+                  <th className="py-2 px-2 text-center text-[#857F7A] font-semibold">PM Score</th>
+                  <th className="py-2 px-2 text-left text-[#857F7A] font-semibold">Action</th>
+                  <th className="py-2 px-2 text-left text-[#857F7A] font-semibold">해석</th>
                 </tr>
               </thead>
               <tbody>
                 {cases.map((c, i) => (
-                  <tr key={i} className="border-b border-gray-800/50 align-top hover:bg-[#1f2937]/30">
+                  <tr key={i} className="border-b border-[#E6D9CE]/50 align-top hover:bg-[#F2E5D7]/30">
                     <td className={`py-2 px-2 font-bold ${c.caseColor}`}>{c.label}</td>
                     <td className={`py-2 px-2 text-center font-mono ${c.compColor}`}>{c.comp}</td>
                     <td className={`py-2 px-2 text-center font-mono font-bold ${c.pmColor}`}>{c.pm}</td>
-                    <td className={`py-2 px-2 font-semibold text-[11px] ${c.actionColor}`}>{c.action}</td>
-                    <td className="py-2 px-2 text-gray-400 text-[11px]">{c.desc}</td>
+                    <td className={`py-2 px-2 font-semibold text-[13px] ${c.actionColor}`}>{c.action}</td>
+                    <td className="py-2 px-2 text-[#66605C] text-[13px]">{c.desc}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
 
-          <div className="bg-[#111827] border border-cyan-900/40 rounded p-2 mt-2">
-            <div className="text-[11px] text-cyan-300">
+          <div className="bg-[#FFFFFF] border border-[#9CC3D5]/40 rounded p-2 mt-2">
+            <div className="text-[13px] text-[#0D7680]">
               <strong>핵심 가치:</strong>{" "}
-              <span className="text-gray-400">
+              <span className="text-[#66605C]">
                 케이스 A·D가 Pre-Momentum 시스템의 핵심 — Composite만으로는 놓칠 수 있는
                 "곧 움직일 종목"을 PM Score가 잡아냅니다.
               </span>
             </div>
           </div>
 
-          <div className="bg-[#111827] border border-orange-900/40 rounded p-2">
-            <div className="text-[11px] text-orange-300">
+          <div className="bg-[#FFFFFF] border border-[#E0C3A0]/40 rounded p-2">
+            <div className="text-[13px] text-[#C2701C]">
               <strong>주의:</strong>{" "}
-              <span className="text-gray-400">
+              <span className="text-[#66605C]">
                 케이스 C는 Composite이 임계 근처라 진입하고 싶은 충동이 있으나,
                 구조적 신호가 약하면 false breakout 가능성이 높음.
               </span>
@@ -1752,6 +1754,7 @@ function CandidateTable({
     ret_21d: (c: Candidate) => c.ret_21d ?? 0,
     ret_63d: (c: Candidate) => c.ret_63d ?? 0,
     ret_126d: (c: Candidate) => c.ret_126d ?? 0,
+    ret_ytd: (c: Candidate) => c.ret_ytd ?? 0,
     ret_252d: (c: Candidate) => c.ret_252d ?? 0,
     ret_3y_ann: (c: Candidate) => c.ret_3y_ann ?? -999,
     ret_5y_ann: (c: Candidate) => c.ret_5y_ann ?? -999,
@@ -1759,20 +1762,20 @@ function CandidateTable({
   }), []);
   const { sorted, onSort, indicator } = useSort(rows, accessors);
 
-  if (!rows || rows.length === 0) return <p className="text-[10px] text-gray-600">No data</p>;
+  if (!rows || rows.length === 0) return <p className="text-[12px] text-[#857F7A]">No data</p>;
   const agentKeys: (keyof Candidate["agents"])[] = ["microstructure", "macro_regime", "graph_relational", "catalyst", "qvr"];
   const agentHeaders: { key: string; label: string }[] = [
     { key: "micro", label: "Micro" }, { key: "macro", label: "Macro" },
     { key: "graph", label: "Graph" }, { key: "catalyst", label: "Catal" },
     { key: "qvr", label: "QVR" },
   ];
-  const headerCls = "py-1.5 px-2 text-gray-500 cursor-pointer select-none hover:text-gray-200 whitespace-nowrap";
+  const headerCls = "py-1.5 px-2 text-[#857F7A] cursor-pointer select-none hover:text-[#33302E] whitespace-nowrap";
   return (
-    <div className="overflow-auto border border-gray-800 rounded" style={{ maxHeight: "600px" }}>
-      <table className="w-full text-xs border-collapse">
-        <thead className="sticky top-0 z-10 bg-[#1f2937]">
-          <tr className="border-b border-gray-700">
-            <th className="py-1.5 px-2 text-left text-gray-500 w-6">#</th>
+    <div className="overflow-auto border border-[#E6D9CE] rounded" style={{ maxHeight: "600px" }}>
+      <table className="w-full text-[14px] border-collapse">
+        <thead className="sticky top-0 z-10 bg-[#F2E5D7]">
+          <tr className="border-b border-[#E6D9CE]">
+            <th className="py-1.5 px-2 text-left text-[#857F7A] w-6">#</th>
             <th className={`${headerCls} text-left`} onClick={() => onSort("ticker")}>Ticker{indicator("ticker")}</th>
             <th className={`${headerCls} text-left`} onClick={() => onSort("name")}>Name{indicator("name")}</th>
             <th className={`${headerCls} text-left`} onClick={() => onSort("sector")}>Sector{indicator("sector")}</th>
@@ -1793,11 +1796,12 @@ function CandidateTable({
             <th className={`${headerCls} text-right`} onClick={() => onSort("ret_21d")}>1M{indicator("ret_21d")}</th>
             <th className={`${headerCls} text-right`} onClick={() => onSort("ret_63d")}>3M{indicator("ret_63d")}</th>
             <th className={`${headerCls} text-right`} onClick={() => onSort("ret_126d")}>6M{indicator("ret_126d")}</th>
+            <th className={`${headerCls} text-right`} onClick={() => onSort("ret_ytd")}>YTD{indicator("ret_ytd")}</th>
             <th className={`${headerCls} text-right`} onClick={() => onSort("ret_252d")}>1Y{indicator("ret_252d")}</th>
             <th className={`${headerCls} text-right`} onClick={() => onSort("ret_3y_ann")}>3Y/A{indicator("ret_3y_ann")}</th>
             <th className={`${headerCls} text-right`} onClick={() => onSort("ret_5y_ann")}>5Y/A{indicator("ret_5y_ann")}</th>
             <th className={`${headerCls} text-right`} onClick={() => onSort("vol_3y_ann")}>Vol3Y{indicator("vol_3y_ann")}</th>
-            <th className="py-1.5 px-2 text-left text-gray-500">Key Catalyst</th>
+            <th className="py-1.5 px-2 text-left text-[#857F7A]">Key Catalyst</th>
           </tr>
         </thead>
         <tbody>
@@ -1805,20 +1809,20 @@ function CandidateTable({
             const age = c.pm_age ?? 0;
             const ageColor = age >= 14 ? C.green : age >= 7 ? C.cyan : age >= 3 ? C.yellow : C.gray;
             return (
-              <tr key={c.ticker} className="border-b border-gray-800/50 hover:bg-[#1f2937]/30">
-                <td className="py-1.5 px-2 text-gray-600">{i + 1}</td>
+              <tr key={c.ticker} className="border-b border-[#E6D9CE]/50 hover:bg-[#F2E5D7]/30">
+                <td className="py-1.5 px-2 text-[#857F7A]">{i + 1}</td>
                 <td className="py-1.5 px-2">
-                  <button onClick={() => onSelect(c.ticker)} className="font-mono text-xs text-cyan-400 hover:underline font-bold">
+                  <button onClick={() => onSelect(c.ticker)} className="font-mono text-[14px] text-[#0F5499] hover:underline font-bold">
                     {c.ticker}
                   </button>
                 </td>
-                <td className="py-1.5 px-2 text-gray-400 truncate max-w-[120px]">{c.name}</td>
-                <td className="py-1.5 px-2 text-gray-500 text-[10px]" title={`SubTheme: ${c.theme || "-"}`}>
+                <td className="py-1.5 px-2 text-[#66605C] truncate max-w-[120px]">{c.name}</td>
+                <td className="py-1.5 px-2 text-[#857F7A] text-[12px]" title={`SubTheme: ${c.theme || "-"}`}>
                   {c.sector || c.category}
                 </td>
-                <td className="py-1.5 px-2 text-[10px] text-gray-400">{c.current_classification}</td>
-                <td className="py-1.5 px-2 text-right text-xs font-mono text-gray-300">{c.current_composite.toFixed(1)}</td>
-                <td className="py-1.5 px-2 text-right text-xs font-mono font-bold" style={{ color: scoreColor(c.pre_momentum_score) }}>
+                <td className="py-1.5 px-2 text-[12px] text-[#66605C]">{c.current_classification}</td>
+                <td className="py-1.5 px-2 text-right text-[14px] font-mono text-[#33302E]">{c.current_composite.toFixed(1)}</td>
+                <td className="py-1.5 px-2 text-right text-[14px] font-mono font-bold" style={{ color: scoreColor(c.pre_momentum_score) }}>
                   {c.pre_momentum_score.toFixed(1)}
                 </td>
                 {(() => {
@@ -1826,20 +1830,20 @@ function CandidateTable({
                   return (
                     <td className="py-1.5 px-2 align-top" style={{ minWidth: "320px" }}>
                       <div className="flex flex-col gap-0.5">
-                        <span className="text-[11px] font-bold whitespace-nowrap" style={{ color: d.color }}>
+                        <span className="text-[13px] font-bold whitespace-nowrap" style={{ color: d.color }}>
                           {d.action}
                         </span>
-                        <span className="text-[10px] text-gray-500 leading-snug whitespace-normal break-words">
+                        <span className="text-[12px] text-[#857F7A] leading-snug whitespace-normal break-words">
                           {d.rationale}
                         </span>
                       </div>
                     </td>
                   );
                 })()}
-                <td className="py-1.5 px-2 text-right text-xs font-mono font-semibold" style={{ color: ageColor }}>
+                <td className="py-1.5 px-2 text-right text-[14px] font-mono font-semibold" style={{ color: ageColor }}>
                   {age}d
                 </td>
-                <td className="py-1.5 px-2 text-right text-xs font-mono font-semibold"
+                <td className="py-1.5 px-2 text-right text-[14px] font-mono font-semibold"
                     style={{ color: agreementColor(c.agreement_ratio || 0) }}
                     title={(c.agreement_ratio || 0) >= 0.6 ? "STRONG"
                           : (c.agreement_ratio || 0) >= 0.4 ? "MODERATE"
@@ -1859,23 +1863,24 @@ function CandidateTable({
                           + (ag.summary ? ` — ${ag.summary}` : "");
                   }
                   return (
-                    <td key={k} className="py-1.5 px-2 text-right text-xs font-mono"
+                    <td key={k} className="py-1.5 px-2 text-right text-[14px] font-mono"
                         style={{ color: agentScoreColor(score) }} title={title}>
                       {score.toFixed(0)}
                     </td>
                   );
                 })}
-                <td className="py-1.5 px-2 text-[10px] text-gray-500">{c.expected_timeline}</td>
-                <td className="py-1.5 px-2 text-right text-xs font-mono" style={{ color: retColor(c.ret_1d ?? 0) }}>{(c.ret_1d ?? 0).toFixed(1)}%</td>
-                <td className="py-1.5 px-2 text-right text-xs font-mono" style={{ color: retColor(c.ret_5d ?? 0) }}>{(c.ret_5d ?? 0).toFixed(1)}%</td>
-                <td className="py-1.5 px-2 text-right text-xs font-mono" style={{ color: retColor(c.ret_21d ?? 0) }}>{(c.ret_21d ?? 0).toFixed(1)}%</td>
-                <td className="py-1.5 px-2 text-right text-xs font-mono" style={{ color: retColor(c.ret_63d ?? 0) }}>{(c.ret_63d ?? 0).toFixed(1)}%</td>
-                <td className="py-1.5 px-2 text-right text-xs font-mono" style={{ color: retColor(c.ret_126d ?? 0) }}>{(c.ret_126d ?? 0).toFixed(1)}%</td>
-                <td className="py-1.5 px-2 text-right text-xs font-mono" style={{ color: retColor(c.ret_252d ?? 0) }}>{(c.ret_252d ?? 0).toFixed(1)}%</td>
-                <td className="py-1.5 px-2 text-right text-xs font-mono" style={{ color: c.ret_3y_ann == null ? C.gray : retColor(c.ret_3y_ann) }}>{c.ret_3y_ann == null ? "-" : `${c.ret_3y_ann.toFixed(1)}%`}</td>
-                <td className="py-1.5 px-2 text-right text-xs font-mono" style={{ color: c.ret_5y_ann == null ? C.gray : retColor(c.ret_5y_ann) }}>{c.ret_5y_ann == null ? "-" : `${c.ret_5y_ann.toFixed(1)}%`}</td>
-                <td className="py-1.5 px-2 text-right text-xs font-mono text-gray-400">{c.vol_3y_ann == null ? "-" : `${c.vol_3y_ann.toFixed(1)}%`}</td>
-                <td className="py-1.5 px-2 text-[10px] text-gray-500 truncate max-w-[160px]">{c.key_catalysts?.[0] ?? "-"}</td>
+                <td className="py-1.5 px-2 text-[12px] text-[#857F7A]">{c.expected_timeline}</td>
+                <td className="py-1.5 px-2 text-right text-[14px] font-mono" style={{ color: retColor(c.ret_1d ?? 0) }}>{(c.ret_1d ?? 0).toFixed(1)}%</td>
+                <td className="py-1.5 px-2 text-right text-[14px] font-mono" style={{ color: retColor(c.ret_5d ?? 0) }}>{(c.ret_5d ?? 0).toFixed(1)}%</td>
+                <td className="py-1.5 px-2 text-right text-[14px] font-mono" style={{ color: retColor(c.ret_21d ?? 0) }}>{(c.ret_21d ?? 0).toFixed(1)}%</td>
+                <td className="py-1.5 px-2 text-right text-[14px] font-mono" style={{ color: retColor(c.ret_63d ?? 0) }}>{(c.ret_63d ?? 0).toFixed(1)}%</td>
+                <td className="py-1.5 px-2 text-right text-[14px] font-mono" style={{ color: retColor(c.ret_126d ?? 0) }}>{(c.ret_126d ?? 0).toFixed(1)}%</td>
+                <td className="py-1.5 px-2 text-right text-[14px] font-mono" style={{ color: retColor(c.ret_ytd ?? 0) }}>{c.ret_ytd != null ? `${c.ret_ytd.toFixed(1)}%` : "—"}</td>
+                <td className="py-1.5 px-2 text-right text-[14px] font-mono" style={{ color: retColor(c.ret_252d ?? 0) }}>{(c.ret_252d ?? 0).toFixed(1)}%</td>
+                <td className="py-1.5 px-2 text-right text-[14px] font-mono" style={{ color: c.ret_3y_ann == null ? C.gray : retColor(c.ret_3y_ann) }}>{c.ret_3y_ann == null ? "-" : `${c.ret_3y_ann.toFixed(1)}%`}</td>
+                <td className="py-1.5 px-2 text-right text-[14px] font-mono" style={{ color: c.ret_5y_ann == null ? C.gray : retColor(c.ret_5y_ann) }}>{c.ret_5y_ann == null ? "-" : `${c.ret_5y_ann.toFixed(1)}%`}</td>
+                <td className="py-1.5 px-2 text-right text-[14px] font-mono text-[#66605C]">{c.vol_3y_ann == null ? "-" : `${c.vol_3y_ann.toFixed(1)}%`}</td>
+                <td className="py-1.5 px-2 text-[12px] text-[#857F7A] truncate max-w-[160px]">{c.key_catalysts?.[0] ?? "-"}</td>
               </tr>
             );
           })}
@@ -1961,7 +1966,7 @@ export function PreMomentumTab({ totalUniverse, filterSectors, mlMode = false }:
 
   if (!data)
     return (
-      <div className="text-gray-500 p-8">
+      <div className="text-[#857F7A] p-8">
         Loading pre-momentum analysis...
       </div>
     );
@@ -1998,7 +2003,7 @@ export function PreMomentumTab({ totalUniverse, filterSectors, mlMode = false }:
         {classDist.map(([cls, count]) => (
           <span
             key={cls}
-            className="text-[10px] px-2 py-1 rounded border border-gray-800"
+            className="text-[12px] px-2 py-1 rounded border border-[#E6D9CE]"
             style={{ color: CLASS_COLORS[cls] || C.gray, borderColor: (CLASS_COLORS[cls] || C.gray) + "44" }}
           >
             {cls} <span className="font-mono font-bold ml-1">{count}</span>
@@ -2016,7 +2021,7 @@ export function PreMomentumTab({ totalUniverse, filterSectors, mlMode = false }:
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         <div>
-          <h3 className="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-2">
+          <h3 className="text-[14px] font-semibold text-[#0F5499] uppercase tracking-wide mb-2">
             ETF Candidates ({filteredEtf.length})
           </h3>
           <CandidateTable
@@ -2025,7 +2030,7 @@ export function PreMomentumTab({ totalUniverse, filterSectors, mlMode = false }:
           />
         </div>
         <div>
-          <h3 className="text-xs font-semibold text-green-400 uppercase tracking-wide mb-2">
+          <h3 className="text-[14px] font-semibold text-[#0A7D3F] uppercase tracking-wide mb-2">
             Stock Candidates ({filteredStock.length})
           </h3>
           <CandidateTable
@@ -2052,7 +2057,7 @@ export function PreMomentumTab({ totalUniverse, filterSectors, mlMode = false }:
           <div className="flex justify-end mb-2">
             <button
               onClick={() => setSelectedTicker(null)}
-              className="text-[10px] text-gray-500 hover:text-gray-300 px-2 py-1 rounded border border-gray-800 hover:border-gray-600 transition-colors"
+              className="text-[12px] text-[#857F7A] hover:text-[#33302E] px-2 py-1 rounded border border-[#E6D9CE] hover:border-[#CCC1B7] transition-colors"
             >
               Close
             </button>

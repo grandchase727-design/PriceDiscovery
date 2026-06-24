@@ -48,6 +48,7 @@ interface Ticker {
   ret_21d: number;
   ret_63d: number;
   ret_126d: number;
+  ret_ytd?: number | null;
   ret_252d: number;
   ret_3y_ann: number | null;
   ret_5y_ann: number | null;
@@ -86,22 +87,22 @@ function Section({
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="border border-gray-800 rounded-lg overflow-hidden">
+    <div className="border border-[#E6D9CE] rounded-lg overflow-hidden">
       <button
-        className="w-full px-4 py-3 text-left text-sm font-semibold bg-[#111827] hover:bg-[#1f2937] flex justify-between items-center"
+        className="w-full px-4 py-3 text-left text-[16px] font-semibold bg-[#FFFFFF] hover:bg-[#F2E5D7] flex justify-between items-center"
         onClick={() => setOpen(!open)}
       >
         <span className="flex items-center gap-2">
           {title}
           {badge && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-900/50 text-cyan-400">
+            <span className="text-[12px] px-1.5 py-0.5 rounded bg-[#E3EEF5]/50 text-[#0F5499]">
               {badge}
             </span>
           )}
         </span>
-        <span className="text-gray-500 text-xs">{open ? "\u25bc" : "\u25b6"}</span>
+        <span className="text-[#857F7A] text-[14px]">{open ? "\u25bc" : "\u25b6"}</span>
       </button>
-      {open && <div className="p-4 bg-[#0d1117] space-y-4">{children}</div>}
+      {open && <div className="p-4 bg-[#FBEEE3] space-y-4">{children}</div>}
     </div>
   );
 }
@@ -119,8 +120,8 @@ function compColor(v: number): string {
 
 function retColor(v: number): string {
   if (v > 3) return C.green;
-  if (v > 0) return "#86efac";
-  if (v > -3) return "#fca5a5";
+  if (v > 0) return "#0A7D3F";
+  if (v > -3) return "#CC0000";
   return C.red;
 }
 
@@ -160,6 +161,7 @@ const COLUMN_DEFS = [
   { col: "1M", desc: "1-month return (%) \u2014 21 trading days" },
   { col: "3M", desc: "3-month return (%) \u2014 63 trading days" },
   { col: "6M", desc: "6-month return (%) \u2014 126 trading days" },
+  { col: "YTD", desc: "Year-to-date return (%) \u2014 prior year-end close to today" },
   { col: "1Y", desc: "1-year return (%) \u2014 252 trading days" },
   { col: "3Y/A", desc: "3-year annualized return (%)" },
   { col: "5Y/A", desc: "5-year annualized return (%)" },
@@ -169,20 +171,20 @@ const COLUMN_DEFS = [
 function ColumnDefinitions() {
   const [open, setOpen] = useState(false);
   return (
-    <div className="border border-gray-800 rounded-lg overflow-hidden mb-2">
+    <div className="border border-[#E6D9CE] rounded-lg overflow-hidden mb-2">
       <button
-        className="w-full px-4 py-2 text-left text-xs font-semibold bg-[#111827] hover:bg-[#1f2937] flex justify-between items-center"
+        className="w-full px-4 py-2 text-left text-[14px] font-semibold bg-[#FFFFFF] hover:bg-[#F2E5D7] flex justify-between items-center"
         onClick={() => setOpen(!open)}
       >
-        <span className="text-gray-400">Column Definitions</span>
-        <span className="text-gray-500 text-[10px]">{open ? "\u25bc" : "\u25b6"}</span>
+        <span className="text-[#66605C]">Column Definitions</span>
+        <span className="text-[#857F7A] text-[12px]">{open ? "\u25bc" : "\u25b6"}</span>
       </button>
       {open && (
-        <div className="bg-[#0d1117] px-4 py-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-6 gap-y-1.5">
+        <div className="bg-[#FBEEE3] px-4 py-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-6 gap-y-1.5">
           {COLUMN_DEFS.map((d) => (
-            <div key={d.col} className="flex gap-2 text-[11px]">
-              <span className="text-cyan-400 font-semibold shrink-0 w-16">{d.col}</span>
-              <span className="text-gray-500">{d.desc}</span>
+            <div key={d.col} className="flex gap-2 text-[13px]">
+              <span className="text-[#0F5499] font-semibold shrink-0 w-16">{d.col}</span>
+              <span className="text-[#857F7A]">{d.desc}</span>
             </div>
           ))}
         </div>
@@ -221,6 +223,7 @@ function ExcludedTable({
     ret_21d: (r: Ticker) => r.ret_21d ?? 0,
     ret_63d: (r: Ticker) => r.ret_63d ?? 0,
     ret_126d: (r: Ticker) => r.ret_126d ?? 0,
+    ret_ytd: (r: Ticker) => r.ret_ytd ?? 0,
     ret_252d: (r: Ticker) => r.ret_252d ?? 0,
     ret_3y_ann: (r: Ticker) => r.ret_3y_ann ?? -999,
     ret_5y_ann: (r: Ticker) => r.ret_5y_ann ?? -999,
@@ -228,14 +231,14 @@ function ExcludedTable({
   }), []);
   const { sorted, onSort, indicator } = useSort(rows, accessors);
 
-  if (!rows.length) return <p className="text-[10px] text-gray-600">No data</p>;
-  const headerCls = "py-1.5 px-2 text-gray-500 cursor-pointer select-none hover:text-gray-200 whitespace-nowrap";
+  if (!rows.length) return <p className="text-[12px] text-[#857F7A]">No data</p>;
+  const headerCls = "py-1.5 px-2 text-[#857F7A] cursor-pointer select-none hover:text-[#33302E] whitespace-nowrap";
   return (
-    <div className="overflow-auto border border-gray-800 rounded" style={{ maxHeight: "600px" }}>
-      <table className="w-full text-xs border-collapse">
-        <thead className="sticky top-0 z-10 bg-[#1f2937]">
-          <tr className="border-b border-gray-700">
-            <th className="py-1.5 px-2 text-left text-gray-500">#</th>
+    <div className="overflow-auto border border-[#E6D9CE] rounded" style={{ maxHeight: "600px" }}>
+      <table className="w-full text-[14px] border-collapse">
+        <thead className="sticky top-0 z-10 bg-[#F2E5D7]">
+          <tr className="border-b border-[#E6D9CE]">
+            <th className="py-1.5 px-2 text-left text-[#857F7A]">#</th>
             <th className={`${headerCls} text-left`} onClick={() => onSort("ticker")}>Ticker{indicator("ticker")}</th>
             <th className={`${headerCls} text-left`} onClick={() => onSort("name")}>Name{indicator("name")}</th>
             <th className={`${headerCls} text-left`} onClick={() => onSort("sector")}>Sector{indicator("sector")}</th>
@@ -254,6 +257,7 @@ function ExcludedTable({
             <th className={`${headerCls} text-right`} onClick={() => onSort("ret_21d")}>1M{indicator("ret_21d")}</th>
             <th className={`${headerCls} text-right`} onClick={() => onSort("ret_63d")}>3M{indicator("ret_63d")}</th>
             <th className={`${headerCls} text-right`} onClick={() => onSort("ret_126d")}>6M{indicator("ret_126d")}</th>
+            <th className={`${headerCls} text-right`} onClick={() => onSort("ret_ytd")}>YTD{indicator("ret_ytd")}</th>
             <th className={`${headerCls} text-right`} onClick={() => onSort("ret_252d")}>1Y{indicator("ret_252d")}</th>
             <th className={`${headerCls} text-right`} onClick={() => onSort("ret_3y_ann")}>3Y/A{indicator("ret_3y_ann")}</th>
             <th className={`${headerCls} text-right`} onClick={() => onSort("ret_5y_ann")}>5Y/A{indicator("ret_5y_ann")}</th>
@@ -262,29 +266,29 @@ function ExcludedTable({
         </thead>
         <tbody>
           {sorted.map((r, i) => (
-            <tr key={r.ticker} className="border-b border-gray-800/50 hover:bg-[#1f2937]/30">
-              <td className="py-1.5 px-2 text-gray-600">{i + 1}</td>
+            <tr key={r.ticker} className="border-b border-[#E6D9CE]/50 hover:bg-[#F2E5D7]/30">
+              <td className="py-1.5 px-2 text-[#857F7A]">{i + 1}</td>
               <td className="py-1.5 px-2">
-                <button onClick={() => onSelect(r.ticker)} className="font-mono text-xs text-cyan-400 hover:underline font-bold">
+                <button onClick={() => onSelect(r.ticker)} className="font-mono text-[14px] text-[#0F5499] hover:underline font-bold">
                   {r.ticker}
                 </button>
               </td>
-              <td className="py-1.5 px-2 text-gray-400 truncate max-w-[120px]">{r.name}</td>
-              <td className="py-1.5 px-2 text-gray-500 text-[10px]" title={`SubTheme: ${r.theme || "-"}`}>
+              <td className="py-1.5 px-2 text-[#66605C] truncate max-w-[120px]">{r.name}</td>
+              <td className="py-1.5 px-2 text-[#857F7A] text-[12px]" title={`SubTheme: ${r.theme || "-"}`}>
                 {r.sector || r.category}
               </td>
               <td className="py-1.5 px-2">
-                <span className="text-[10px]" style={{ color: CLASS_COLORS[r.classification] || C.gray }}>
+                <span className="text-[12px]" style={{ color: CLASS_COLORS[r.classification] || C.gray }}>
                   {r.classification}
                 </span>
               </td>
-              <td className="py-1.5 px-2 text-[10px] text-orange-400">{r.rejection || "-"}</td>
+              <td className="py-1.5 px-2 text-[12px] text-[#C2701C]">{r.rejection || "-"}</td>
               <td className="py-1.5 px-2 text-right font-mono font-bold" style={{ color: compColor(r.composite) }}>
                 {r.composite?.toFixed(1)}
               </td>
-              <td className="py-1.5 px-2 text-right font-mono text-gray-300">{r.tcs}</td>
-              <td className="py-1.5 px-2 text-right font-mono text-gray-300">{r.tfs}</td>
-              <td className="py-1.5 px-2 text-right font-mono text-gray-300">{r.rss}</td>
+              <td className="py-1.5 px-2 text-right font-mono text-[#33302E]">{r.tcs}</td>
+              <td className="py-1.5 px-2 text-right font-mono text-[#33302E]">{r.tfs}</td>
+              <td className="py-1.5 px-2 text-right font-mono text-[#33302E]">{r.rss}</td>
               <td className="py-1.5 px-2 text-right font-mono" style={{ color: oerColor(r.oer) }}>{r.oer}</td>
               {(() => {
                 const b3m = r.qvr_bullish_chg_3m;
@@ -306,17 +310,18 @@ function ExcludedTable({
                   </td>
                 );
               })()}
-              <td className="py-1.5 px-2 text-right font-mono text-gray-400">{r.rsi?.toFixed(0)}</td>
-              <td className="py-1.5 px-2 text-right font-mono text-gray-400">{r.adv_M?.toFixed(1)}</td>
+              <td className="py-1.5 px-2 text-right font-mono text-[#66605C]">{r.rsi?.toFixed(0)}</td>
+              <td className="py-1.5 px-2 text-right font-mono text-[#66605C]">{r.adv_M?.toFixed(1)}</td>
               <td className="py-1.5 px-2 text-right font-mono" style={{ color: retColor(r.ret_1d ?? 0) }}>{(r.ret_1d ?? 0).toFixed(1)}%</td>
               <td className="py-1.5 px-2 text-right font-mono" style={{ color: retColor(r.ret_5d ?? 0) }}>{(r.ret_5d ?? 0).toFixed(1)}%</td>
               <td className="py-1.5 px-2 text-right font-mono" style={{ color: retColor(r.ret_21d ?? 0) }}>{(r.ret_21d ?? 0).toFixed(1)}%</td>
               <td className="py-1.5 px-2 text-right font-mono" style={{ color: retColor(r.ret_63d ?? 0) }}>{(r.ret_63d ?? 0).toFixed(1)}%</td>
               <td className="py-1.5 px-2 text-right font-mono" style={{ color: retColor(r.ret_126d ?? 0) }}>{(r.ret_126d ?? 0).toFixed(1)}%</td>
+              <td className="py-1.5 px-2 text-right font-mono" style={{ color: retColor(r.ret_ytd ?? 0) }}>{r.ret_ytd != null ? `${r.ret_ytd.toFixed(1)}%` : "—"}</td>
               <td className="py-1.5 px-2 text-right font-mono" style={{ color: retColor(r.ret_252d ?? 0) }}>{(r.ret_252d ?? 0).toFixed(1)}%</td>
               <td className="py-1.5 px-2 text-right font-mono" style={{ color: r.ret_3y_ann == null ? C.gray : retColor(r.ret_3y_ann) }}>{r.ret_3y_ann == null ? "-" : `${r.ret_3y_ann.toFixed(1)}%`}</td>
               <td className="py-1.5 px-2 text-right font-mono" style={{ color: r.ret_5y_ann == null ? C.gray : retColor(r.ret_5y_ann) }}>{r.ret_5y_ann == null ? "-" : `${r.ret_5y_ann.toFixed(1)}%`}</td>
-              <td className="py-1.5 px-2 text-right font-mono text-gray-400">{r.vol_3y_ann == null ? "-" : `${r.vol_3y_ann.toFixed(1)}%`}</td>
+              <td className="py-1.5 px-2 text-right font-mono text-[#66605C]">{r.vol_3y_ann == null ? "-" : `${r.vol_3y_ann.toFixed(1)}%`}</td>
             </tr>
           ))}
         </tbody>
@@ -341,39 +346,39 @@ function TickerDetail({ ticker, onClose }: { ticker: Ticker; onClose: () => void
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="text-lg font-bold text-cyan-400 font-mono">{ticker.ticker}</span>
-          <span className="text-sm text-gray-300">{ticker.name}</span>
-          <span className="text-[10px] px-2 py-0.5 rounded" style={{
+          <span className="text-[20px] font-bold text-[#0F5499] font-mono">{ticker.ticker}</span>
+          <span className="text-[16px] text-[#33302E]">{ticker.name}</span>
+          <span className="text-[12px] px-2 py-0.5 rounded" style={{
             backgroundColor: (CLASS_COLORS[ticker.classification] || C.gray) + "22",
             color: CLASS_COLORS[ticker.classification] || C.gray,
           }}>
             {ticker.classification}
           </span>
           {ticker.rejection && (
-            <span className="text-[10px] px-2 py-0.5 rounded bg-orange-900/30 text-orange-400">
+            <span className="text-[12px] px-2 py-0.5 rounded bg-[#F7EDE0]/30 text-[#C2701C]">
               {ticker.rejection}
             </span>
           )}
         </div>
-        <button onClick={onClose} className="text-[10px] text-gray-500 hover:text-gray-300 px-2 py-1 rounded border border-gray-800">
+        <button onClick={onClose} className="text-[12px] text-[#857F7A] hover:text-[#33302E] px-2 py-1 rounded border border-[#E6D9CE]">
           Close
         </button>
       </div>
 
       {/* Classification tags */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-gray-500">
-        <span>Sector: <span className="text-gray-300 font-semibold">{ticker.sector || ticker.category}</span></span>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-[#857F7A]">
+        <span>Sector: <span className="text-[#33302E] font-semibold">{ticker.sector || ticker.category}</span></span>
         {ticker.theme && ticker.theme !== "-" && (
-          <span>SubTheme: <span className="text-gray-300">{ticker.theme}</span></span>
+          <span>SubTheme: <span className="text-[#33302E]">{ticker.theme}</span></span>
         )}
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {axes.map((a) => (
-          <div key={a.label} className="bg-[#111827] border border-gray-800 rounded-lg p-3"
+          <div key={a.label} className="bg-[#FFFFFF] border border-[#E6D9CE] rounded-lg p-3"
                title={a.label === "QVR" ? `Q ${ticker.qvr_q ?? "-"} | V ${ticker.qvr_v ?? "-"} | R ${ticker.qvr_r ?? "-"}` : undefined}>
-            <div className="text-[10px] text-gray-500">{a.desc}</div>
-            <div className="text-xl font-bold font-mono mt-1" style={{
+            <div className="text-[12px] text-[#857F7A]">{a.desc}</div>
+            <div className="text-[22px] font-bold font-mono mt-1" style={{
               color: a.label === "OER" ? oerColor(a.value)
                    : a.label === "QVR" ? qvrColor(a.value)
                    : compColor(a.value),
@@ -383,29 +388,29 @@ function TickerDetail({ ticker, onClose }: { ticker: Ticker; onClose: () => void
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-3 md:grid-cols-6 gap-2 text-xs">
-        <div className="bg-[#111827] rounded p-2">
-          <div className="text-[10px] text-gray-500">Composite</div>
+      <div className="grid grid-cols-3 md:grid-cols-6 gap-2 text-[14px]">
+        <div className="bg-[#FFFFFF] rounded p-2">
+          <div className="text-[12px] text-[#857F7A]">Composite</div>
           <div className="font-mono font-bold" style={{ color: compColor(ticker.composite) }}>{ticker.composite?.toFixed(1)}</div>
         </div>
-        <div className="bg-[#111827] rounded p-2">
-          <div className="text-[10px] text-gray-500">RSI</div>
+        <div className="bg-[#FFFFFF] rounded p-2">
+          <div className="text-[12px] text-[#857F7A]">RSI</div>
           <div className="font-mono">{ticker.rsi?.toFixed(0)}</div>
         </div>
-        <div className="bg-[#111827] rounded p-2">
-          <div className="text-[10px] text-gray-500">Trend Age</div>
+        <div className="bg-[#FFFFFF] rounded p-2">
+          <div className="text-[12px] text-[#857F7A]">Trend Age</div>
           <div className="font-mono">{ticker.trend_age}d</div>
         </div>
-        <div className="bg-[#111827] rounded p-2">
-          <div className="text-[10px] text-gray-500">SMA50 Dist</div>
+        <div className="bg-[#FFFFFF] rounded p-2">
+          <div className="text-[12px] text-[#857F7A]">SMA50 Dist</div>
           <div className="font-mono">{ticker.sma50_dist?.toFixed(1)}%</div>
         </div>
-        <div className="bg-[#111827] rounded p-2">
-          <div className="text-[10px] text-gray-500">ADV</div>
+        <div className="bg-[#FFFFFF] rounded p-2">
+          <div className="text-[12px] text-[#857F7A]">ADV</div>
           <div className="font-mono">${ticker.adv_M?.toFixed(1)}M</div>
         </div>
-        <div className="bg-[#111827] rounded p-2">
-          <div className="text-[10px] text-gray-500">Ret 1M</div>
+        <div className="bg-[#FFFFFF] rounded p-2">
+          <div className="text-[12px] text-[#857F7A]">Ret 1M</div>
           <div className="font-mono" style={{ color: retColor(ticker.ret_1m) }}>{ticker.ret_1m?.toFixed(1)}%</div>
         </div>
       </div>
@@ -470,7 +475,7 @@ export function ExcludedTab({ filters, totalUniverse, mlMode = false }:
     [selected, allData]
   );
 
-  if (loading) return <div className="text-gray-500 p-8">Loading...</div>;
+  if (loading) return <div className="text-[#857F7A] p-8">Loading...</div>;
 
   const avgComp = excluded.length
     ? excluded.reduce((s, t) => s + t.composite, 0) / excluded.length
@@ -494,12 +499,12 @@ export function ExcludedTab({ filters, totalUniverse, mlMode = false }:
       {/* ── Classification + Rejection Breakdown ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <div className="text-[10px] text-gray-500 uppercase tracking-wide mb-1.5">Classification</div>
+          <div className="text-[12px] text-[#857F7A] uppercase tracking-wide mb-1.5">Classification</div>
           <div className="flex gap-1.5 flex-wrap">
             {classDist.map(([cls, count]) => (
               <span
                 key={cls}
-                className="text-[10px] px-2 py-1 rounded border border-gray-800"
+                className="text-[12px] px-2 py-1 rounded border border-[#E6D9CE]"
                 style={{ color: CLASS_COLORS[cls] || C.gray, borderColor: (CLASS_COLORS[cls] || C.gray) + "44" }}
               >
                 {cls} <span className="font-mono font-bold ml-1">{count}</span>
@@ -508,10 +513,10 @@ export function ExcludedTab({ filters, totalUniverse, mlMode = false }:
           </div>
         </div>
         <div>
-          <div className="text-[10px] text-gray-500 uppercase tracking-wide mb-1.5">Rejection Reason</div>
+          <div className="text-[12px] text-[#857F7A] uppercase tracking-wide mb-1.5">Rejection Reason</div>
           <div className="flex gap-1.5 flex-wrap">
             {rejectionDist.map(([reason, count]) => (
-              <span key={reason} className="text-[10px] px-2 py-1 rounded border border-gray-800 text-orange-400 border-orange-900/40">
+              <span key={reason} className="text-[12px] px-2 py-1 rounded border border-[#E6D9CE] text-[#C2701C] border-[#E0C3A0]/40">
                 {reason} <span className="font-mono font-bold ml-1">{count}</span>
               </span>
             ))}
@@ -526,13 +531,13 @@ export function ExcludedTab({ filters, totalUniverse, mlMode = false }:
       {/* ── ETF + Stock side by side ── */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         <div>
-          <h3 className="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-2">
+          <h3 className="text-[14px] font-semibold text-[#0F5499] uppercase tracking-wide mb-2">
             ETF ({etf.length})
           </h3>
           <ExcludedTable rows={etf} onSelect={setSelected} />
         </div>
         <div>
-          <h3 className="text-xs font-semibold text-green-400 uppercase tracking-wide mb-2">
+          <h3 className="text-[14px] font-semibold text-[#0A7D3F] uppercase tracking-wide mb-2">
             Stock ({stock.length})
           </h3>
           <ExcludedTable rows={stock} onSelect={setSelected} />

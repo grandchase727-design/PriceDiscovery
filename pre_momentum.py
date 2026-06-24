@@ -433,6 +433,50 @@ class MacroRegimeAgent:
 
     def __init__(self, indices: dict):
         self.indices = indices
+        # Phase 2C — Cross-sectional rotation indicators (cyclical/style/region 우위).
+        # Macro tags(cyclical_tag/style_tilt/region)가 ticker dict에 주입된 경우에만 작동.
+        self._rotation_ctx = self._compute_rotation_context()
+
+    def _compute_rotation_context(self) -> dict:
+        """전체 universe에서 cyclical vs defensive / growth vs value / region leadership 진단."""
+        ctx = {
+            "cyclical_dom": False, "defensive_dom": False,
+            "growth_dom": False, "value_dom": False,
+            "top_region": None, "bot_region": None,
+        }
+        try:
+            all_results = self.indices.get("by_category", {})
+            # 모든 ticker dict 평면화
+            flat = []
+            for members in all_results.values():
+                flat.extend(members)
+            if not flat:
+                return ctx
+            def _avg(group_key, group_val):
+                vals = [m.get("composite", 0) for m in flat
+                        if m.get(group_key) == group_val and m.get("composite") is not None]
+                return sum(vals) / len(vals) if vals else 50.0
+            cyc = _avg("cyclical_tag", "cyclical")
+            dfn = _avg("cyclical_tag", "defensive")
+            ctx["cyclical_dom"] = (cyc - dfn) > 3.0
+            ctx["defensive_dom"] = (dfn - cyc) > 3.0
+            grw = _avg("style_tilt", "growth")
+            val = _avg("style_tilt", "value")
+            ctx["growth_dom"] = (grw - val) > 3.0
+            ctx["value_dom"] = (val - grw) > 3.0
+            # Region leadership
+            region_avg = {}
+            for m in flat:
+                rg = m.get("region")
+                if rg:
+                    region_avg.setdefault(rg, []).append(m.get("composite", 0) or 0)
+            region_means = {k: sum(v) / len(v) for k, v in region_avg.items() if v}
+            if region_means:
+                ctx["top_region"] = max(region_means.items(), key=lambda kv: kv[1])[0]
+                ctx["bot_region"] = min(region_means.items(), key=lambda kv: kv[1])[0]
+        except Exception:
+            pass
+        return ctx
 
     def score(self, r: dict) -> Tuple[float, Dict[str, float], str]:
         signals = {
@@ -440,17 +484,78 @@ class MacroRegimeAgent:
             "cross_asset": self._cross_asset(r),
             "category_breadth": self._category_breadth(r),
             "relative_improvement": self._relative_improvement(r),
+            # Phase 2C — macro regime alignment (Risk/Style/Region)
+            "rotation_alignment": self._rotation_alignment(r),
+            # Hybrid Phase D — parent ETF divergence signal (bottom-up)
+            "etf_parent_signal": self._etf_parent_signal(r),
         }
         weights = {
-            "sector_rotation": 0.30,
-            "cross_asset": 0.20,
-            "category_breadth": 0.25,
-            "relative_improvement": 0.25,
+            "sector_rotation": 0.20,
+            "cross_asset": 0.10,
+            "category_breadth": 0.20,
+            "relative_improvement": 0.15,
+            "rotation_alignment": 0.20,
+            "etf_parent_signal": 0.15,
         }
         agent_score = sum(signals[k] * weights[k] for k in signals)
         agent_score = _clamp(agent_score)
         summary = self._summarize(signals)
         return agent_score, signals, summary
+
+    # ── Hybrid Phase D: parent ETF signal ──────────────────────────────
+    def _etf_parent_signal(self, r: dict) -> float:
+        """Stock: ETF가 STEALTH_STRENGTH/HEALTHY_TREND이면 + boost (api.py 가 계산해 주입).
+        ETF: own constituent_breadth_mom 사용.
+        시그널 미주입 시 50 (neutral)."""
+        v = r.get("parent_etf_signal")
+        if v is None:
+            return 50.0
+        try:
+            return float(v)
+        except Exception:
+            return 50.0
+
+    # ── Phase 2C: rotation_alignment sub-signal ────────────────────────
+    def _rotation_alignment(self, r: dict) -> float:
+        """현 cross-sectional regime과 ticker의 macro tags 정렬도 (0-100).
+
+        정렬 차원:
+          1) Risk axis: cyclical_dom + ticker cyclical → 정렬 / def_dom + defensive → 정렬
+          2) Style axis: growth_dom + ticker growth / value_dom + value
+          3) Region: top_region 종목이면 +30, bot_region 종목이면 -10
+        """
+        ctx = self._rotation_ctx
+        # Macro tag 미주입 시 중립
+        if r.get("cyclical_tag") is None:
+            return 50.0
+        score = 50.0  # neutral baseline
+        cyc_dom = ctx.get("cyclical_dom", False)
+        def_dom = ctx.get("defensive_dom", False)
+        grw_dom = ctx.get("growth_dom", False)
+        val_dom = ctx.get("value_dom", False)
+        # Risk alignment
+        tag = r.get("cyclical_tag")
+        if cyc_dom and tag == "cyclical":
+            score += 15
+        elif def_dom and tag == "defensive":
+            score += 15
+        elif (cyc_dom and tag == "defensive") or (def_dom and tag == "cyclical"):
+            score -= 10
+        # Style alignment
+        st = r.get("style_tilt")
+        if grw_dom and st == "growth":
+            score += 15
+        elif val_dom and st == "value":
+            score += 15
+        elif (grw_dom and st == "value") or (val_dom and st == "growth"):
+            score -= 10
+        # Region alignment
+        rg = r.get("region")
+        if rg and rg == ctx.get("top_region"):
+            score += 15
+        elif rg and rg == ctx.get("bot_region"):
+            score -= 5
+        return _clamp(score)
 
     # ── Sub-signals ──────────────────────────────────────────────────────
 

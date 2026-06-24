@@ -188,8 +188,8 @@ GLOBAL_ETF_UNIVERSE = {
     "EQ_CommServices": {"tickers": {"XLC": "Communication Services"}},
     "EQ_Factor": {"tickers": {"MTUM": "Momentum", "QUAL": "Quality", "USMV": "Min Volatility", "VLUE": "Value Factor", "SIZE": "Size Factor", "SCHD": "Dividend Growth", "VIG": "Dividend Appreciation", "DVY": "High Dividend Yield", "NOBL": "Dividend Aristocrats", "COWZ": "Free Cash Flow Yield", "MOAT": "Wide Moat", "SPHQ": "S&P 500 Quality", "SPMO": "S&P 500 Momentum", "DYNF": "Dynamic Multi-Factor"}},
     "EQ_Thematic": {"tickers": {"AIQ": "AI & Big Data", "ROBO": "Robotics & Automation", "ARKG": "Genomic Revolution", "ARKW": "Next Gen Internet", "DRIV": "Autonomous & EV", "UFO": "Space", "SKYY": "Cloud Computing", "FINX": "Fintech", "EDOC": "Telemedicine", "QCLN": "Clean Edge Green Energy", "BATT": "Battery Technology", "REMX": "Rare Earth Metals", "XSD": "Semiconductor SPDR", "IGV": "Software", "CLOU": "Cloud Computing", "SHLD": "Global Defense", "463250.KS": "TIGER K방산", "ARKK": "Disruptive Innovation", "TAN": "Solar Energy", "ICLN": "Clean Energy", "LIT": "Lithium & Battery"}},
-    "Intl_Developed": {"tickers": {"VEA": "FTSE Developed ex-US", "EFA": "MSCI EAFE", "IEFA": "MSCI EAFE Core", "SPDW": "S&P Developed ex-US", "VGK": "FTSE Europe", "EZU": "Eurozone", "HEDJ": "Europe Hedged", "FEZ": "Euro Stoxx 50", "EWJ": "MSCI Japan", "BBJP": "Japan BetaBuilders", "DXJ": "Japan Hedged Equity", "EWG": "Germany", "EWU": "United Kingdom", "EWQ": "France", "EWL": "Switzerland", "EWA": "Australia", "EWC": "Canada", "EIS": "Israel"}},
-    "Emerging_Markets": {"tickers": {"VWO": "FTSE Emerging Markets", "EEM": "MSCI Emerging Markets", "IEMG": "MSCI EM Core", "EMXC": "EM ex-China", "EWZ": "Brazil", "EWT": "Taiwan", "EWY": "South Korea", "KORU": "South Korea Bull 3X", "INDA": "India", "FXI": "China Large-Cap", "KWEB": "China Internet", "MCHI": "MSCI China", "EWW": "Mexico", "THD": "Thailand", "VNM": "Vietnam", "EIDO": "Indonesia", "TUR": "Turkey", "EZA": "South Africa", "GXG": "Colombia", "ECH": "Chile"}},
+    "Intl_Developed": {"tickers": {"VEA": "FTSE Developed ex-US", "EFA": "MSCI EAFE", "IEFA": "MSCI EAFE Core", "SPDW": "S&P Developed ex-US", "VGK": "FTSE Europe", "EZU": "Eurozone", "HEDJ": "Europe Hedged", "FEZ": "Euro Stoxx 50", "EWJ": "MSCI Japan", "BBJP": "Japan BetaBuilders", "DXJ": "Japan Hedged Equity", "EWG": "Germany", "EWU": "United Kingdom", "EWQ": "France", "EWL": "Switzerland", "EWP": "Spain", "EWI": "Italy", "EWA": "Australia", "EWC": "Canada", "EIS": "Israel", "EWH": "Hong Kong", "EWS": "Singapore"}},
+    "Emerging_Markets": {"tickers": {"VWO": "FTSE Emerging Markets", "EEM": "MSCI Emerging Markets", "IEMG": "MSCI EM Core", "EMXC": "EM ex-China", "EWZ": "Brazil", "EWT": "Taiwan", "EWY": "South Korea", "KORU": "South Korea Bull 3X", "INDA": "India", "FXI": "China Large-Cap", "KWEB": "China Internet", "MCHI": "MSCI China", "EWW": "Mexico", "THD": "Thailand", "VNM": "Vietnam", "EIDO": "Indonesia", "TUR": "Turkey", "EZA": "South Africa", "GXG": "Colombia", "ECH": "Chile", "EPOL": "Poland", "GREK": "Greece", "EGPT": "Egypt"}},
     "FI_Short": {"tickers": {"SHY": "1-3Y Treasury", "VCSH": "Short-Term Corp", "JAAA": "AAA CLO", "SGOV": "0-3M Treasury", "BIL": "1-3M T-Bill", "SHV": "0-1Y Treasury", "FLOT": "Floating Rate Bond", "USFR": "Floating Rate Treasury", "JPST": "Ultra-Short Income"}},
     "FI_Intermediate": {"tickers": {"IEI": "3-7Y Treasury", "VCIT": "Intermediate Corp", "AGG": "US Aggregate Bond", "BND": "Total Bond Market", "MBB": "MBS", "JBBB": "BB-B CLO", "IGIB": "5-10Y IG Corp", "GOVT": "US Treasury Full Curve"}},
     "FI_Long": {"tickers": {"IEF": "7-10Y Treasury", "TLH": "10-20Y Treasury", "TLT": "20+Y Treasury", "LQD": "Investment Grade Corp", "EDV": "Extended Duration STRIPS", "ZROZ": "25+Y Zero Coupon", "VGLT": "Long-Term Treasury", "VCLT": "Long-Term Corp"}},
@@ -198,7 +198,51 @@ GLOBAL_ETF_UNIVERSE = {
     "FI_International": {"tickers": {"BNDX": "Total Intl Bond", "IAGG": "Intl Aggregate", "EMB": "EM Bonds USD", "CEMB": "EM HC Bonds", "LEMB": "EM LC Bonds", "VWOB": "EM Government Bond", "IGOV": "Intl Treasury", "BWX": "SPDR Intl Treasury"}},
     "Commodities": {"tickers": {"GLD": "Gold", "SLV": "Silver", "GDX": "Gold Miners", "GDXJ": "Junior Gold Miners", "USO": "Crude Oil (WTI)", "BNO": "Brent Crude Oil", "UNG": "Natural Gas", "PPLT": "Platinum", "PALL": "Palladium", "DBA": "Agriculture", "DBC": "Commodity Index", "GSG": "S&P GSCI Commodity", "XOP": "S&P Oil and Exploration", "COPX": "Copper Miners", "WEAT": "Wheat", "CORN": "Corn", "URA": "Uranium", "CPER": "Copper", "SOYB": "Soybeans", "NIGS": "Sugar", "CANE": "Sugar", "PICK": "Metal Mining", "SIL": "Silver Miners", "SILJ": "Junior Silver Miners", "URNM": "Uranium Miners", "NUKZ": "Nuclear Energy", "XME": "S&P Metals & Mining", "GUNR": "Natural Resources", "MOO": "Agribusiness", "FTGC": "Commodity Strategy", "PDBC": "Optimum Yield Commodity", "COMT": "Commodity Strategy Broad", "FCG": "Natural Gas E&P", "OIH": "Oil Services", "GLDM": "Gold Mini", "SGOL": "Gold Physical", "IAU": "Gold Trust", "AAAU": "Goldman Gold", "BAR": "Gold Shares"}},
     "Real_Assets": {"tickers": {"VNQ": "US Real Estate", "VNQI": "Intl Real Estate", "IYR": "US Real Estate Broad", "REM": "Mortgage REITs", "AMLP": "MLP Energy", "MLPX": "MLP Energy", "IFRA": "Infrastructure", "WOOD": "Timber & Forestry", "IBIT": "Bitcoin", "ETHA": "Ethereum"}},
-    "Korea_Equity": {"tickers": {"069500.KS": "KODEX 200", "229200.KS": "KODEX 코스닥150", "091160.KS": "KODEX 반도체", "487240.KS": "AI핵심전력설비","305720.KS": "KODEX 2차전지", "102110.KS": "TIGER 200", "396500.KS": "TIGER 반도체TOP10", "292150.KS": "TIGER 코리아TOP10", "381170.KS": "TIGER 미국테크TOP10", "381180.KS": "TIGER 미국필라델피아반도체나스닥", "466920.KS": "SOL 조선TOP3플러스", "395160.KS": "KODEX AI반도체", "161510.KS": "PLUS 고배당주"}},
+    "Korea_Equity": {"tickers": {
+        # ── Broad market ──
+        "069500.KS": "KODEX 200",
+        "102110.KS": "TIGER 200",
+        "292150.KS": "TIGER 코리아TOP10",
+        "229200.KS": "KODEX 코스닥150",
+        "069660.KS": "KOSEF 200",
+        "278530.KS": "KODEX 200TR",
+        "152100.KS": "ARIRANG 200",
+        # ── Semiconductor (KR 반도체) ──
+        "091160.KS": "KODEX 반도체",
+        "396500.KS": "TIGER 반도체TOP10",
+        "395160.KS": "KODEX AI반도체",
+        # ── US Tech proxy (KR 상장) ──
+        "381170.KS": "TIGER 미국테크TOP10",
+        "381180.KS": "TIGER 미국필라델피아반도체나스닥",
+        # ── Sector ETFs ──
+        "305720.KS": "KODEX 2차전지",
+        "466920.KS": "SOL 조선TOP3플러스",
+        "487240.KS": "AI핵심전력설비",
+        "463250.KS": "TIGER K방산",
+        "139220.KS": "TIGER 200 IT",
+        "228810.KS": "TIGER 화장품",
+        "228790.KS": "TIGER 화학",
+        "228800.KS": "TIGER 생활소비재",
+        "139230.KS": "TIGER 200 중공업",
+        "139260.KS": "TIGER 200 건설",
+        "139270.KS": "TIGER 200 금융",
+        "266390.KS": "TIGER 코스피고배당",
+        # ── Factor / Style ──
+        "161510.KS": "PLUS 고배당주",
+        "279530.KS": "KODEX 고배당",
+        "143850.KS": "TIGER 미국S&P500선물",
+        "133690.KS": "TIGER 미국나스닥100",
+        "360750.KS": "TIGER 미국S&P500",
+        # ── Bond ──
+        "157450.KS": "KODEX 종합채권(AA-이상)",
+        "302190.KS": "TIGER 국고채30년",
+        "275980.KS": "TIGER 단기채권",
+        # ── Inverse / Leverage (SHORT 후보) ──
+        "251340.KS": "KODEX 코스닥150 선물인버스",
+        "252670.KS": "KODEX 200선물인버스2X",
+        "114800.KS": "KODEX 인버스",
+        "122630.KS": "KODEX 레버리지",
+    }},
     "Currency_Vol": {"tickers": {"UUP": "US Dollar Bullish", "FXE": "Euro", "FXY": "Japanese Yen", "FXB": "British Pound", "FXA": "Australian Dollar", "CYB": "Chinese Yuan", "VIXY": "VIX Short-Term"}},
     "Multi_Asset": {"tickers": {"AOR": "Growth Allocation", "AOA": "Aggressive Allocation", "AOM": "Moderate Allocation", "AOK": "Conservative Allocation", "RPAR": "Risk Parity", "GAA": "Global Asset Allocation"}}
 }
@@ -537,6 +581,17 @@ STOCK_UNIVERSE = {
         "078930.KS": "GS", "316140.KS": "우리금융지주",
         "036570.KS": "엔씨소프트", "011200.KS": "HMM",
         "267260.KS": "HD현대일렉트릭", "042700.KS": "한미반도체",
+        # ── KOSDAQ blue chips (NEW) ──
+        "247540.KQ": "에코프로비엠",       # Battery materials
+        "086520.KQ": "에코프로",           # Holding (Battery)
+        "091990.KQ": "셀트리온헬스케어",   # Biotech
+        "041510.KQ": "에스엠",             # Entertainment
+        "058470.KQ": "리노공업",           # Semiconductor equipment
+        "067310.KQ": "하나마이크론",       # Semiconductor packaging
+        "278280.KQ": "천보",               # Battery electrolytes
+        "240810.KQ": "원익IPS",            # Semiconductor equipment
+        "035900.KQ": "JYP Ent.",           # Entertainment
+        "263750.KQ": "펄어비스",           # Game
     }},
     # ══════════════════════════════════════════════════════════════════════
     # 13. Japan — ADR + 미국 상장 (yfinance 안정성 우선)
@@ -713,22 +768,62 @@ STOCK_THEMES = {
     "CTVA": "Ag Chemical", "NUE": "Steel", "DD": "Specialty Chemical",
     "DOW": "Commodity Chemical", "VMC": "Aggregates", "MLM": "Aggregates",
     "HAL": "Oilfield Services", "DVN": "E&P", "CE": "Specialty Chemical",
-    # ── Korea ──
-    "005930.KS": "Semiconductor", "000660.KS": "Memory",
-    "207940.KS": "Bio CDMO", "005380.KS": "Auto OEM",
-    "068270.KS": "Biosimilar", "005490.KS": "Steel/Holdings",
-    "035420.KS": "Internet Platform", "006400.KS": "Battery",
-    "000270.KS": "Auto OEM", "051910.KS": "Battery/Chemical",
-    "012450.KS": "Defense/Aerospace", "105560.KS": "Banking",
-    "055550.KS": "Banking", "034730.KS": "Holding/Telecom",
-    "035720.KS": "Internet Platform", "028260.KS": "Construction/Holding",
-    "066570.KS": "Consumer Electronics", "032830.KS": "Insurance",
-    "086790.KS": "Banking", "009150.KS": "Electronic Components",
-    "017670.KS": "Telecom", "003550.KS": "Holding",
-    "033780.KS": "Tobacco/Staples", "030200.KS": "Telecom",
-    "010130.KS": "Zinc/Smelting", "047050.KS": "Trading/Steel",
-    "010120.KS": "Electric Infra", "003670.KS": "Battery Materials",
-    "005935.KS": "Semiconductor", "018260.KS": "IT Services",
+    # ── Korea (themes aligned with SUBTHEME_TO_SECTOR keys in api.py) ──
+    "005930.KS": "Semiconductor Memory",       # Samsung Elec → Technology
+    "000660.KS": "Semiconductor Memory",       # SK Hynix → Technology
+    "005935.KS": "Semiconductor Memory",       # Samsung Elec Pref → Technology
+    "207940.KS": "Biotech",                    # Samsung Biologics → Healthcare
+    "068270.KS": "Biotech",                    # 셀트리온 → Healthcare
+    "005380.KS": "Auto & EV",                  # 현대차 → ConsDisc
+    "000270.KS": "Auto & EV",                  # 기아 → ConsDisc
+    "005490.KS": "Steel & Metals",             # POSCO홀딩스 → Materials
+    "047050.KS": "Steel & Metals",             # 포스코인터 → Materials
+    "035420.KS": "Digital Advertising & Media", # NAVER → CommServices
+    "035720.KS": "Digital Advertising & Media", # Kakao → CommServices
+    "006400.KS": "Battery & EV Materials",     # Samsung SDI → Materials
+    "051910.KS": "Battery & EV Materials",     # LG Chem → Materials
+    "003670.KS": "Battery & EV Materials",     # 포스코퓨처엠 → Materials
+    "373220.KS": "Battery & EV Materials",     # LG에너지솔루션 → Materials
+    "012450.KS": "Aerospace & Defense",        # 한화에어로 → Industrials
+    "105560.KS": "Banks",                      # KB금융 → Financials
+    "055550.KS": "Banks",                      # 신한지주 → Financials
+    "086790.KS": "Banks",                      # 하나금융지주 → Financials
+    "316140.KS": "Banks",                      # 우리금융지주 → Financials
+    "034730.KS": "Conglomerate & Holding",     # SK → Financials
+    "028260.KS": "Conglomerate & Holding",     # 삼성물산 → Financials
+    "003550.KS": "Conglomerate & Holding",     # LG → Financials
+    "078930.KS": "Conglomerate & Holding",     # GS → Financials
+    "066570.KS": "Consumer Hardware",          # LG전자 → Technology
+    "032830.KS": "Insurance",                  # 삼성생명 → Financials
+    "000810.KS": "Insurance",                  # 삼성화재 → Financials
+    "009150.KS": "Industrial Technology",      # 삼성전기 → Technology
+    "017670.KS": "Telecom & IT Services",      # SKT → CommServices
+    "030200.KS": "Telecom & IT Services",      # KT → CommServices
+    "033780.KS": "Consumer Staples",           # KT&G → ConsStaples
+    "010130.KS": "Base Metals & Mining",       # 고려아연 → Materials
+    "010120.KS": "Power & Energy Infra",       # LS Electric → Utilities
+    "018260.KS": "Telecom & IT Services",      # 삼성SDS → CommServices
+    "352820.KS": "Digital Media & Entertainment", # 하이브 → CommServices
+    "259960.KS": "Digital Media & Entertainment", # 크래프톤 → CommServices
+    "036570.KS": "Digital Media & Entertainment", # 엔씨소프트 → CommServices
+    "402340.KS": "Conglomerate & Holding",     # SK스퀘어 → Financials
+    "011070.KS": "Industrial Technology",      # LG이노텍 → Technology
+    "096770.KS": "Oil & Gas",                  # SK이노베이션 → Energy
+    "034020.KS": "Power & Energy Infra",       # 두산에너빌리티 → Utilities
+    "011200.KS": "Transport & Logistics",      # HMM → Industrials
+    "267260.KS": "Power & Energy Infra",       # HD현대일렉트릭 → Utilities
+    "042700.KS": "Semiconductor Equipment & EDA", # 한미반도체 → Technology
+    # ── KOSDAQ (NEW) ──
+    "247540.KQ": "Battery & EV Materials",      # 에코프로비엠 → Materials
+    "086520.KQ": "Conglomerate & Holding",      # 에코프로 → Financials
+    "091990.KQ": "Biotech",                     # 셀트리온헬스케어 → Healthcare
+    "041510.KQ": "Digital Media & Entertainment", # 에스엠 → CommServices
+    "035900.KQ": "Digital Media & Entertainment", # JYP → CommServices
+    "263750.KQ": "Digital Media & Entertainment", # 펄어비스 → CommServices
+    "058470.KQ": "Semiconductor Equipment & EDA", # 리노공업 → Technology
+    "067310.KQ": "Semiconductor Equipment & EDA", # 하나마이크론 → Technology
+    "240810.KQ": "Semiconductor Equipment & EDA", # 원익IPS → Technology
+    "278280.KQ": "Battery & EV Materials",      # 천보 → Materials
     # ════════════════════ 추가 종목 테마 ════════════════════
     # Semicon 추가
     "WOLF": "SiC/Wide Bandgap", "ACLS": "Equipment (Ion Implant)",
@@ -1164,21 +1259,47 @@ ETF_SUBTHEMES = {
     "TAN": "Power & Energy Infra", "ICLN": "Power & Energy Infra",
     "LIT": "Battery & EV Materials",
     # ── Intl_Developed ──
+    # Broad multi-country (그대로 광범위 분산)
     "VEA": "Developed Markets", "EFA": "Developed Markets",
     "IEFA": "Developed Markets", "SPDW": "Developed Markets",
-    "VGK": "Europe", "EZU": "Europe", "HEDJ": "Europe", "FEZ": "Europe",
-    "EWG": "Europe", "EWU": "Europe", "EWQ": "Europe", "EWL": "Europe",
+    "VGK": "Europe Broad", "EZU": "Europe Broad", "HEDJ": "Europe Broad", "FEZ": "Europe Broad",
+    # Europe single-country (Developed)
+    "EWG": "Europe - Germany",
+    "EWU": "Europe - UK",
+    "EWQ": "Europe - France",
+    "EWL": "Europe - Switzerland",
+    "EWP": "Europe - Spain",
+    "EWI": "Europe - Italy",
+    # Asia Pacific (Developed)
     "EWJ": "Japan", "BBJP": "Japan", "DXJ": "Japan",
-    "EWA": "Asia Pacific", "EWC": "North America", "EIS": "Middle East",
+    "EWA": "Asia Pacific - Australia",
+    "EWH": "Asia Pacific - Hong Kong",
+    "EWS": "Asia Pacific - Singapore",
+    # Other Developed
+    "EWC": "North America - Canada",
+    "EIS": "Middle East - Israel",
     # ── Emerging_Markets ──
     "VWO": "EM Broad", "EEM": "EM Broad", "IEMG": "EM Broad", "EMXC": "EM Broad",
-    "EWZ": "Latin America", "EWW": "Latin America",
-    "GXG": "Latin America", "ECH": "Latin America",
-    "EWT": "Asia Pacific", "EWY": "Korea (Index)", "KORU": "Korea (Index)",
+    # Asia EM
+    "EWT": "Asia Pacific - Taiwan",
+    "EWY": "Korea (Index)", "KORU": "Korea (Index)",
     "INDA": "India",
     "FXI": "China", "KWEB": "China", "MCHI": "China",
-    "THD": "Asia Pacific", "VNM": "Asia Pacific", "EIDO": "Asia Pacific",
-    "TUR": "Other EM", "EZA": "Other EM",
+    "THD": "Asia Pacific - Thailand",
+    "VNM": "Asia Pacific - Vietnam",
+    "EIDO": "Asia Pacific - Indonesia",
+    # Latin America EM
+    "EWZ": "Latin America - Brazil",
+    "EWW": "Latin America - Mexico",
+    "GXG": "Latin America - Colombia",
+    "ECH": "Latin America - Chile",
+    # Europe EM
+    "EPOL": "Europe - Poland",
+    "GREK": "Europe - Greece",
+    # EMEA EM
+    "TUR": "EMEA - Turkey",
+    "EZA": "EMEA - South Africa",
+    "EGPT": "EMEA - Egypt",
     # ── FI_Short ──
     "SHY": "Treasury - Short", "SGOV": "Treasury - Short",
     "BIL": "Treasury - Short", "SHV": "Treasury - Short", "JPST": "Treasury - Short",
@@ -1235,18 +1356,43 @@ ETF_SUBTHEMES = {
     "IFRA": "Industrial Equipment", "WOOD": "Agriculture & Food",
     "IBIT": "Crypto", "ETHA": "Crypto",
     # ── Korea_Equity ──
+    # Broad
     "069500.KS": "Korea (Index)", "229200.KS": "Korea (Index)",
-    "091160.KS": "Semiconductor Design",
+    "102110.KS": "Korea (Index)", "292150.KS": "Korea (Index)",
+    "069660.KS": "Korea (Index)", "278530.KS": "Korea (Index)",
+    "152100.KS": "Korea (Index)",
+    # Semiconductor (KR + US-proxy)
+    "091160.KS": "Semiconductor Design", "396500.KS": "Semiconductor Design",
+    "395160.KS": "Semiconductor Design",
+    "381170.KS": "Sector Broad - Tech", "381180.KS": "Semiconductor Design",
+    # Sector
     "487240.KS": "Power & Energy Infra",
     "305720.KS": "Battery & EV Materials",
-    "102110.KS": "Korea (Index)",
-    "396500.KS": "Semiconductor Design",
-    "292150.KS": "Korea (Index)",
-    "381170.KS": "Sector Broad - Tech",
-    "381180.KS": "Semiconductor Design",
     "466920.KS": "Industrial Equipment",
-    "395160.KS": "Semiconductor Design",
+    "463250.KS": "Aerospace & Defense",
+    "139220.KS": "Sector Broad - Tech",
+    "228810.KS": "Consumer Brands",
+    "228790.KS": "Chemicals",
+    "228800.KS": "Consumer Staples",
+    "139230.KS": "Industrial Equipment",
+    "139260.KS": "Building & Construction",
+    "139270.KS": "Sector Broad - Financials",
+    "266390.KS": "Factor - Dividend",
+    # Factor / Style
     "161510.KS": "Factor - Dividend",
+    "279530.KS": "Factor - Dividend",
+    "143850.KS": "Korea (Index)",      # US S&P proxy via KR ETF
+    "133690.KS": "Korea (Index)",
+    "360750.KS": "Korea (Index)",
+    # Bond
+    "157450.KS": "Sector Broad - Financials",
+    "302190.KS": "Sector Broad - Financials",
+    "275980.KS": "Sector Broad - Financials",
+    # Inverse / Leverage
+    "251340.KS": "Korea (Index)",
+    "252670.KS": "Korea (Index)",
+    "114800.KS": "Korea (Index)",
+    "122630.KS": "Korea (Index)",
     # ── Currency_Vol ──
     "UUP": "Currency", "FXE": "Currency", "FXY": "Currency",
     "FXB": "Currency", "FXA": "Currency", "CYB": "Currency",
@@ -1578,6 +1724,23 @@ class NaiveDiscoveryDetector:
         # ── 1Y Return (252 trading days) ──
         ret_252d = ((last_close / close_252d_ago) - 1) * 100 if close_252d_ago > 0 else 0.0
 
+        # ── YTD Return (Year-to-Date) ── return from last trading day of prior calendar year
+        try:
+            current_year = close.index[-1].year
+            in_year_mask = close.index.year >= current_year
+            if in_year_mask.any():
+                first_idx_of_year_pos = int(np.argmax(in_year_mask.values))
+                eoy_pos = first_idx_of_year_pos - 1
+                if eoy_pos >= 0:
+                    close_eoy_prev = sf(close.iloc[eoy_pos])
+                else:
+                    close_eoy_prev = sf(close.iloc[0])
+                ret_ytd = ((last_close / close_eoy_prev) - 1) * 100 if close_eoy_prev > 0 else 0.0
+            else:
+                ret_ytd = 0.0
+        except Exception:
+            ret_ytd = 0.0
+
         # ── 36-12M Return (De Bondt & Thaler 1985): 36개월 수익률에서 최근 12개월 제외 ──
         # Long-term reversal signal: 756 거래일(~3년) 전 → 252 거래일(~1년) 전 구간 수익률
         close_756d_ago = sf(close.iloc[-757]) if len(close) >= 757 else None
@@ -1784,6 +1947,7 @@ class NaiveDiscoveryDetector:
             'ret_12_1m': ret_12_1m,
             'ret_1d': ret_1d,
             'ret_252d': ret_252d,
+            'ret_ytd': ret_ytd,
             'ret_36_12m': ret_36_12m,
             'ret_3y_ann': ret_3y_ann,
             'ret_5y_ann': ret_5y_ann,
@@ -2011,11 +2175,35 @@ class NaiveDiscoveryDetector:
             r['rss'] = ws * r['rss_short'] + wl * r['rss_long']
             ranks[t] = r
 
-        # ── Pass 2: 카테고리 RSS 평균/분산 ──
+        # ── Pass 2: 카테고리 RSS 평균/분산 + Within-sector RSS hybrid ──
+        # Universe-wide RSS만으로는 sector beta가 한쪽으로 쏠리면 (defensive 약세 시 tech 자동 상위)
+        # 종목 본인의 sector 내 상대 강도를 알 수 없음. 60% within-sector + 40% universe 로 hybrid.
+        # 작은 카테고리(n < 8)는 percentile noise가 크므로 universe-wide 그대로 사용.
+        WITHIN_SECTOR_WEIGHT = 0.60
+        UNIVERSE_RSS_WEIGHT = 1.0 - WITHIN_SECTOR_WEIGHT
+        MIN_CAT_N_FOR_WITHIN = 8
+
         for cat, tlist in cat_to_tickers.items():
             rss_arr = np.array([ranks[t]['rss'] for t in tlist], dtype=float)
             cat_stats[cat]['rss_mean'] = float(np.nanmean(rss_arr)) if len(rss_arr) > 0 else 50.0
             cat_stats[cat]['rss_std'] = float(np.nanstd(rss_arr)) if len(rss_arr) > 1 else 0.0
+
+            # Within-sector RSS: universe RSS 의 sector 내 percentile rank
+            if len(tlist) >= MIN_CAT_N_FOR_WITHIN:
+                for t in tlist:
+                    rss_universe = ranks[t]['rss']
+                    rss_within = pct_rank(rss_universe, rss_arr)
+                    ranks[t]['rss_universe'] = round(rss_universe, 1)
+                    ranks[t]['rss_within_sector'] = round(rss_within, 1)
+                    ranks[t]['rss'] = round(
+                        WITHIN_SECTOR_WEIGHT * rss_within
+                        + UNIVERSE_RSS_WEIGHT * rss_universe, 1
+                    )
+            else:
+                # Small bucket — universe-wide RSS 유지, within=universe로 mirror
+                for t in tlist:
+                    ranks[t]['rss_universe'] = round(ranks[t]['rss'], 1)
+                    ranks[t]['rss_within_sector'] = round(ranks[t]['rss'], 1)
 
         # ── Pass 3: URS 4 컴포넌트 (raw → cross-sectional pctile → blend) ──
         # 1) LeadLagGap_raw: 카테고리 평균 ret_63d - 본인 ret_63d, 단 (a) 카테고리가 상승추세
@@ -2145,6 +2333,8 @@ class NaiveDiscoveryDetector:
         sma20_s = raw['sma20_slope']
 
         # Step 1: Short-term direction with hysteresis
+        # Anti-flip 강화: prev=FLAT 일 때 진입 임계값을 1.3× 로 stricter 설정.
+        # → 격주 NEUTRAL ↔ CONSOLIDATION ↔ RECOVERY ↔ FADING flip noise 제거.
         if prev_short == "UP":
             # Loose exit from UP: 거리만 줄어도 slope가 양수면 UP 유지
             if sma20_d > short_buf_exit and sma20_s > 0:
@@ -2160,7 +2350,16 @@ class NaiveDiscoveryDetector:
                 short_dir = "UP"
             else:
                 short_dir = "FLAT"
-        else:  # FLAT or unknown — strict enter
+        elif prev_short == "FLAT":
+            # Sticky FLAT: 이전이 명시적 FLAT이었다면 더 큰 움직임 필요 (1.3× buffer)
+            sticky = short_buf * 1.3
+            if sma20_d > sticky and sma20_s > 0:
+                short_dir = "UP"
+            elif sma20_d < -sticky and sma20_s < 0:
+                short_dir = "DOWN"
+            else:
+                short_dir = "FLAT"
+        else:  # unknown (initial scan) — strict enter
             if sma20_d > short_buf and sma20_s > 0:
                 short_dir = "UP"
             elif sma20_d < -short_buf and sma20_s < 0:
@@ -2187,7 +2386,16 @@ class NaiveDiscoveryDetector:
                 long_dir = "UP"
             else:
                 long_dir = "FLAT"
-        else:  # FLAT or unknown — strict enter
+        elif prev_long == "FLAT":
+            # Sticky FLAT (long horizon)
+            sticky = long_buf * 1.3
+            if sma50_d > sticky and (spread > 0 or slope50 > 0):
+                long_dir = "UP"
+            elif sma50_d < -sticky and (spread < 0 or slope50 < 0):
+                long_dir = "DOWN"
+            else:
+                long_dir = "FLAT"
+        else:  # unknown (initial scan) — strict enter
             if sma50_d > long_buf and (spread > 0 or slope50 > 0):
                 long_dir = "UP"
             elif sma50_d < -long_buf and (spread < 0 or slope50 < 0):
@@ -2278,8 +2486,12 @@ class NaiveDiscoveryDetector:
 
     @staticmethod
     def composite(tcs, tfs, rss, oer, urs=50.0):
-        # AQR underreaction (URS) 15% 비중 추가, TCS/TFS/RSS 비례 축소
-        return round(0.30 * tcs + 0.25 * tfs + 0.30 * rss + 0.15 * urs, 1)
+        # Base: TCS/TFS/RSS/URS 가중합
+        base = 0.30 * tcs + 0.25 * tfs + 0.30 * rss + 0.15 * urs
+        # OER risk penalty — 과열 종목과 건전 추세주의 동일점수 비대칭 해소.
+        # OER ≤ 40: penalty 없음. OER 40 → 100 구간 선형 감점 (max -6점).
+        oer_penalty = 0.10 * max(0.0, float(oer) - 40.0)
+        return round(max(0.0, base - oer_penalty), 1)
 
     # ── O'Neil (CANSLIM) Long / Short Signals ──
     # William O'Neil 방법론 기반 매수/매도 시그널 스코어링 (0-100)
@@ -2561,14 +2773,23 @@ class NaiveDiscoveryDetector:
 ###############################################################################
 
 def evaluate_eligible(analysis, adv_usd, min_adv=5_000_000, comp_threshold=55):
-    """Portfolio eligibility 평가.
-    부적격 클래스: DOWNTREND, EXHAUSTING, FADING, COUNTER_RALLY, CYCLE_PEAK, WEAKENING.
-      - WEAKENING (DOWN, FLAT): 단기 약세 + 장기 횡보 → 매수 진입 위험 (#8 fix).
-      - OVEREXTENDED는 위험 신호이나 차익실현/관망용 — 부적격은 아니나 CLASS_RANK=1.
-    LAGGING_CATCHUP은 적격 (URS 기반 catch-up 매수 후보)."""
+    """Portfolio eligibility 평가 (Option C — strict separation from Pre-Momentum).
+
+    Momentum (eligible=True) 가능 classes (4):
+      - 🟢 CONTINUATION, 🔵 FORMATION, 🟡 OVEREXTENDED, 🟦 LAGGING_CATCHUP
+
+    Pre-Momentum 전용 classes (4) — NEVER eligible regardless of composite:
+      - 🟠 NEUTRAL, 🟡 CONSOLIDATION, 🔵 RECOVERY, 🔶 PULLBACK
+        (방향성 모호 — 명확한 momentum 확인 안 됨 → Pre-Momentum stage)
+
+    Excluded classes (6) — bearish, never eligible:
+      - ⬇️ DOWNTREND, 🟤 EXHAUSTING, 🟤 FADING, 🟣 COUNTER_RALLY,
+        🔴 CYCLE_PEAK, ⚠️ WEAKENING
+    """
     cls = analysis['classification']
     comp = analysis['composite']
     reasons = []
+    # Bearish — excluded
     if cls == "⬇️ DOWNTREND":
         reasons.append("Downtrend")
     if cls == "🟤 EXHAUSTING":
@@ -2581,6 +2802,15 @@ def evaluate_eligible(analysis, adv_usd, min_adv=5_000_000, comp_threshold=55):
         reasons.append("CyclePeak")
     if cls == "⚠️ WEAKENING":
         reasons.append("Weakening")
+    # Ambiguous / pre-momentum exclusive — strict separation (Option C)
+    if cls == "🟠 NEUTRAL":
+        reasons.append("Neutral(PM)")
+    if cls == "🟡 CONSOLIDATION":
+        reasons.append("Consolidation(PM)")
+    if cls == "🔵 RECOVERY":
+        reasons.append("Recovery(PM)")
+    if cls == "🔶 PULLBACK":
+        reasons.append("Pullback(PM)")
     if comp < comp_threshold:
         reasons.append("LowScore")
     if adv_usd < min_adv:
@@ -2673,7 +2903,24 @@ class SignalValidityEngine:
         start_i = max(60, n_avail - self.lookback_td - 1)
         end_i = n_avail - max_fwd - 1   # leave room for forward return
         if end_i <= start_i: end_i = n_avail - 2
-        eval_indices = sorted(set(np.linspace(start_i, end_i, self.n_eval, dtype=int)))
+        # ── Bi-weekly Friday grid ──
+        # 매 2주 금요일을 anchor 로 backward iterate. 사용자 expectation:
+        #   "2주 간격으로 마지막 금요일 데이터 산출 + 가장 최근은 today (API에서 append)"
+        # 금요일이 시장 휴장(holiday)이면 직전 trading day (목요일 등)로 fallback.
+        last_date = dates[end_i]
+        days_to_friday = (last_date.weekday() - 4) % 7   # 0 if Friday, 1 if Sat, ..., 6 if Thu
+        most_recent_friday = last_date - pd.Timedelta(days=days_to_friday)
+        eval_indices_set = set()
+        target_friday = most_recent_friday
+        while len(eval_indices_set) < self.n_eval:
+            # 목표 Friday <= 인 가장 가까운 trading day index 찾기
+            idx = int(dates.searchsorted(target_friday, side='right') - 1)
+            if idx < start_i:
+                break
+            if start_i <= idx <= end_i:
+                eval_indices_set.add(idx)
+            target_friday = target_friday - pd.Timedelta(days=14)
+        eval_indices = sorted(eval_indices_set)
         eval_dates = [dates[i] for i in eval_indices]
 
         # Walk-forward split: train | embargo | test
@@ -3389,6 +3636,41 @@ def run_scan(categories=None, lookback_days=365, custom_date=None,
     print(f"📊 Phase 2: Cross-sectional percentile ranking...")
     all_ranks = NaiveDiscoveryDetector.compute_percentile_ranks(all_raw)
 
+    # ── Phase 2.5: TFS residualization (TCS-TFS 정보 중복 제거) ──
+    # TCS와 TFS는 둘 다 SMA family 의존 → cross-sectional 상관 ~0.5-0.7로 추정.
+    # TFS를 TCS에 대해 residualize → "추세와 독립된 formation 강도" 신호 분리.
+    # composite() 계산 시에만 residualized TFS 사용 (classify()용 tfs_short/long은 raw 유지).
+    tfs_residual_map = {}
+    _tcs_pre = []
+    _tfs_pre = []
+    _tickers_pre = []
+    for ticker in sorted(all_raw.keys()):
+        try:
+            raw = all_raw[ticker]
+            tcs_pre, _, _ = NaiveDiscoveryDetector.score_tcs(raw)
+            tfs_pre, _, _ = NaiveDiscoveryDetector.score_tfs(raw)
+            _tcs_pre.append(tcs_pre)
+            _tfs_pre.append(tfs_pre)
+            _tickers_pre.append(ticker)
+        except Exception:
+            pass
+
+    if len(_tickers_pre) >= 30:
+        try:
+            _tcs_arr = np.array(_tcs_pre, dtype=float)
+            _tfs_arr = np.array(_tfs_pre, dtype=float)
+            # OLS: TFS = a + b·TCS
+            b_coef, a_coef = np.polyfit(_tcs_arr, _tfs_arr, 1)
+            resid = _tfs_arr - (a_coef + b_coef * _tcs_arr)
+            # Center at 50, clip [0, 100]
+            tfs_residualized = np.clip(50.0 + resid, 0.0, 100.0)
+            for i, t in enumerate(_tickers_pre):
+                tfs_residual_map[t] = float(tfs_residualized[i])
+            r2 = 1.0 - (resid.var() / _tfs_arr.var()) if _tfs_arr.var() > 0 else 0.0
+            print(f"   🔬 TFS residualization: slope={b_coef:.2f}, intercept={a_coef:.1f}, R²={r2:.2f}")
+        except Exception as e:
+            print(f"   ⚠️ TFS residualization failed: {e}")
+
     # ── Hedge strategy pre-computation ──
     market_regime = 'transition'
     cat_stats = {}
@@ -3418,7 +3700,9 @@ def run_scan(categories=None, lookback_days=365, custom_date=None,
             rss_l = round(ranks['rss_long'], 1)
             rss = round(ranks['rss'], 1)
             urs = NaiveDiscoveryDetector.score_urs(ranks)
-            comp = NaiveDiscoveryDetector.composite(tcs, tfs, rss, oer, urs)
+            # Composite는 residualized TFS 사용 (TCS와 정보 중복 제거); display tfs는 raw 유지.
+            tfs_for_composite = tfs_residual_map.get(ticker, tfs)
+            comp = NaiveDiscoveryDetector.composite(tcs, tfs_for_composite, rss, oer, urs)
             adaptive = ve.adaptive_thresholds if ve.computed else {}
             cls = NaiveDiscoveryDetector.classify(raw, tcs_s, tcs_l, tfs_s, tfs_l, oer,
                                                    adaptive=adaptive, urs=urs,
@@ -3495,6 +3779,9 @@ def run_scan(categories=None, lookback_days=365, custom_date=None,
                 'market_cap': etf.market_cap,
                 'data_as_of': data_as_of, 'realtime_updated': etf.realtime_updated,
                 'composite': comp, 'tcs': tcs, 'tfs': tfs, 'oer': oer, 'rss': rss,
+                'tfs_resid': round(float(tfs_for_composite), 1),  # TCS-residualized TFS (used in composite)
+                'rss_universe': ranks.get('rss_universe', rss),    # universe-wide RSS (legacy)
+                'rss_within_sector': ranks.get('rss_within_sector', rss),  # within-category RSS
                 'urs': urs,
                 'urs_leadlag': ranks.get('urs_leadlag', 50.0),
                 'urs_attn_gap': ranks.get('urs_attn_gap', 50.0),
@@ -3745,6 +4032,30 @@ def run_scan(categories=None, lookback_days=365, custom_date=None,
             # Cross-sectional percentile ranks
             snap_ranks = NaiveDiscoveryDetector.compute_percentile_ranks(snap_raw)
 
+            # ── TFS residualization (snap-level) — main scan과 동일 매커니즘 ──
+            _snap_tcs = []
+            _snap_tfs = []
+            _snap_tk = []
+            for tk in snap_raw:
+                try:
+                    _tcs_p, _, _ = NaiveDiscoveryDetector.score_tcs(snap_raw[tk])
+                    _tfs_p, _, _ = NaiveDiscoveryDetector.score_tfs(snap_raw[tk])
+                    _snap_tcs.append(_tcs_p)
+                    _snap_tfs.append(_tfs_p)
+                    _snap_tk.append(tk)
+                except Exception:
+                    pass
+            snap_tfs_resid = {}
+            if len(_snap_tk) >= 30:
+                try:
+                    _b, _a = np.polyfit(np.array(_snap_tcs, dtype=float),
+                                        np.array(_snap_tfs, dtype=float), 1)
+                    for i, tk in enumerate(_snap_tk):
+                        r_val = _snap_tfs[i] - (_a + _b * _snap_tcs[i])
+                        snap_tfs_resid[tk] = float(np.clip(50.0 + r_val, 0.0, 100.0))
+                except Exception:
+                    pass
+
             # Score + classify + O'Neil
             for ticker in snap_raw:
                 raw = snap_raw[ticker]
@@ -3754,7 +4065,8 @@ def run_scan(categories=None, lookback_days=365, custom_date=None,
                 oer = NaiveDiscoveryDetector.score_oer(raw)
                 rss = round(ranks['rss'], 1)
                 urs = NaiveDiscoveryDetector.score_urs(ranks)
-                comp = NaiveDiscoveryDetector.composite(tcs, tfs, rss, oer, urs)
+                tfs_for_composite = snap_tfs_resid.get(ticker, tfs)
+                comp = NaiveDiscoveryDetector.composite(tcs, tfs_for_composite, rss, oer, urs)
                 cls = NaiveDiscoveryDetector.classify(raw, tcs_s, tcs_l, tfs_s, tfs_l, oer, urs=urs)
                 oneil_long = NaiveDiscoveryDetector.score_oneil_long(raw, ranks)
                 el_reasons = []

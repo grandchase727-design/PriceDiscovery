@@ -11,12 +11,12 @@ export function EffectivenessTab() {
   const [period, setPeriod] = useState("1M");
   useEffect(() => { fetchEffectiveness().then(setRaw); }, []);
 
-  if (!raw) return <div className="text-gray-500 p-8">Loading...</div>;
+  if (!raw) return <div className="text-[#857F7A] p-8">Loading...</div>;
 
   const periods: string[] = raw.periods || [];
   const data = raw.per_period?.[period];
 
-  if (!data || !periods.length) return <div className="text-gray-500 p-8">No effectiveness data available.</div>;
+  if (!data || !periods.length) return <div className="text-[#857F7A] p-8">No effectiveness data available.</div>;
 
   const { kpis, ic_timeseries, quintiles, classification_summary, scatter, box_data, regression } = data;
 
@@ -25,11 +25,11 @@ export function EffectivenessTab() {
 
       {/* Period Selector */}
       <div className="flex items-center gap-2">
-        <span className="text-sm text-gray-400">Forward Period:</span>
+        <span className="text-[16px] text-[#66605C]">Forward Period:</span>
         {periods.map((p: string) => (
           <button key={p}
-            className={`px-4 py-1.5 rounded text-sm font-medium transition-colors ${
-              period === p ? "bg-cyan-600 text-white" : "bg-[#1f2937] text-gray-400 hover:text-gray-200"
+            className={`px-4 py-1.5 rounded text-[16px] font-medium transition-colors ${
+              period === p ? "bg-[#0F5499] text-white" : "bg-[#F2E5D7] text-[#66605C] hover:text-[#33302E]"
             }`}
             onClick={() => setPeriod(p)}>
             {p}
@@ -48,7 +48,7 @@ export function EffectivenessTab() {
 
       {/* IC Time Series */}
       <div className="mt-12">
-        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">
+        <h3 className="text-[16px] font-semibold text-[#66605C] uppercase tracking-wide mb-3">
           Information Coefficient Over Time ({period} Forward)
         </h3>
         {ic_timeseries.length > 0 && (
@@ -67,7 +67,7 @@ export function EffectivenessTab() {
               }}
               config={{ responsive: true }} style={{ width: "100%" }}
             />
-            <p className="text-[11px] text-gray-500 mt-3 px-2 leading-relaxed">
+            <p className="text-[13px] text-[#857F7A] mt-3 px-2 leading-relaxed">
               각 평��� 시점에서 Composite Score와 {period} forward return 간 Spearman 순위상관계수(IC).
               양수(초록) = 점수가 높을수록 수익률 높음. 음수(빨강) = 역상관. 일관되게 양수이면 시그널 예측력 양호.
             </p>
@@ -77,7 +77,7 @@ export function EffectivenessTab() {
 
       {/* Quintile Analysis */}
       <div className="mt-12">
-        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">
+        <h3 className="text-[16px] font-semibold text-[#66605C] uppercase tracking-wide mb-3">
           Quintile Analysis ({period})
         </h3>
         <div className="grid grid-cols-2 gap-8">
@@ -98,7 +98,7 @@ export function EffectivenessTab() {
               { accessorKey: "avg_exc", header: `Avg Exc%` },
               { accessorKey: "hit_rate", header: "Hit Rate%" },
             ]} maxHeight="250px" />
-            <p className="text-[11px] text-gray-500 mt-3 px-2 leading-relaxed">
+            <p className="text-[13px] text-[#857F7A] mt-3 px-2 leading-relaxed">
               Composite Score를 5분위로 나누어 각 분위의 {period} forward return 성과 비교.
               Q5(고점수)의 수익률이 Q1(저점수)보다 높으면 스코어링 시스템이 유효.
             </p>
@@ -116,7 +116,7 @@ export function EffectivenessTab() {
               }}
               config={{ responsive: true }} style={{ width: "100%" }}
             />
-            <p className="text-[11px] text-gray-500 mt-3 px-2 leading-relaxed">
+            <p className="text-[13px] text-[#857F7A] mt-3 px-2 leading-relaxed">
               Q1→Q5�� 갈수록 수익률이 단조증가하면 시그널의 모노토닉(단조성) 충족.
               Q5-Q1 스프레드가 클수록 변별력 높음.
             </p>
@@ -126,7 +126,7 @@ export function EffectivenessTab() {
 
       {/* Classification Box Plot */}
       <div className="mt-12">
-        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">
+        <h3 className="text-[16px] font-semibold text-[#66605C] uppercase tracking-wide mb-3">
           Excess Return by Classification ({period})
         </h3>
         {box_data.length > 0 && (() => {
@@ -146,7 +146,7 @@ export function EffectivenessTab() {
                 }}
                 config={{ responsive: true }} style={{ width: "100%" }}
               />
-              <p className="text-[11px] text-gray-500 mt-3 px-2 leading-relaxed">
+              <p className="text-[13px] text-[#857F7A] mt-3 px-2 leading-relaxed">
                 각 분류(Classification)의 {period} excess return 분포(박스플롯). 0선 위 = 벤치마크 초과수익.
                 CONTINUATION의 중앙값이 양수이면 해당 시그널이 알파 생성에 유효. DOWNTREND가 음수면 리스크 필터 유효.
               </p>
@@ -157,7 +157,7 @@ export function EffectivenessTab() {
 
       {/* Classification Summary Table */}
       <div className="mt-12">
-        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">
+        <h3 className="text-[16px] font-semibold text-[#66605C] uppercase tracking-wide mb-3">
           Classification Summary ({period})
         </h3>
         <ColDefToggle defs={[
@@ -176,14 +176,14 @@ export function EffectivenessTab() {
           { accessorKey: "avg_exc", header: `Exc%` },
           { accessorKey: "hit_rate", header: "Hit Rate%" },
         ]} maxHeight="350px" />
-        <p className="text-[11px] text-gray-500 mt-3 px-2 leading-relaxed">
+        <p className="text-[13px] text-[#857F7A] mt-3 px-2 leading-relaxed">
           분류별 {period} forward 성�� 요약. Hit Rate = excess return &gt; 0 비율. 50% 이상이면 벤치마크 대비 우위.
         </p>
       </div>
 
       {/* Score vs Excess Return Scatter */}
       <div className="mt-12">
-        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">
+        <h3 className="text-[16px] font-semibold text-[#66605C] uppercase tracking-wide mb-3">
           Composite Score vs Excess Return ({period})
         </h3>
         {scatter.length > 0 && (
@@ -213,7 +213,7 @@ export function EffectivenessTab() {
               }}
               config={{ responsive: true }} style={{ width: "100%" }}
             />
-            <p className="text-[11px] text-gray-500 mt-3 px-2 leading-relaxed">
+            <p className="text-[13px] text-[#857F7A] mt-3 px-2 leading-relaxed">
               각 관측(시점×종���)의 Composite Score(X)와 {period} excess return(Y) 산점도.
               주황 회귀선의 기울기(slope={regression.slope})가 양수면 고점수 = 고수익 관계 성립.
               R²={regression.r_squared}는 설명력. 점선(55) = 적격 기준.
@@ -240,7 +240,7 @@ export function EffectivenessTab() {
         if (compRows.length < 2) return null;
         return (
           <div className="mt-12">
-            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">
+            <h3 className="text-[16px] font-semibold text-[#66605C] uppercase tracking-wide mb-3">
               Multi-Period Comparison (1W vs 1M vs 3M)
             </h3>
             <div className="grid grid-cols-2 gap-8">
@@ -253,7 +253,7 @@ export function EffectivenessTab() {
                   { accessorKey: "avg_exc", header: "Avg Exc%" },
                   { accessorKey: "r_sq", header: "R²" },
                 ]} maxHeight="200px" />
-                <p className="text-[11px] text-gray-500 mt-3 px-2 leading-relaxed">
+                <p className="text-[13px] text-[#857F7A] mt-3 px-2 leading-relaxed">
                   1주/1개월/3개월 forward 기간별 시그널 유효성 비교.
                   기간이 길수록 IC와 R²가 높으면 중장��� 시그널로서 유효, 짧은 기간이 높으면 단기 트레이딩 시그널.
                 </p>

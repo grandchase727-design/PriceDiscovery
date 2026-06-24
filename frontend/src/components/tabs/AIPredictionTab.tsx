@@ -306,13 +306,13 @@ export function AIPredictionTab() {
   }, []);
 
   if (loading) {
-    return <div className="text-gray-500">Loading AI prediction results...</div>;
+    return <div className="text-[#857F7A]">Loading AI prediction results...</div>;
   }
   if (!data || data.error || !data.metrics) {
     return (
-      <div className="p-6 bg-[#111827] border border-red-900 rounded-lg text-red-300 text-sm">
+      <div className="p-6 bg-[#FFFFFF] border border-[#E0AAAA] rounded-lg text-[#CC0000] text-[16px]">
         {data?.error || "AI prediction cache not available."} <br />
-        Run <code className="text-red-200">python3 ai_prediction_cache.py</code> to generate it.
+        Run <code className="text-[#CC0000]">python3 ai_prediction_cache.py</code> to generate it.
       </div>
     );
   }
@@ -325,24 +325,24 @@ export function AIPredictionTab() {
     <div className="space-y-4">
       {/* ── Header (always visible) ── */}
       <div>
-        <h2 className="text-xl font-bold text-gray-100">AI Regime Prediction (Forward 1M)</h2>
-        <p className="text-sm text-gray-500 mt-1">
+        <h2 className="text-[22px] font-bold text-[#33302E]">AI Regime Prediction (Forward 1M)</h2>
+        <p className="text-[16px] text-[#857F7A] mt-1">
           MSCI ACWI / Bloomberg Global Agg forward 1-month regime classifier (BULL / BASE / BEAR). LightGBM multiclass + meta-labeling
           (Lopez de Prado). Allocation grids: <b>BULL 90 / 5 / 5</b>, <b>BASE 75 / 10 / 15</b>, <b>BEAR 60 / 15 / 25</b> (equity / bond / cash).
-          &nbsp;Benchmark: <b className="text-cyan-300">{m.benchmark_label ?? "ACWI 90 / Cash 10"}</b>.
+          &nbsp;Benchmark: <b className="text-[#0D7680]">{m.benchmark_label ?? "ACWI 90 / Cash 10"}</b>.
         </p>
       </div>
 
       {/* ── Sub-tab navigation ── */}
-      <div className="flex gap-1 border-b border-gray-800">
+      <div className="flex gap-1 border-b border-[#E6D9CE]">
         {["Performance & Analytics", "Signal Definition"].map((label, i) => (
           <button
             key={label}
             onClick={() => setSub(i)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            className={`px-4 py-2 text-[16px] font-medium border-b-2 transition-colors ${
               sub === i
-                ? "border-cyan-400 text-cyan-300"
-                : "border-transparent text-gray-500 hover:text-gray-300"
+                ? "border-[#0F5499] text-[#0D7680]"
+                : "border-transparent text-[#857F7A] hover:text-[#33302E]"
             }`}>
             {label}
           </button>
@@ -372,14 +372,14 @@ export function AIPredictionTab() {
                     sub={`${m.period_start} → ${m.period_end}`} />
       </div>
 
-      <div className="text-xs text-gray-500">
+      <div className="text-[14px] text-[#857F7A]">
         <b>Meta diagnostics</b> — hit rate {fmtPct(m.meta_hit_rate, 1)}, agreement with primary {fmtPct(m.meta_agreement, 1)},
         override→BASE rate {fmtPct(m.meta_override_rate, 1)}. Dataset: {m.winner_n_features} features × {m.winner_n_rows} months.
       </div>
 
       {/* ── Cumulative Return (full-width) ── */}
-      <div className="bg-[#111827] rounded-lg p-4 border border-gray-800">
-        <div className="text-sm font-semibold text-gray-200 mb-2">Cumulative Return (OOS)</div>
+      <div className="bg-[#FFFFFF] rounded-lg p-4 border border-[#E6D9CE]">
+        <div className="text-[16px] font-semibold text-[#33302E] mb-2">Cumulative Return (OOS)</div>
         <Plot
           data={(() => {
             const dates = data.returns.map((r) => r.date);
@@ -397,8 +397,8 @@ export function AIPredictionTab() {
             ...DARK_LAYOUT, height: 380,
             margin: { t: 20, b: 35, l: 55, r: 15 },
             hovermode: "x unified",
-            yaxis: { title: "Cumulative", gridcolor: "#1f2937" },
-            xaxis: { gridcolor: "#1f2937" },
+            yaxis: { title: "Cumulative", gridcolor: "#F2E5D7" },
+            xaxis: { gridcolor: "#F2E5D7" },
             legend: { x: 0.02, y: 0.98, bgcolor: "rgba(0,0,0,0)" },
           }}
           config={{ displayModeBar: false, responsive: true }}
@@ -414,8 +414,8 @@ export function AIPredictionTab() {
       {/* ── Charts row 2: regime proba + confusion matrix ── */}
       <div className="grid grid-cols-3 gap-4">
         {/* Regime probabilities */}
-        <div className="col-span-2 bg-[#111827] rounded-lg p-4 border border-gray-800">
-          <div className="text-sm font-semibold text-gray-200 mb-2">OOS Regime Probabilities (Primary Model)</div>
+        <div className="col-span-2 bg-[#FFFFFF] rounded-lg p-4 border border-[#E6D9CE]">
+          <div className="text-[16px] font-semibold text-[#33302E] mb-2">OOS Regime Probabilities (Primary Model)</div>
           <Plot
             data={(() => {
               const dates = data.proba.map((r) => r.date);
@@ -430,8 +430,8 @@ export function AIPredictionTab() {
               ...DARK_LAYOUT, height: 340,
               margin: { t: 20, b: 35, l: 50, r: 15 },
               hovermode: "x unified",
-              yaxis: { range: [0, 1], tickformat: ".0%", gridcolor: "#1f2937" },
-              xaxis: { gridcolor: "#1f2937" },
+              yaxis: { range: [0, 1], tickformat: ".0%", gridcolor: "#F2E5D7" },
+              xaxis: { gridcolor: "#F2E5D7" },
               legend: { x: 0.02, y: 0.98, bgcolor: "rgba(0,0,0,0)" },
             }}
             config={{ displayModeBar: false, responsive: true }}
@@ -440,8 +440,8 @@ export function AIPredictionTab() {
         </div>
 
         {/* Confusion matrix */}
-        <div className="bg-[#111827] rounded-lg p-4 border border-gray-800">
-          <div className="text-sm font-semibold text-gray-200 mb-2">Confusion Matrix (OOS)</div>
+        <div className="bg-[#FFFFFF] rounded-lg p-4 border border-[#E6D9CE]">
+          <div className="text-[16px] font-semibold text-[#33302E] mb-2">Confusion Matrix (OOS)</div>
           <Plot
             data={(() => {
               const labels = ["BEAR", "BASE", "BULL"];
@@ -471,8 +471,8 @@ export function AIPredictionTab() {
               (data.confusion_matrix[1]?.BASE ?? 0) +
               (data.confusion_matrix[2]?.BULL ?? 0);
             return (
-              <div className="text-xs text-gray-400 mt-1">
-                Overall accuracy: <span className="text-cyan-400 font-semibold">
+              <div className="text-[14px] text-[#66605C] mt-1">
+                Overall accuracy: <span className="text-[#0F5499] font-semibold">
                   {((correct / total) * 100).toFixed(1)}%
                 </span>{" "}({correct} / {total})
               </div>
@@ -482,8 +482,8 @@ export function AIPredictionTab() {
       </div>
 
       {/* ── Feature importance ── */}
-      <div className="bg-[#111827] rounded-lg p-4 border border-gray-800">
-        <div className="text-sm font-semibold text-gray-200 mb-2">Feature Importance (LightGBM mean gain across folds)</div>
+      <div className="bg-[#FFFFFF] rounded-lg p-4 border border-[#E6D9CE]">
+        <div className="text-[16px] font-semibold text-[#33302E] mb-2">Feature Importance (LightGBM mean gain across folds)</div>
         <Plot
           data={(() => {
             const top = data.feature_importance.slice(0, 20).reverse();
@@ -500,21 +500,21 @@ export function AIPredictionTab() {
           layout={{
             ...DARK_LAYOUT, height: 500,
             margin: { t: 20, b: 35, l: 180, r: 20 },
-            xaxis: { gridcolor: "#1f2937", title: "importance" },
-            yaxis: { gridcolor: "#1f2937" },
+            xaxis: { gridcolor: "#F2E5D7", title: "importance" },
+            yaxis: { gridcolor: "#F2E5D7" },
           }}
           config={{ displayModeBar: false, responsive: true }}
           style={{ width: "100%" }}
         />
-        <div className="text-xs text-gray-500 mt-2">
-          <span className="text-purple-400">Purple</span> = breadth features from historical price_discovery replay (P1).&nbsp;
-          <span className="text-cyan-400">Cyan</span> = macro / cross-asset features (baseline + P3).
+        <div className="text-[14px] text-[#857F7A] mt-2">
+          <span className="text-[#7D5BA6]">Purple</span> = breadth features from historical price_discovery replay (P1).&nbsp;
+          <span className="text-[#0F5499]">Cyan</span> = macro / cross-asset features (baseline + P3).
         </div>
       </div>
 
       {/* ── Sharpe vs Alpha scatter ── */}
-      <div className="bg-[#111827] rounded-lg p-4 border border-gray-800">
-        <div className="text-sm font-semibold text-gray-200 mb-2">Sharpe vs Alpha (per variant)</div>
+      <div className="bg-[#FFFFFF] rounded-lg p-4 border border-[#E6D9CE]">
+        <div className="text-[16px] font-semibold text-[#33302E] mb-2">Sharpe vs Alpha (per variant)</div>
         <Plot
           data={(() => {
             const tag = (v: string) =>
@@ -541,7 +541,7 @@ export function AIPredictionTab() {
               marker: {
                 color: colors[t],
                 size: rows.map((r) => Math.max(8, (r.bull_recall ?? 0) * 70 + 6)),
-                line: { color: "#0a0e17", width: 1 },
+                line: { color: "#FFF1E5", width: 1 },
                 opacity: 0.85,
               },
               text: rows.map((r) => r.variant),
@@ -551,15 +551,15 @@ export function AIPredictionTab() {
           layout={{
             ...DARK_LAYOUT, height: 420,
             margin: { t: 20, b: 45, l: 60, r: 20 },
-            xaxis: { title: "Annual Alpha", tickformat: ".2%", gridcolor: "#1f2937", zerolinecolor: "#374151" },
-            yaxis: { title: "Sharpe Ratio", gridcolor: "#1f2937" },
-            shapes: [{ type: "line", x0: 0, x1: 0, y0: 0, y1: 1, yref: "paper", line: { dash: "dash", color: "#6b7280" } }],
+            xaxis: { title: "Annual Alpha", tickformat: ".2%", gridcolor: "#F2E5D7", zerolinecolor: "#CCC1B7" },
+            yaxis: { title: "Sharpe Ratio", gridcolor: "#F2E5D7" },
+            shapes: [{ type: "line", x0: 0, x1: 0, y0: 0, y1: 1, yref: "paper", line: { dash: "dash", color: "#857F7A" } }],
             legend: { x: 0.02, y: 0.98, bgcolor: "rgba(0,0,0,0)" },
           }}
           config={{ displayModeBar: false, responsive: true }}
           style={{ width: "100%" }}
         />
-        <div className="text-xs text-gray-500 mt-1">
+        <div className="text-[14px] text-[#857F7A] mt-1">
           Point size = BULL recall. Dashed line = 0% alpha vs {m.benchmark_label ?? "ACWI 90 / Cash 10"}.
         </div>
       </div>
@@ -589,9 +589,9 @@ export function AIPredictionTab() {
 
       {/* ── Methodology & findings ── */}
       <div className="grid grid-cols-2 gap-4">
-        <div className="bg-[#111827] rounded-lg p-4 border border-gray-800 text-sm text-gray-300">
-          <div className="text-base font-semibold text-gray-100 mb-2">Pipeline (P0 → P4)</div>
-          <ul className="list-disc pl-5 space-y-1 text-xs leading-relaxed">
+        <div className="bg-[#FFFFFF] rounded-lg p-4 border border-[#E6D9CE] text-[16px] text-[#33302E]">
+          <div className="text-[18px] font-semibold text-[#33302E] mb-2">Pipeline (P0 → P4)</div>
+          <ul className="list-disc pl-5 space-y-1 text-[14px] leading-relaxed">
             <li><b>P0</b>: Purged Walk-Forward CV with 21-day embargo (Lopez de Prado)</li>
             <li><b>P3</b>: 6 macro cross-asset features (VIX/MOVE, VIX/VXV, WTI/Copper, DXY z-score, HY/IG spread, TIP/IEF)</li>
             <li><b>P2</b>: Class weight × BULL-threshold sweep (4×3 = 12 variants)</li>
@@ -600,24 +600,24 @@ export function AIPredictionTab() {
             <li><b>P4 (winner)</b>: Meta-labeling — primary = multiclass argmax, meta = binary filter, fallback → BASE</li>
           </ul>
         </div>
-        <div className="bg-[#111827] rounded-lg p-4 border border-gray-800 text-sm text-gray-300">
-          <div className="text-base font-semibold text-gray-100 mb-2">What Moved the Needle</div>
-          <ul className="list-disc pl-5 space-y-1 text-xs leading-relaxed">
-            <li><b>Meta-labeling (P4)</b> delivers the <span className="text-green-400">highest Sharpe</span> ({m.winner_sharpe.toFixed(2)} vs benchmark {m.benchmark_sharpe.toFixed(2)}) and <span className="text-green-400">lowest Max DD</span> ({(m.winner_max_dd * 100).toFixed(1)}% vs {(m.benchmark_max_dd * 100).toFixed(1)}%) — cuts turnover from {m.baseline_turnover.toFixed(1)}% → {m.winner_turnover.toFixed(1)}%/mo</li>
+        <div className="bg-[#FFFFFF] rounded-lg p-4 border border-[#E6D9CE] text-[16px] text-[#33302E]">
+          <div className="text-[18px] font-semibold text-[#33302E] mb-2">What Moved the Needle</div>
+          <ul className="list-disc pl-5 space-y-1 text-[14px] leading-relaxed">
+            <li><b>Meta-labeling (P4)</b> delivers the <span className="text-[#0A7D3F]">highest Sharpe</span> ({m.winner_sharpe.toFixed(2)} vs benchmark {m.benchmark_sharpe.toFixed(2)}) and <span className="text-[#0A7D3F]">lowest Max DD</span> ({(m.winner_max_dd * 100).toFixed(1)}% vs {(m.benchmark_max_dd * 100).toFixed(1)}%) — cuts turnover from {m.baseline_turnover.toFixed(1)}% → {m.winner_turnover.toFixed(1)}%/mo</li>
             <li><b>Alpha vs ACWI 90/10</b>: {(m.winner_alpha_ann * 100).toFixed(2)}% ann — absolute underperformance in bull tape, but superior risk-adjusted profile (Sharpe & DD)</li>
             <li><b>P3 macro features</b> doubled BULL recall {(m.baseline_bull_recall * 100).toFixed(0)}% → {(m.winner_bull_recall * 100).toFixed(0)}%</li>
             <li><b>VIX-free ablation</b> lowered BULL recall — label circularity is NOT the bottleneck</li>
             <li><b>BULL recall ceiling ~16%</b> with {m.winner_n_rows} monthly samples — data volume constraint</li>
-            <li>All 3 leakage tests <span className="text-green-400">PASS</span> (feature as-of, breadth as-of, label correlation &lt; 0.2)</li>
+            <li>All 3 leakage tests <span className="text-[#0A7D3F]">PASS</span> (feature as-of, breadth as-of, label correlation &lt; 0.2)</li>
           </ul>
         </div>
       </div>
 
-      <div className="bg-[#0a0e17] border border-cyan-900/60 rounded-lg p-3 text-xs text-cyan-300">
-        <b className="text-cyan-200">Production config</b> —&nbsp;
+      <div className="bg-[#FFF1E5] border border-[#9CC3D5]/60 rounded-lg p-3 text-[14px] text-[#0D7680]">
+        <b className="text-[#0D7680]">Production config</b> —&nbsp;
         <code>use_meta=true</code>, <code>class_weight={"{BULL: 3.0}"}</code>, <code>bull_threshold=0.25</code>,&nbsp;
         <code>cv_mode='walkforward'</code>, 22 macro + 6 breadth features.&nbsp;
-        Regenerate cache via <code className="text-cyan-200">python3 ai_prediction_cache.py</code>.
+        Regenerate cache via <code className="text-[#0D7680]">python3 ai_prediction_cache.py</code>.
       </div>
       </div>
       )}
@@ -635,10 +635,10 @@ function AblationTable({ rows }: { rows: AblationRow[] }) {
       cell: (info) => {
         const v = info.getValue() as string;
         const tint =
-          v.includes("P4_meta") ? "bg-green-900/30 text-green-200"
-          : v.includes("VIXFREE") ? "bg-purple-900/30 text-purple-200"
-          : v.includes("P1_breadth") ? "bg-orange-900/20 text-orange-200"
-          : "text-gray-300";
+          v.includes("P4_meta") ? "bg-[#E3F0E8]/30 text-[#0A7D3F]"
+          : v.includes("VIXFREE") ? "bg-[#EFE9F5]/30 text-[#7D5BA6]"
+          : v.includes("P1_breadth") ? "bg-[#F7EDE0]/20 text-[#C2701C]"
+          : "text-[#33302E]";
         return <span className={`px-1.5 py-0.5 rounded ${tint}`}>{v}</span>;
       },
     },
@@ -652,7 +652,7 @@ function AblationTable({ rows }: { rows: AblationRow[] }) {
         const v = info.getValue() as number;
         if (v == null) return "–";
         const s = (v * 100).toFixed(2);
-        const cls = v >= 0 ? "text-green-400 font-semibold" : "text-red-400";
+        const cls = v >= 0 ? "text-[#0A7D3F] font-semibold" : "text-[#CC0000]";
         return <span className={cls}>{v >= 0 ? "+" : ""}{s}%</span>;
       },
     },
@@ -681,15 +681,15 @@ function AblationTable({ rows }: { rows: AblationRow[] }) {
   );
 
   return (
-    <div className="bg-[#111827] rounded-lg p-4 border border-gray-800">
-      <div className="text-sm font-semibold text-gray-200 mb-2">
+    <div className="bg-[#FFFFFF] rounded-lg p-4 border border-[#E6D9CE]">
+      <div className="text-[16px] font-semibold text-[#33302E] mb-2">
         P1-P4 Ablation Results ({sorted.length} variants, sorted by alpha)
       </div>
       <DataTable data={sorted} columns={columns} maxHeight="520px" />
-      <div className="text-xs text-gray-500 mt-2">
-        <span className="px-1.5 py-0.5 rounded bg-green-900/30 text-green-200">green</span> = P4 meta (winner).&nbsp;
-        <span className="px-1.5 py-0.5 rounded bg-purple-900/30 text-purple-200">purple</span> = VIX-free label ablation.&nbsp;
-        <span className="px-1.5 py-0.5 rounded bg-orange-900/20 text-orange-200">orange</span> = P1 breadth variants.
+      <div className="text-[14px] text-[#857F7A] mt-2">
+        <span className="px-1.5 py-0.5 rounded bg-[#E3F0E8]/30 text-[#0A7D3F]">green</span> = P4 meta (winner).&nbsp;
+        <span className="px-1.5 py-0.5 rounded bg-[#EFE9F5]/30 text-[#7D5BA6]">purple</span> = VIX-free label ablation.&nbsp;
+        <span className="px-1.5 py-0.5 rounded bg-[#F7EDE0]/20 text-[#C2701C]">orange</span> = P1 breadth variants.
       </div>
     </div>
   );
@@ -752,53 +752,53 @@ function MoEComparisonSection({
   ];
 
   return (
-    <div className="bg-[#111827] rounded-lg p-4 border border-gray-800 space-y-4">
+    <div className="bg-[#FFFFFF] rounded-lg p-4 border border-[#E6D9CE] space-y-4">
       <div>
-        <div className="text-base font-semibold text-gray-100">
+        <div className="text-[18px] font-semibold text-[#33302E]">
           Plan B · Regime-Conditional Expert Blending (MoE) — Comparison
         </div>
-        <div className="text-xs text-gray-500 mt-1">
+        <div className="text-[14px] text-[#857F7A] mt-1">
           Common window {summary.period_start} → {summary.period_end} ({summary.n_oos_months} months).&nbsp;
-          Experts: <span className="text-green-300">BULL→{summary.expert_assignment.BULL}</span>,&nbsp;
-          <span className="text-cyan-300">BASE→{summary.expert_assignment.BASE}</span>,&nbsp;
-          <span className="text-amber-300">BEAR→{summary.expert_assignment.BEAR}</span>.&nbsp;
+          Experts: <span className="text-[#0A7D3F]">BULL→{summary.expert_assignment.BULL}</span>,&nbsp;
+          <span className="text-[#0D7680]">BASE→{summary.expert_assignment.BASE}</span>,&nbsp;
+          <span className="text-[#B85C00]">BEAR→{summary.expert_assignment.BEAR}</span>.&nbsp;
           Gate: {summary.gate}.
         </div>
       </div>
 
       {/* Summary comparison table */}
-      <div className="overflow-auto border border-gray-800 rounded">
-        <table className="w-full text-xs">
-          <thead className="bg-[#1f2937]">
+      <div className="overflow-auto border border-[#E6D9CE] rounded">
+        <table className="w-full text-[14px]">
+          <thead className="bg-[#F2E5D7]">
             <tr>
-              <th className="px-2 py-1.5 text-left text-gray-400 border-b border-gray-700">Strategy</th>
-              <th className="px-2 py-1.5 text-right text-gray-400 border-b border-gray-700">AnnRet</th>
-              <th className="px-2 py-1.5 text-right text-gray-400 border-b border-gray-700">Sharpe</th>
-              <th className="px-2 py-1.5 text-right text-gray-400 border-b border-gray-700">Max DD</th>
-              <th className="px-2 py-1.5 text-right text-gray-400 border-b border-gray-700">Alpha (ann)</th>
-              <th className="px-2 py-1.5 text-right text-gray-400 border-b border-gray-700">Turnover</th>
+              <th className="px-2 py-1.5 text-left text-[#66605C] border-b border-[#E6D9CE]">Strategy</th>
+              <th className="px-2 py-1.5 text-right text-[#66605C] border-b border-[#E6D9CE]">AnnRet</th>
+              <th className="px-2 py-1.5 text-right text-[#66605C] border-b border-[#E6D9CE]">Sharpe</th>
+              <th className="px-2 py-1.5 text-right text-[#66605C] border-b border-[#E6D9CE]">Max DD</th>
+              <th className="px-2 py-1.5 text-right text-[#66605C] border-b border-[#E6D9CE]">Alpha (ann)</th>
+              <th className="px-2 py-1.5 text-right text-[#66605C] border-b border-[#E6D9CE]">Turnover</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((row) => (
               <tr key={row.name}
-                  className={`border-b border-gray-800/50 ${
-                    row.flag === "winner" ? "bg-green-900/20 text-green-100" :
-                    row.flag === "moe"    ? "bg-purple-900/10" : ""
+                  className={`border-b border-[#E6D9CE]/50 ${
+                    row.flag === "winner" ? "bg-[#E3F0E8]/20 text-[#0A7D3F]" :
+                    row.flag === "moe"    ? "bg-[#EFE9F5]/10" : ""
                   }`}>
                 <td className="px-2 py-1 font-medium">{row.name}</td>
                 <td className="px-2 py-1 text-right">{(row.stats.ann_return * 100).toFixed(2)}%</td>
                 <td className="px-2 py-1 text-right font-semibold">{row.stats.sharpe.toFixed(2)}</td>
                 <td className="px-2 py-1 text-right">{(row.stats.max_dd * 100).toFixed(1)}%</td>
                 <td className={`px-2 py-1 text-right font-semibold ${
-                  row.stats.alpha_ann >= 0 ? "text-green-400" : "text-red-400"
+                  row.stats.alpha_ann >= 0 ? "text-[#0A7D3F]" : "text-[#CC0000]"
                 }`}>
                   {row.stats.alpha_ann >= 0 ? "+" : ""}{(row.stats.alpha_ann * 100).toFixed(2)}%
                 </td>
                 <td className="px-2 py-1 text-right">{row.stats.turnover.toFixed(2)}%/mo</td>
               </tr>
             ))}
-            <tr className="border-t-2 border-gray-700 text-gray-400 italic">
+            <tr className="border-t-2 border-[#E6D9CE] text-[#66605C] italic">
               <td className="px-2 py-1">Benchmark {summary.benchmark.label}</td>
               <td className="px-2 py-1 text-right">{(summary.benchmark.ann_return * 100).toFixed(2)}%</td>
               <td className="px-2 py-1 text-right">{summary.benchmark.sharpe.toFixed(2)}</td>
@@ -814,7 +814,7 @@ function MoEComparisonSection({
       <div className="grid grid-cols-2 gap-4">
         {/* Cumulative */}
         <div>
-          <div className="text-sm font-semibold text-gray-200 mb-1">MoE vs Benchmark — Cumulative (common window)</div>
+          <div className="text-[16px] font-semibold text-[#33302E] mb-1">MoE vs Benchmark — Cumulative (common window)</div>
           <Plot
             data={[
               { x: cum.dates, y: cum.soft, type: "scatter", mode: "lines", name: "MoE soft",
@@ -828,8 +828,8 @@ function MoEComparisonSection({
               ...DARK_LAYOUT, height: 300,
               margin: { t: 20, b: 35, l: 50, r: 15 },
               hovermode: "x unified",
-              yaxis: { title: "Cumulative", gridcolor: "#1f2937" },
-              xaxis: { gridcolor: "#1f2937" },
+              yaxis: { title: "Cumulative", gridcolor: "#F2E5D7" },
+              xaxis: { gridcolor: "#F2E5D7" },
               legend: { x: 0.02, y: 0.98, bgcolor: "rgba(0,0,0,0)" },
             }}
             config={{ displayModeBar: false, responsive: true }}
@@ -839,7 +839,7 @@ function MoEComparisonSection({
 
         {/* Per-regime alpha bar */}
         <div>
-          <div className="text-sm font-semibold text-gray-200 mb-1">Per-Regime Alpha (bp / month, true regime)</div>
+          <div className="text-[16px] font-semibold text-[#33302E] mb-1">Per-Regime Alpha (bp / month, true regime)</div>
           <Plot
             data={(() => {
               return (["MoE soft", "MoE hard"] as const).map((label, i) => ({
@@ -859,14 +859,14 @@ function MoEComparisonSection({
               ...DARK_LAYOUT, height: 300,
               margin: { t: 20, b: 35, l: 50, r: 15 },
               barmode: "group",
-              yaxis: { title: "bp / month", gridcolor: "#1f2937", zerolinecolor: "#374151" },
-              xaxis: { gridcolor: "#1f2937" },
+              yaxis: { title: "bp / month", gridcolor: "#F2E5D7", zerolinecolor: "#CCC1B7" },
+              xaxis: { gridcolor: "#F2E5D7" },
               legend: { x: 0.02, y: 0.98, bgcolor: "rgba(0,0,0,0)" },
             }}
             config={{ displayModeBar: false, responsive: true }}
             style={{ width: "100%" }}
           />
-          <div className="text-[11px] text-gray-500 mt-1">
+          <div className="text-[13px] text-[#857F7A] mt-1">
             MoE soft BEAR n={perRegime["MoE soft"]?.BEAR?.n ?? 0},&nbsp;
             BASE n={perRegime["MoE soft"]?.BASE?.n ?? 0},&nbsp;
             BULL n={perRegime["MoE soft"]?.BULL?.n ?? 0}.
@@ -875,22 +875,22 @@ function MoEComparisonSection({
       </div>
 
       {/* Gate diagnostics + verdict */}
-      <div className="grid grid-cols-3 gap-3 text-xs">
+      <div className="grid grid-cols-3 gap-3 text-[14px]">
         {(["BEAR", "BASE", "BULL"] as const).map((r) => {
           const n = gateDist[r] ?? 0;
           const pct = summary.n_oos_months > 0 ? (n / summary.n_oos_months) * 100 : 0;
-          const color = r === "BEAR" ? "text-red-300" : r === "BULL" ? "text-green-300" : "text-gray-300";
+          const color = r === "BEAR" ? "text-[#CC0000]" : r === "BULL" ? "text-[#0A7D3F]" : "text-[#33302E]";
           return (
-            <div key={r} className="bg-[#0a0e17] border border-gray-800 rounded-lg p-2">
+            <div key={r} className="bg-[#FFF1E5] border border-[#E6D9CE] rounded-lg p-2">
               <div className={`font-semibold ${color}`}>Gate argmax = {r}</div>
-              <div className="text-gray-500">{n} / {summary.n_oos_months} months ({pct.toFixed(1)}%)</div>
+              <div className="text-[#857F7A]">{n} / {summary.n_oos_months} months ({pct.toFixed(1)}%)</div>
             </div>
           );
         })}
       </div>
 
-      <div className="bg-[#0a0e17] border border-amber-900/60 rounded-lg p-3 text-xs text-amber-200">
-        <b className="text-amber-100">Verdict</b> — MoE does NOT beat P4_meta solo.&nbsp;
+      <div className="bg-[#FFF1E5] border border-[#DCC9A0]/60 rounded-lg p-3 text-[14px] text-[#B85C00]">
+        <b className="text-[#B85C00]">Verdict</b> — MoE does NOT beat P4_meta solo.&nbsp;
         Reason: P4's meta-labeling (override→BASE when low confidence) is already a
         stronger form of regime-conditional routing than external gating; plus the gate
         (P0 primary) has BULL recall ~16%, so argmax under-routes to the BULL expert.
@@ -973,28 +973,28 @@ function ModelDefinitions() {
   ];
 
   return (
-    <div className="bg-[#111827] rounded-lg p-4 border border-gray-800">
+    <div className="bg-[#FFFFFF] rounded-lg p-4 border border-[#E6D9CE]">
       <div className="flex items-baseline justify-between mb-3">
-        <div className="text-base font-semibold text-gray-100">Model Definitions (P0 → P4)</div>
-        <div className="text-xs text-gray-500">Incremental ablation — each phase isolates one design decision.</div>
+        <div className="text-[18px] font-semibold text-[#33302E]">Model Definitions (P0 → P4)</div>
+        <div className="text-[14px] text-[#857F7A]">Incremental ablation — each phase isolates one design decision.</div>
       </div>
       <div className="grid grid-cols-5 gap-3">
         {phases.map((p) => (
           <div key={p.tag}
-               className={`bg-[#0a0e17] border rounded-lg p-3 flex flex-col ${
-                 p.tag === "P4" ? "border-green-700/60 ring-1 ring-green-700/40" : "border-gray-800"
+               className={`bg-[#FFF1E5] border rounded-lg p-3 flex flex-col ${
+                 p.tag === "P4" ? "border-[#A8CDB6]/60 ring-1 ring-[#A8CDB6]/40" : "border-[#E6D9CE]"
                }`}>
             <div className="flex items-baseline justify-between mb-1">
-              <span className="text-lg font-bold" style={{ color: p.color }}>{p.tag}</span>
+              <span className="text-[20px] font-bold" style={{ color: p.color }}>{p.tag}</span>
               {p.tag === "P4" && (
-                <span className="text-[9px] uppercase tracking-wider text-green-400 font-semibold">
+                <span className="text-[11px] uppercase tracking-wider text-[#0A7D3F] font-semibold">
                   Winner
                 </span>
               )}
             </div>
-            <div className="text-sm font-semibold text-gray-100">{p.title}</div>
-            <div className="text-[11px] text-gray-400 italic mt-1 mb-2">{p.short}</div>
-            <ul className="text-[10.5px] text-gray-300 leading-snug list-disc pl-4 space-y-0.5">
+            <div className="text-[16px] font-semibold text-[#33302E]">{p.title}</div>
+            <div className="text-[13px] text-[#66605C] italic mt-1 mb-2">{p.short}</div>
+            <ul className="text-[10.5px] text-[#33302E] leading-snug list-disc pl-4 space-y-0.5">
               {p.bullets.map((b, i) => (
                 <li key={i}>{b}</li>
               ))}
@@ -1002,7 +1002,7 @@ function ModelDefinitions() {
           </div>
         ))}
       </div>
-      <div className="text-[11px] text-gray-500 mt-3">
+      <div className="text-[13px] text-[#857F7A] mt-3">
         <b>Composition</b>: P4 sits on top of P3 features and uses the same CV as P0. P1 and P2
         are independently evaluated variants (not stacked into P4 in this run; ablation showed
         they provided marginal lift only). <b>MoE</b> (Plan B, see below) attempts to combine
@@ -1101,9 +1101,9 @@ function PerformanceAnalyticsSection({ perf }: { perf: PerfData }) {
     if (vals.length === 0) return "";
     const best = higherBetter ? Math.max(...vals) : Math.min(...vals);
     const worst = higherBetter ? Math.min(...vals) : Math.max(...vals);
-    if (Math.abs(val - best) < 1e-9) return "text-green-300 font-semibold";
-    if (Math.abs(val - worst) < 1e-9) return "text-red-300";
-    return "text-gray-200";
+    if (Math.abs(val - best) < 1e-9) return "text-[#0A7D3F] font-semibold";
+    if (Math.abs(val - worst) < 1e-9) return "text-[#CC0000]";
+    return "text-[#33302E]";
   };
 
   // Rows for summary table — { label, key, fmt, higherBetter, group }
@@ -1167,26 +1167,26 @@ function PerformanceAnalyticsSection({ perf }: { perf: PerfData }) {
   }));
 
   return (
-    <div className="bg-[#111827] rounded-lg p-4 border border-gray-800 space-y-5">
+    <div className="bg-[#FFFFFF] rounded-lg p-4 border border-[#E6D9CE] space-y-5">
       <div>
-        <div className="text-base font-semibold text-gray-100">
+        <div className="text-[18px] font-semibold text-[#33302E]">
           Performance Analytics — Institutional-Style Comparison
         </div>
-        <div className="text-xs text-gray-500 mt-1">
-          Five variants benchmarked against <b className="text-cyan-300">{bmLabel}</b>.&nbsp;
+        <div className="text-[14px] text-[#857F7A] mt-1">
+          Five variants benchmarked against <b className="text-[#0D7680]">{bmLabel}</b>.&nbsp;
           Methodology mirrors AQR / Bridgewater / BlackRock Aladdin / MSCI Barra / Man AHL reporting.&nbsp;
           Note: P4 has shorter OOS window ({variants["P4"].n_months} months vs {variants["P0"].n_months} for others) due to meta CV burn-in.
         </div>
       </div>
 
       {/* ── Summary metrics matrix ── */}
-      <div className="overflow-x-auto border border-gray-800 rounded">
-        <table className="w-full text-xs">
-          <thead className="bg-[#1f2937] sticky top-0">
+      <div className="overflow-x-auto border border-[#E6D9CE] rounded">
+        <table className="w-full text-[14px]">
+          <thead className="bg-[#F2E5D7] sticky top-0">
             <tr>
-              <th className="px-2 py-1.5 text-left text-gray-400 border-b border-gray-700">Metric</th>
+              <th className="px-2 py-1.5 text-left text-[#66605C] border-b border-[#E6D9CE]">Metric</th>
               {order.map((tag) => (
-                <th key={tag} className="px-2 py-1.5 text-right border-b border-gray-700"
+                <th key={tag} className="px-2 py-1.5 text-right border-b border-[#E6D9CE]"
                     style={{ color: VARIANT_COLORS[tag] }}>
                   {tag}{tag === "P4" && " ★"}
                 </th>
@@ -1196,19 +1196,19 @@ function PerformanceAnalyticsSection({ perf }: { perf: PerfData }) {
           <tbody>
             {Object.entries(groupedRows).map(([group, gRows]) => (
               <>
-                <tr key={`group-${group}`} className="bg-[#0a0e17]">
+                <tr key={`group-${group}`} className="bg-[#FFF1E5]">
                   <td colSpan={order.length + 1}
-                      className="px-2 py-1 text-[10px] uppercase tracking-wider text-gray-500 font-semibold">
+                      className="px-2 py-1 text-[12px] uppercase tracking-wider text-[#857F7A] font-semibold">
                     {group}
                   </td>
                 </tr>
                 {gRows.map((r) => (
-                  <tr key={r.key as string} className="border-b border-gray-800/50 hover:bg-[#1f2937]/40">
-                    <td className="px-2 py-1 text-gray-300">{r.label}</td>
+                  <tr key={r.key as string} className="border-b border-[#E6D9CE]/50 hover:bg-[#F2E5D7]/40">
+                    <td className="px-2 py-1 text-[#33302E]">{r.label}</td>
                     {order.map((tag) => {
                       const v = variants[tag][r.key] as number;
                       const cls = typeof v === "number" && Number.isFinite(v)
-                        ? cellColor(r.key, v, r.higherBetter) : "text-gray-500";
+                        ? cellColor(r.key, v, r.higherBetter) : "text-[#857F7A]";
                       return (
                         <td key={tag} className={`px-2 py-1 text-right ${cls}`}>
                           {fmtVal(v, r.fmt)}
@@ -1222,30 +1222,30 @@ function PerformanceAnalyticsSection({ perf }: { perf: PerfData }) {
           </tbody>
         </table>
       </div>
-      <div className="text-[10px] text-gray-500">
-        <span className="text-green-300">green</span> = best per row,&nbsp;
-        <span className="text-red-300">red</span> = worst.&nbsp;
+      <div className="text-[12px] text-[#857F7A]">
+        <span className="text-[#0A7D3F]">green</span> = best per row,&nbsp;
+        <span className="text-[#CC0000]">red</span> = worst.&nbsp;
         Max DD / TE / Beta / Down Capture / Kurtosis / Turnover: lower is better.
       </div>
 
       {/* ── Rolling Sharpe (1Y, 3Y) ── */}
       <div>
-        <div className="text-sm font-semibold text-gray-200 mb-2">Rolling Sharpe Ratio</div>
+        <div className="text-[16px] font-semibold text-[#33302E] mb-2">Rolling Sharpe Ratio</div>
         <div className="grid grid-cols-3 gap-3">
           {[12, 36, 60].map((w) => (
             <div key={w}>
-              <div className="text-xs text-gray-400 mb-1">{w / 12}-Year window</div>
+              <div className="text-[14px] text-[#66605C] mb-1">{w / 12}-Year window</div>
               <Plot
                 data={lineTraces(w, "sharpe") as any}
                 layout={{
                   ...DARK_LAYOUT, height: 260,
                   margin: { t: 15, b: 30, l: 40, r: 10 },
                   hovermode: "x unified",
-                  yaxis: { title: "Sharpe", gridcolor: "#1f2937", zerolinecolor: "#374151" },
-                  xaxis: { gridcolor: "#1f2937" },
+                  yaxis: { title: "Sharpe", gridcolor: "#F2E5D7", zerolinecolor: "#CCC1B7" },
+                  xaxis: { gridcolor: "#F2E5D7" },
                   legend: { orientation: "h", y: -0.18, font: { size: 10 } },
                   shapes: [{ type: "line", xref: "paper", x0: 0, x1: 1, y0: 0, y1: 0,
-                             line: { color: "#374151", dash: "dash", width: 1 } }],
+                             line: { color: "#CCC1B7", dash: "dash", width: 1 } }],
                 }}
                 config={{ displayModeBar: false, responsive: true }}
                 style={{ width: "100%" }}
@@ -1257,22 +1257,22 @@ function PerformanceAnalyticsSection({ perf }: { perf: PerfData }) {
 
       {/* ── Rolling CAGR (1Y, 3Y, 5Y) ── */}
       <div>
-        <div className="text-sm font-semibold text-gray-200 mb-2">Rolling Annualized Return (CAGR)</div>
+        <div className="text-[16px] font-semibold text-[#33302E] mb-2">Rolling Annualized Return (CAGR)</div>
         <div className="grid grid-cols-3 gap-3">
           {[12, 36, 60].map((w) => (
             <div key={w}>
-              <div className="text-xs text-gray-400 mb-1">{w / 12}-Year window</div>
+              <div className="text-[14px] text-[#66605C] mb-1">{w / 12}-Year window</div>
               <Plot
                 data={lineTraces(w, "cagr") as any}
                 layout={{
                   ...DARK_LAYOUT, height: 260,
                   margin: { t: 15, b: 30, l: 50, r: 10 },
                   hovermode: "x unified",
-                  yaxis: { title: "CAGR", tickformat: ".1%", gridcolor: "#1f2937", zerolinecolor: "#374151" },
-                  xaxis: { gridcolor: "#1f2937" },
+                  yaxis: { title: "CAGR", tickformat: ".1%", gridcolor: "#F2E5D7", zerolinecolor: "#CCC1B7" },
+                  xaxis: { gridcolor: "#F2E5D7" },
                   legend: { orientation: "h", y: -0.18, font: { size: 10 } },
                   shapes: [{ type: "line", xref: "paper", x0: 0, x1: 1, y0: 0, y1: 0,
-                             line: { color: "#374151", dash: "dash", width: 1 } }],
+                             line: { color: "#CCC1B7", dash: "dash", width: 1 } }],
                 }}
                 config={{ displayModeBar: false, responsive: true }}
                 style={{ width: "100%" }}
@@ -1284,24 +1284,24 @@ function PerformanceAnalyticsSection({ perf }: { perf: PerfData }) {
 
       {/* ── Rolling Information Ratio ── */}
       <div>
-        <div className="text-sm font-semibold text-gray-200 mb-2">
+        <div className="text-[16px] font-semibold text-[#33302E] mb-2">
           Rolling Information Ratio (vs {bmLabel})
         </div>
         <div className="grid grid-cols-2 gap-3">
           {[12, 36].map((w) => (
             <div key={w}>
-              <div className="text-xs text-gray-400 mb-1">{w / 12}-Year window</div>
+              <div className="text-[14px] text-[#66605C] mb-1">{w / 12}-Year window</div>
               <Plot
                 data={lineTraces(w, "ir") as any}
                 layout={{
                   ...DARK_LAYOUT, height: 260,
                   margin: { t: 15, b: 30, l: 40, r: 10 },
                   hovermode: "x unified",
-                  yaxis: { title: "IR", gridcolor: "#1f2937", zerolinecolor: "#374151" },
-                  xaxis: { gridcolor: "#1f2937" },
+                  yaxis: { title: "IR", gridcolor: "#F2E5D7", zerolinecolor: "#CCC1B7" },
+                  xaxis: { gridcolor: "#F2E5D7" },
                   legend: { orientation: "h", y: -0.18, font: { size: 10 } },
                   shapes: [{ type: "line", xref: "paper", x0: 0, x1: 1, y0: 0, y1: 0,
-                             line: { color: "#374151", dash: "dash", width: 1 } }],
+                             line: { color: "#CCC1B7", dash: "dash", width: 1 } }],
                 }}
                 config={{ displayModeBar: false, responsive: true }}
                 style={{ width: "100%" }}
@@ -1314,7 +1314,7 @@ function PerformanceAnalyticsSection({ perf }: { perf: PerfData }) {
       {/* ── Underwater curve (drawdown over time) + Capture bars ── */}
       <div className="grid grid-cols-3 gap-3">
         <div className="col-span-2">
-          <div className="text-sm font-semibold text-gray-200 mb-1">
+          <div className="text-[16px] font-semibold text-[#33302E] mb-1">
             Underwater Drawdown Curve
           </div>
           <Plot
@@ -1330,20 +1330,20 @@ function PerformanceAnalyticsSection({ perf }: { perf: PerfData }) {
               ...DARK_LAYOUT, height: 280,
               margin: { t: 15, b: 35, l: 50, r: 10 },
               hovermode: "x unified",
-              yaxis: { title: "Drawdown", tickformat: ".0%", gridcolor: "#1f2937" },
-              xaxis: { gridcolor: "#1f2937" },
+              yaxis: { title: "Drawdown", tickformat: ".0%", gridcolor: "#F2E5D7" },
+              xaxis: { gridcolor: "#F2E5D7" },
               legend: { orientation: "h", y: -0.20, font: { size: 10 } },
             }}
             config={{ displayModeBar: false, responsive: true }}
             style={{ width: "100%" }}
           />
-          <div className="text-[10px] text-gray-500">
+          <div className="text-[12px] text-[#857F7A]">
             Time spent in drawdown is a key institutional risk metric. Steeper troughs = larger losses.
           </div>
         </div>
 
         <div>
-          <div className="text-sm font-semibold text-gray-200 mb-1">
+          <div className="text-[16px] font-semibold text-[#33302E] mb-1">
             Up / Down Capture
           </div>
           <Plot
@@ -1367,16 +1367,16 @@ function PerformanceAnalyticsSection({ perf }: { perf: PerfData }) {
               ...DARK_LAYOUT, height: 280,
               margin: { t: 15, b: 25, l: 40, r: 10 },
               barmode: "group",
-              yaxis: { gridcolor: "#1f2937" },
-              xaxis: { gridcolor: "#1f2937" },
+              yaxis: { gridcolor: "#F2E5D7" },
+              xaxis: { gridcolor: "#F2E5D7" },
               legend: { orientation: "h", y: -0.18, font: { size: 10 } },
               shapes: [{ type: "line", xref: "paper", x0: 0, x1: 1, y0: 1, y1: 1,
-                         line: { color: "#9ca3af", dash: "dash", width: 1 } }],
+                         line: { color: "#66605C", dash: "dash", width: 1 } }],
             }}
             config={{ displayModeBar: false, responsive: true }}
             style={{ width: "100%" }}
           />
-          <div className="text-[10px] text-gray-500">
+          <div className="text-[12px] text-[#857F7A]">
             Dashed line = 1.0 (match benchmark in that direction).&nbsp;
             Up &gt; 1, Down &lt; 1 = ideal asymmetric profile.
           </div>
@@ -1385,7 +1385,7 @@ function PerformanceAnalyticsSection({ perf }: { perf: PerfData }) {
 
       {/* ── Monthly return distribution ── */}
       <div>
-        <div className="text-sm font-semibold text-gray-200 mb-1">
+        <div className="text-[16px] font-semibold text-[#33302E] mb-1">
           Monthly Return Distribution
         </div>
         <Plot
@@ -1394,8 +1394,8 @@ function PerformanceAnalyticsSection({ perf }: { perf: PerfData }) {
             ...DARK_LAYOUT, height: 280,
             margin: { t: 15, b: 35, l: 40, r: 10 },
             barmode: "overlay",
-            xaxis: { title: "Monthly return", tickformat: ".0%", gridcolor: "#1f2937" },
-            yaxis: { title: "Density", gridcolor: "#1f2937" },
+            xaxis: { title: "Monthly return", tickformat: ".0%", gridcolor: "#F2E5D7" },
+            yaxis: { title: "Density", gridcolor: "#F2E5D7" },
             legend: { orientation: "h", y: -0.20, font: { size: 10 } },
           }}
           config={{ displayModeBar: false, responsive: true }}
@@ -1404,9 +1404,9 @@ function PerformanceAnalyticsSection({ perf }: { perf: PerfData }) {
       </div>
 
       {/* ── Methodology footer ── */}
-      <div className="bg-[#0a0e17] border border-cyan-900/40 rounded-lg p-3 text-[11px] text-cyan-200/90 leading-relaxed">
-        <b className="text-cyan-100">Metric Glossary</b> —&nbsp;
-        <span className="text-gray-300">
+      <div className="bg-[#FFF1E5] border border-[#9CC3D5]/40 rounded-lg p-3 text-[13px] text-[#0D7680]/90 leading-relaxed">
+        <b className="text-[#0D7680]">Metric Glossary</b> —&nbsp;
+        <span className="text-[#33302E]">
           <b>Sharpe</b> = ann excess return / vol (assumes 0% rf for monthly).&nbsp;
           <b>Sortino</b> = ann return / annualized downside std (only negative returns).&nbsp;
           <b>Calmar</b> = CAGR / |Max DD|.&nbsp;
@@ -1492,10 +1492,10 @@ function MonthlyAllocationByVariant({ perf }: { perf: PerfData }) {
   // Per-variant y-axis config — annotate each panel with the variant tag
   const yAxisCommon = {
     range: [0, 1], tickformat: ".0%",
-    gridcolor: "#1f2937", zerolinecolor: "#374151",
+    gridcolor: "#F2E5D7", zerolinecolor: "#CCC1B7",
     fixedrange: true,
   };
-  const xAxisCommon = { gridcolor: "#1f2937" };
+  const xAxisCommon = { gridcolor: "#F2E5D7" };
 
   // Annotations: variant label inside each panel (top-left)
   const annotations = order.map((tag, i) => ({
@@ -1551,12 +1551,12 @@ function MonthlyAllocationByVariant({ perf }: { perf: PerfData }) {
   }
 
   return (
-    <div className="bg-[#111827] rounded-lg p-4 border border-gray-800">
+    <div className="bg-[#FFFFFF] rounded-lg p-4 border border-[#E6D9CE]">
       <div className="flex items-baseline justify-between mb-1">
-        <div className="text-sm font-semibold text-gray-200">
+        <div className="text-[16px] font-semibold text-[#33302E]">
           Monthly Allocation by Variant — Equity / Bond / Cash (OOS → Today)
         </div>
-        <div className="text-[10.5px] text-gray-500">
+        <div className="text-[10.5px] text-[#857F7A]">
           Dotted line = benchmark equity weight ({(bmEq * 100).toFixed(0)}%).
           Each panel = monthly rebalanced allocation that the variant prescribed.
         </div>
@@ -1567,11 +1567,11 @@ function MonthlyAllocationByVariant({ perf }: { perf: PerfData }) {
         config={{ displayModeBar: false, responsive: true }}
         style={{ width: "100%" }}
       />
-      <div className="text-[11px] text-gray-500 mt-2 leading-relaxed">
-        <b className="text-gray-300">How to read</b>: each row is one variant; vertical thickness of
+      <div className="text-[13px] text-[#857F7A] mt-2 leading-relaxed">
+        <b className="text-[#33302E]">How to read</b>: each row is one variant; vertical thickness of
         a color band at any date = that asset's weight at that month-end rebalance.
-        <span className="text-green-300"> Equity</span> compresses (variant tilts defensive) when
-        BEAR signal strengthens; <span className="text-yellow-300"> Cash</span> & <span className="text-blue-300"> Bond</span> expand.
+        <span className="text-[#0A7D3F]"> Equity</span> compresses (variant tilts defensive) when
+        BEAR signal strengthens; <span className="text-[#B85C00]"> Cash</span> & <span className="text-[#0F5499]"> Bond</span> expand.
         P4 (★) shows clearer regime switches and lower turnover than P0-P3 due to meta-labeling override→BASE.
       </div>
     </div>
@@ -1643,26 +1643,26 @@ function BenchmarkValidationSection({ bench }: { bench: BenchmarkData }) {
 
   // Color helper
   const sigClass = (v: number | null | undefined, higherBetter = true) => {
-    if (v == null || !Number.isFinite(v)) return "text-gray-400";
-    if ((higherBetter && v > 0) || (!higherBetter && v < 0)) return "text-green-400";
-    if ((higherBetter && v < 0) || (!higherBetter && v > 0)) return "text-red-400";
-    return "text-gray-200";
+    if (v == null || !Number.isFinite(v)) return "text-[#66605C]";
+    if ((higherBetter && v > 0) || (!higherBetter && v < 0)) return "text-[#0A7D3F]";
+    if ((higherBetter && v < 0) || (!higherBetter && v > 0)) return "text-[#CC0000]";
+    return "text-[#33302E]";
   };
 
   return (
-    <div className="bg-[#111827] rounded-lg p-4 border border-gray-800 space-y-5">
+    <div className="bg-[#FFFFFF] rounded-lg p-4 border border-[#E6D9CE] space-y-5">
       {/* ── Header + Hypothesis ── */}
       <div>
-        <div className="text-base font-semibold text-gray-100">
+        <div className="text-[18px] font-semibold text-[#33302E]">
           Benchmark Validation Suite — Hypothesis Test
         </div>
-        <div className="text-xs text-gray-500 mt-1">
+        <div className="text-[14px] text-[#857F7A] mt-1">
           OOS window: {s.period_start} → {s.period_end} ({s.n_oos_months} months).
           Methodology: AQR / Bridgewater / BlackRock institutional reporting — strategy benchmarked against
           5 reference portfolios with risk-adjusted metrics.
         </div>
-        <div className="mt-2 p-3 bg-[#0a0e17] border border-gray-800 rounded text-xs text-gray-300 italic">
-          <b className="text-cyan-300">Hypothesis</b>: "vs holding 100% equity, can the P4 active asset
+        <div className="mt-2 p-3 bg-[#FFF1E5] border border-[#E6D9CE] rounded text-[14px] text-[#33302E] italic">
+          <b className="text-[#0D7680]">Hypothesis</b>: "vs holding 100% equity, can the P4 active asset
           allocation produce superior <u>risk-adjusted</u> long-term performance?"
         </div>
       </div>
@@ -1670,25 +1670,25 @@ function BenchmarkValidationSection({ bench }: { bench: BenchmarkData }) {
       {/* ── Verdict Banner ── */}
       <div className={`rounded-lg p-4 border-2 ${
         verdict.overall_pass
-          ? "bg-green-900/20 border-green-700/60"
-          : "bg-red-900/20 border-red-700/60"
+          ? "bg-[#E3F0E8]/20 border-[#A8CDB6]/60"
+          : "bg-[#F7E3E3]/20 border-[#E0AAAA]/60"
       }`}>
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <div className={`text-lg font-bold ${verdict.overall_pass ? "text-green-300" : "text-red-300"}`}>
+            <div className={`text-[20px] font-bold ${verdict.overall_pass ? "text-[#0A7D3F]" : "text-[#CC0000]"}`}>
               {verdict.overall_pass ? "✓ HYPOTHESIS VALIDATED" : "✗ HYPOTHESIS NOT VALIDATED"}
-              <span className="text-sm font-normal ml-2 text-gray-300">
+              <span className="text-[16px] font-normal ml-2 text-[#33302E]">
                 ({verdict.score} risk-adjusted dimensions outperform vs ACWI 100%)
               </span>
             </div>
-            <div className="text-xs text-gray-400 mt-1">
+            <div className="text-[14px] text-[#66605C] mt-1">
               P4 Sharpe {fmtNum(s.p4_strategy.sharpe)} vs ACWI100 Sharpe&nbsp;
               {fmtNum(s.benchmarks.find((b) => b.tag === "acwi100")?.sharpe)}
               &nbsp;|&nbsp;P4 MaxDD {fmtPct(s.p4_strategy.max_dd, 1)} vs ACWI100 MaxDD&nbsp;
               {fmtPct(s.benchmarks.find((b) => b.tag === "acwi100")?.max_dd, 1)}
             </div>
           </div>
-          <div className="grid grid-cols-4 gap-2 text-[11px]">
+          <div className="grid grid-cols-4 gap-2 text-[13px]">
             {[
               ["Sharpe", verdict.sharpe_better],
               ["Sortino", verdict.sortino_better],
@@ -1697,9 +1697,9 @@ function BenchmarkValidationSection({ bench }: { bench: BenchmarkData }) {
             ].map(([label, ok]) => (
               <div key={label as string}
                    className={`px-2 py-1 rounded text-center font-semibold border ${
-                     ok === true ? "border-green-600 text-green-300 bg-green-900/30"
-                     : ok === false ? "border-red-600 text-red-300 bg-red-900/30"
-                     : "border-gray-600 text-gray-400 bg-gray-900/30"
+                     ok === true ? "border-[#A8CDB6] text-[#0A7D3F] bg-[#E3F0E8]/30"
+                     : ok === false ? "border-[#E0AAAA] text-[#CC0000] bg-[#F7E3E3]/30"
+                     : "border-[#CCC1B7] text-[#66605C] bg-[#FBEEE3]/30"
                    }`}>
                 {label as string} {ok === true ? "✓" : ok === false ? "✗" : "—"}
               </div>
@@ -1710,23 +1710,23 @@ function BenchmarkValidationSection({ bench }: { bench: BenchmarkData }) {
 
       {/* ── Absolute metrics table ── */}
       <div>
-        <div className="text-sm font-semibold text-gray-200 mb-2">
+        <div className="text-[16px] font-semibold text-[#33302E] mb-2">
           Absolute Metrics — P4 vs 5 Reference Portfolios
         </div>
-        <div className="overflow-x-auto border border-gray-800 rounded">
-          <table className="w-full text-xs">
-            <thead className="bg-[#1f2937]">
+        <div className="overflow-x-auto border border-[#E6D9CE] rounded">
+          <table className="w-full text-[14px]">
+            <thead className="bg-[#F2E5D7]">
               <tr>
-                <th className="px-2 py-1.5 text-left text-gray-400 border-b border-gray-700">Strategy</th>
-                <th className="px-2 py-1.5 text-right text-gray-400 border-b border-gray-700">Weights</th>
-                <th className="px-2 py-1.5 text-right text-gray-400 border-b border-gray-700">CAGR</th>
-                <th className="px-2 py-1.5 text-right text-gray-400 border-b border-gray-700">Vol</th>
-                <th className="px-2 py-1.5 text-right text-gray-400 border-b border-gray-700">Sharpe</th>
-                <th className="px-2 py-1.5 text-right text-gray-400 border-b border-gray-700">Sortino</th>
-                <th className="px-2 py-1.5 text-right text-gray-400 border-b border-gray-700">Calmar</th>
-                <th className="px-2 py-1.5 text-right text-gray-400 border-b border-gray-700">Max DD</th>
-                <th className="px-2 py-1.5 text-right text-gray-400 border-b border-gray-700">Up Cap</th>
-                <th className="px-2 py-1.5 text-right text-gray-400 border-b border-gray-700">Dn Cap</th>
+                <th className="px-2 py-1.5 text-left text-[#66605C] border-b border-[#E6D9CE]">Strategy</th>
+                <th className="px-2 py-1.5 text-right text-[#66605C] border-b border-[#E6D9CE]">Weights</th>
+                <th className="px-2 py-1.5 text-right text-[#66605C] border-b border-[#E6D9CE]">CAGR</th>
+                <th className="px-2 py-1.5 text-right text-[#66605C] border-b border-[#E6D9CE]">Vol</th>
+                <th className="px-2 py-1.5 text-right text-[#66605C] border-b border-[#E6D9CE]">Sharpe</th>
+                <th className="px-2 py-1.5 text-right text-[#66605C] border-b border-[#E6D9CE]">Sortino</th>
+                <th className="px-2 py-1.5 text-right text-[#66605C] border-b border-[#E6D9CE]">Calmar</th>
+                <th className="px-2 py-1.5 text-right text-[#66605C] border-b border-[#E6D9CE]">Max DD</th>
+                <th className="px-2 py-1.5 text-right text-[#66605C] border-b border-[#E6D9CE]">Up Cap</th>
+                <th className="px-2 py-1.5 text-right text-[#66605C] border-b border-[#E6D9CE]">Dn Cap</th>
               </tr>
             </thead>
             <tbody>
@@ -1736,13 +1736,13 @@ function BenchmarkValidationSection({ bench }: { bench: BenchmarkData }) {
                 const wStr = w ? `${(w.equity * 100).toFixed(0)}/${(w.bond * 100).toFixed(0)}/${(w.cash * 100).toFixed(0)}` : "—";
                 return (
                   <tr key={r.tag}
-                      className={`border-b border-gray-800/50 ${
-                        isP4 ? "bg-green-900/20 text-green-100 font-semibold"
-                        : r.role === "primary" ? "bg-red-900/15"
+                      className={`border-b border-[#E6D9CE]/50 ${
+                        isP4 ? "bg-[#E3F0E8]/20 text-[#0A7D3F] font-semibold"
+                        : r.role === "primary" ? "bg-[#F7E3E3]/15"
                         : ""
                       }`}>
                     <td className="px-2 py-1">{r.name}{isP4 && " ★"}</td>
-                    <td className="px-2 py-1 text-right text-gray-400">{isP4 ? "dynamic" : wStr}</td>
+                    <td className="px-2 py-1 text-right text-[#66605C]">{isP4 ? "dynamic" : wStr}</td>
                     <td className="px-2 py-1 text-right">{fmtPct(r.ann_return)}</td>
                     <td className="px-2 py-1 text-right">{fmtPct(r.ann_vol)}</td>
                     <td className="px-2 py-1 text-right">{fmtNum(r.sharpe)}</td>
@@ -1757,31 +1757,31 @@ function BenchmarkValidationSection({ bench }: { bench: BenchmarkData }) {
             </tbody>
           </table>
         </div>
-        <div className="text-[10px] text-gray-500 mt-1">
+        <div className="text-[12px] text-[#857F7A] mt-1">
           Up/Down Capture computed vs ACWI 100% (market reference).
-          <span className="text-red-300"> red row</span> = primary benchmark (hypothesis null).
+          <span className="text-[#CC0000]"> red row</span> = primary benchmark (hypothesis null).
         </div>
       </div>
 
       {/* ── P4 vs each benchmark ── */}
       <div>
-        <div className="text-sm font-semibold text-gray-200 mb-2">
+        <div className="text-[16px] font-semibold text-[#33302E] mb-2">
           P4 vs Each Benchmark — Alpha / IR / Risk-Adjusted Differential
         </div>
-        <div className="overflow-x-auto border border-gray-800 rounded">
-          <table className="w-full text-xs">
-            <thead className="bg-[#1f2937]">
+        <div className="overflow-x-auto border border-[#E6D9CE] rounded">
+          <table className="w-full text-[14px]">
+            <thead className="bg-[#F2E5D7]">
               <tr>
-                <th className="px-2 py-1.5 text-left text-gray-400 border-b border-gray-700">Benchmark</th>
-                <th className="px-2 py-1.5 text-right text-gray-400 border-b border-gray-700">Alpha (ann)</th>
-                <th className="px-2 py-1.5 text-right text-gray-400 border-b border-gray-700">TE</th>
-                <th className="px-2 py-1.5 text-right text-gray-400 border-b border-gray-700">IR</th>
-                <th className="px-2 py-1.5 text-right text-gray-400 border-b border-gray-700">Δ Sharpe</th>
-                <th className="px-2 py-1.5 text-right text-gray-400 border-b border-gray-700">Δ Sortino</th>
-                <th className="px-2 py-1.5 text-right text-gray-400 border-b border-gray-700">Δ Calmar</th>
-                <th className="px-2 py-1.5 text-right text-gray-400 border-b border-gray-700">Δ MaxDD</th>
-                <th className="px-2 py-1.5 text-right text-gray-400 border-b border-gray-700">P4 UpCap</th>
-                <th className="px-2 py-1.5 text-right text-gray-400 border-b border-gray-700">P4 DnCap</th>
+                <th className="px-2 py-1.5 text-left text-[#66605C] border-b border-[#E6D9CE]">Benchmark</th>
+                <th className="px-2 py-1.5 text-right text-[#66605C] border-b border-[#E6D9CE]">Alpha (ann)</th>
+                <th className="px-2 py-1.5 text-right text-[#66605C] border-b border-[#E6D9CE]">TE</th>
+                <th className="px-2 py-1.5 text-right text-[#66605C] border-b border-[#E6D9CE]">IR</th>
+                <th className="px-2 py-1.5 text-right text-[#66605C] border-b border-[#E6D9CE]">Δ Sharpe</th>
+                <th className="px-2 py-1.5 text-right text-[#66605C] border-b border-[#E6D9CE]">Δ Sortino</th>
+                <th className="px-2 py-1.5 text-right text-[#66605C] border-b border-[#E6D9CE]">Δ Calmar</th>
+                <th className="px-2 py-1.5 text-right text-[#66605C] border-b border-[#E6D9CE]">Δ MaxDD</th>
+                <th className="px-2 py-1.5 text-right text-[#66605C] border-b border-[#E6D9CE]">P4 UpCap</th>
+                <th className="px-2 py-1.5 text-right text-[#66605C] border-b border-[#E6D9CE]">P4 DnCap</th>
               </tr>
             </thead>
             <tbody>
@@ -1789,8 +1789,8 @@ function BenchmarkValidationSection({ bench }: { bench: BenchmarkData }) {
                 const isPrimary = c.tag === "acwi100";
                 return (
                   <tr key={c.tag}
-                      className={`border-b border-gray-800/50 ${isPrimary ? "bg-red-900/15 font-semibold" : ""}`}>
-                    <td className="px-2 py-1 text-gray-300">{c.name}</td>
+                      className={`border-b border-[#E6D9CE]/50 ${isPrimary ? "bg-[#F7E3E3]/15 font-semibold" : ""}`}>
+                    <td className="px-2 py-1 text-[#33302E]">{c.name}</td>
                     <td className={`px-2 py-1 text-right ${sigClass(c.alpha_ann)}`}>{fmtPctSig(c.alpha_ann)}</td>
                     <td className="px-2 py-1 text-right">{fmtPct(c.tracking_error)}</td>
                     <td className={`px-2 py-1 text-right ${sigClass(c.information_ratio)}`}>{fmtNumSig(c.information_ratio)}</td>
@@ -1806,7 +1806,7 @@ function BenchmarkValidationSection({ bench }: { bench: BenchmarkData }) {
             </tbody>
           </table>
         </div>
-        <div className="text-[10px] text-gray-500 mt-1">
+        <div className="text-[12px] text-[#857F7A] mt-1">
           Δ Sharpe / Sortino / Calmar = P4 minus benchmark (positive = P4 better).
           Δ MaxDD = P4 minus benchmark (positive = P4 better, less negative).
         </div>
@@ -1815,7 +1815,7 @@ function BenchmarkValidationSection({ bench }: { bench: BenchmarkData }) {
       {/* ── Cumulative chart + Risk-Return scatter ── */}
       <div className="grid grid-cols-3 gap-4">
         <div className="col-span-2">
-          <div className="text-sm font-semibold text-gray-200 mb-1">
+          <div className="text-[16px] font-semibold text-[#33302E] mb-1">
             Cumulative Return — P4 vs All Benchmarks
           </div>
           <Plot
@@ -1831,8 +1831,8 @@ function BenchmarkValidationSection({ bench }: { bench: BenchmarkData }) {
               ...DARK_LAYOUT, height: 380,
               margin: { t: 15, b: 30, l: 50, r: 10 },
               hovermode: "x unified",
-              yaxis: { title: "Cumulative", gridcolor: "#1f2937" },
-              xaxis: { gridcolor: "#1f2937" },
+              yaxis: { title: "Cumulative", gridcolor: "#F2E5D7" },
+              xaxis: { gridcolor: "#F2E5D7" },
               legend: { orientation: "h", y: -0.18, font: { size: 10 } },
             }}
             config={{ displayModeBar: false, responsive: true }}
@@ -1841,7 +1841,7 @@ function BenchmarkValidationSection({ bench }: { bench: BenchmarkData }) {
         </div>
 
         <div>
-          <div className="text-sm font-semibold text-gray-200 mb-1">
+          <div className="text-[16px] font-semibold text-[#33302E] mb-1">
             Risk-Return Scatter
           </div>
           <Plot
@@ -1851,24 +1851,24 @@ function BenchmarkValidationSection({ bench }: { bench: BenchmarkData }) {
               y: scatterPoints.map((p) => p.y),
               text: scatterPoints.map((p) => p.name.split(" ")[0]),
               textposition: "top center",
-              textfont: { size: 10, color: "#9ca3af" },
+              textfont: { size: 10, color: "#66605C" },
               marker: {
                 color: scatterPoints.map((p) => p.color),
                 size: scatterPoints.map((p) => p.size),
-                line: { color: "#0a0e17", width: 1 },
+                line: { color: "#FFF1E5", width: 1 },
               },
               hovertemplate: "<b>%{text}</b><br>Vol=%{x:.2%}<br>CAGR=%{y:.2%}<extra></extra>",
             }] as any}
             layout={{
               ...DARK_LAYOUT, height: 380,
               margin: { t: 15, b: 35, l: 55, r: 10 },
-              xaxis: { title: "Annualized Vol", tickformat: ".0%", gridcolor: "#1f2937" },
-              yaxis: { title: "CAGR", tickformat: ".0%", gridcolor: "#1f2937" },
+              xaxis: { title: "Annualized Vol", tickformat: ".0%", gridcolor: "#F2E5D7" },
+              yaxis: { title: "CAGR", tickformat: ".0%", gridcolor: "#F2E5D7" },
             }}
             config={{ displayModeBar: false, responsive: true }}
             style={{ width: "100%" }}
           />
-          <div className="text-[10px] text-gray-500 mt-1">
+          <div className="text-[12px] text-[#857F7A] mt-1">
             Top-left = ideal (high return, low vol). P4 (★ green) sits above the
             risk/return frontier vs single-asset references.
           </div>
@@ -1876,14 +1876,14 @@ function BenchmarkValidationSection({ bench }: { bench: BenchmarkData }) {
       </div>
 
       {/* ── Interpretation ── */}
-      <div className="bg-[#0a0e17] border border-cyan-900/40 rounded-lg p-3 text-[11px] text-cyan-200/90 leading-relaxed">
-        <b className="text-cyan-100">Interpretation</b> —&nbsp;
-        <span className="text-gray-300">
-          <b className="text-green-300">P4 vs ACWI 100% (primary test)</b>: P4 sacrifices&nbsp;
+      <div className="bg-[#FFF1E5] border border-[#9CC3D5]/40 rounded-lg p-3 text-[13px] text-[#0D7680]/90 leading-relaxed">
+        <b className="text-[#0D7680]">Interpretation</b> —&nbsp;
+        <span className="text-[#33302E]">
+          <b className="text-[#0A7D3F]">P4 vs ACWI 100% (primary test)</b>: P4 sacrifices&nbsp;
           {fmtPctSig(s.comparisons.find((c) => c.tag === "acwi100")?.alpha_ann ?? 0)} of absolute alpha
           but delivers higher Sharpe (Δ {fmtNumSig(s.comparisons.find((c) => c.tag === "acwi100")?.p4_sharpe_minus_bench ?? 0)})
           and shallower MaxDD (Δ {fmtPctSig(s.comparisons.find((c) => c.tag === "acwi100")?.p4_dd_minus_bench ?? 0, 1)}).
-          → <b className="text-green-300">Hypothesis validated</b>: bond/cash adjustment improves
+          → <b className="text-[#0A7D3F]">Hypothesis validated</b>: bond/cash adjustment improves
           risk-adjusted profile vs passive equity.&nbsp;
           <b>vs ACWI 60 / AGG 40</b>: P4 generates positive alpha + IR&nbsp;
           {fmtNumSig(s.comparisons.find((c) => c.tag === "acwi60agg40")?.information_ratio ?? 0)} —
@@ -1904,223 +1904,223 @@ function SignalDefinitionContent() {
   return (
     <div className="space-y-6">
       {/* ── 1. Big Picture Flow ── */}
-      <div className="bg-[#111827] rounded-lg p-5 border border-gray-800">
-        <div className="text-base font-semibold text-gray-100 mb-1">
+      <div className="bg-[#FFFFFF] rounded-lg p-5 border border-[#E6D9CE]">
+        <div className="text-[18px] font-semibold text-[#33302E] mb-1">
           1. 전체 흐름 — 한 눈에 보기
         </div>
-        <div className="text-xs text-gray-500 mb-4">
+        <div className="text-[14px] text-[#857F7A] mb-4">
           매월 마지막 거래일에 4단계로 자산배분이 결정됩니다.
         </div>
         <div className="grid grid-cols-7 gap-2 items-center">
           {/* Step 1 */}
-          <div className="col-span-1 bg-[#0a0e17] border-2 border-cyan-700/50 rounded-lg p-3 text-center">
-            <div className="text-cyan-300 text-xs font-bold mb-1">STEP 1</div>
-            <div className="text-2xl mb-1">📊</div>
-            <div className="text-xs text-gray-200 font-semibold">데이터 수집</div>
-            <div className="text-[10px] text-gray-500 mt-1">VIX, 금리, 환율, 종목 breadth 등</div>
+          <div className="col-span-1 bg-[#FFF1E5] border-2 border-[#9CC3D5]/50 rounded-lg p-3 text-center">
+            <div className="text-[#0D7680] text-[14px] font-bold mb-1">STEP 1</div>
+            <div className="text-[26px] mb-1">📊</div>
+            <div className="text-[14px] text-[#33302E] font-semibold">데이터 수집</div>
+            <div className="text-[12px] text-[#857F7A] mt-1">VIX, 금리, 환율, 종목 breadth 등</div>
           </div>
-          <div className="col-span-1 text-center text-2xl text-gray-600">→</div>
+          <div className="col-span-1 text-center text-[26px] text-[#857F7A]">→</div>
           {/* Step 2 */}
-          <div className="col-span-1 bg-[#0a0e17] border-2 border-blue-700/50 rounded-lg p-3 text-center">
-            <div className="text-blue-300 text-xs font-bold mb-1">STEP 2</div>
-            <div className="text-2xl mb-1">🤖</div>
-            <div className="text-xs text-gray-200 font-semibold">ML 분류 모델</div>
-            <div className="text-[10px] text-gray-500 mt-1">LightGBM multiclass</div>
+          <div className="col-span-1 bg-[#FFF1E5] border-2 border-[#9CC3D5]/50 rounded-lg p-3 text-center">
+            <div className="text-[#0F5499] text-[14px] font-bold mb-1">STEP 2</div>
+            <div className="text-[26px] mb-1">🤖</div>
+            <div className="text-[14px] text-[#33302E] font-semibold">ML 분류 모델</div>
+            <div className="text-[12px] text-[#857F7A] mt-1">LightGBM multiclass</div>
           </div>
-          <div className="col-span-1 text-center text-2xl text-gray-600">→</div>
+          <div className="col-span-1 text-center text-[26px] text-[#857F7A]">→</div>
           {/* Step 3 */}
-          <div className="col-span-1 bg-[#0a0e17] border-2 border-yellow-700/50 rounded-lg p-3 text-center">
-            <div className="text-yellow-300 text-xs font-bold mb-1">STEP 3</div>
-            <div className="text-2xl mb-1">🎯</div>
-            <div className="text-xs text-gray-200 font-semibold">시장 상태 확률</div>
-            <div className="text-[10px] text-gray-500 mt-1">P(BULL), P(BASE), P(BEAR)</div>
+          <div className="col-span-1 bg-[#FFF1E5] border-2 border-[#DCC9A0]/50 rounded-lg p-3 text-center">
+            <div className="text-[#B85C00] text-[14px] font-bold mb-1">STEP 3</div>
+            <div className="text-[26px] mb-1">🎯</div>
+            <div className="text-[14px] text-[#33302E] font-semibold">시장 상태 확률</div>
+            <div className="text-[12px] text-[#857F7A] mt-1">P(BULL), P(BASE), P(BEAR)</div>
           </div>
-          <div className="col-span-1 text-center text-2xl text-gray-600">→</div>
+          <div className="col-span-1 text-center text-[26px] text-[#857F7A]">→</div>
         </div>
         <div className="grid grid-cols-7 gap-2 items-center mt-2">
           <div className="col-span-5"></div>
-          <div className="col-span-1 text-center text-2xl text-gray-600">↓</div>
+          <div className="col-span-1 text-center text-[26px] text-[#857F7A]">↓</div>
           <div className="col-span-1"></div>
         </div>
         <div className="grid grid-cols-7 gap-2 items-center mt-2">
           <div className="col-span-5"></div>
-          <div className="col-span-2 bg-[#0a0e17] border-2 border-green-700/50 rounded-lg p-3 text-center">
-            <div className="text-green-300 text-xs font-bold mb-1">STEP 4</div>
-            <div className="text-2xl mb-1">💼</div>
-            <div className="text-xs text-gray-200 font-semibold">자산배분 결정</div>
-            <div className="text-[10px] text-gray-500 mt-1">주식 / 채권 / 현금 비율 산출</div>
+          <div className="col-span-2 bg-[#FFF1E5] border-2 border-[#A8CDB6]/50 rounded-lg p-3 text-center">
+            <div className="text-[#0A7D3F] text-[14px] font-bold mb-1">STEP 4</div>
+            <div className="text-[26px] mb-1">💼</div>
+            <div className="text-[14px] text-[#33302E] font-semibold">자산배분 결정</div>
+            <div className="text-[12px] text-[#857F7A] mt-1">주식 / 채권 / 현금 비율 산출</div>
           </div>
         </div>
       </div>
 
       {/* ── 2. Three Regime Definitions ── */}
-      <div className="bg-[#111827] rounded-lg p-5 border border-gray-800">
-        <div className="text-base font-semibold text-gray-100 mb-1">
+      <div className="bg-[#FFFFFF] rounded-lg p-5 border border-[#E6D9CE]">
+        <div className="text-[18px] font-semibold text-[#33302E] mb-1">
           2. 시장 상태 (Regime) — 3가지로 분류
         </div>
-        <div className="text-xs text-gray-500 mb-4">
+        <div className="text-[14px] text-[#857F7A] mb-4">
           모든 모델은 공통으로 시장을 BULL / BASE / BEAR 셋 중 하나로 봅니다.
           각 상태에는 미리 정해진 자산배분 비율(allocation grid)이 있습니다.
         </div>
         <div className="grid grid-cols-3 gap-4">
           {/* BULL */}
-          <div className="bg-gradient-to-br from-green-900/30 to-[#0a0e17] border-2 border-green-700/50 rounded-lg p-4">
+          <div className="bg-gradient-to-br from-green-900/30 to-[#FFF1E5] border-2 border-[#A8CDB6]/50 rounded-lg p-4">
             <div className="flex items-center gap-2 mb-3">
               <span className="text-3xl">🟢</span>
               <div>
-                <div className="text-lg font-bold text-green-300">BULL</div>
-                <div className="text-[11px] text-gray-400">강세장 (Bull Market)</div>
+                <div className="text-[20px] font-bold text-[#0A7D3F]">BULL</div>
+                <div className="text-[13px] text-[#66605C]">강세장 (Bull Market)</div>
               </div>
             </div>
-            <div className="text-xs text-gray-300 mb-3 leading-relaxed">
+            <div className="text-[14px] text-[#33302E] mb-3 leading-relaxed">
               <b>의미:</b> 다음 1개월간 주식이 +3% 이상 오를 것으로 예상,
               큰 낙폭(-2% 이상) 없을 것으로 예상.
             </div>
-            <div className="bg-[#0a0e17]/50 rounded p-3 mb-2">
-              <div className="text-[10px] text-green-300 mb-1">자산배분</div>
+            <div className="bg-[#FFF1E5]/50 rounded p-3 mb-2">
+              <div className="text-[12px] text-[#0A7D3F] mb-1">자산배분</div>
               <div className="grid grid-cols-3 gap-1 text-center">
-                <div><div className="text-2xl font-bold text-green-300">90%</div><div className="text-[10px] text-gray-500">주식</div></div>
-                <div><div className="text-2xl font-bold text-blue-300">5%</div><div className="text-[10px] text-gray-500">채권</div></div>
-                <div><div className="text-2xl font-bold text-yellow-300">5%</div><div className="text-[10px] text-gray-500">현금</div></div>
+                <div><div className="text-[26px] font-bold text-[#0A7D3F]">90%</div><div className="text-[12px] text-[#857F7A]">주식</div></div>
+                <div><div className="text-[26px] font-bold text-[#0F5499]">5%</div><div className="text-[12px] text-[#857F7A]">채권</div></div>
+                <div><div className="text-[26px] font-bold text-[#B85C00]">5%</div><div className="text-[12px] text-[#857F7A]">현금</div></div>
               </div>
             </div>
-            <div className="text-[11px] text-gray-400 italic">
+            <div className="text-[13px] text-[#66605C] italic">
               "거의 다 주식, 약간의 안전자산"
             </div>
-            <div className="text-[10px] text-gray-500 mt-2">발생 빈도 ≈ 14% (최근 33년)</div>
+            <div className="text-[12px] text-[#857F7A] mt-2">발생 빈도 ≈ 14% (최근 33년)</div>
           </div>
 
           {/* BASE */}
-          <div className="bg-gradient-to-br from-yellow-900/30 to-[#0a0e17] border-2 border-yellow-700/50 rounded-lg p-4">
+          <div className="bg-gradient-to-br from-yellow-900/30 to-[#FFF1E5] border-2 border-[#DCC9A0]/50 rounded-lg p-4">
             <div className="flex items-center gap-2 mb-3">
               <span className="text-3xl">🟡</span>
               <div>
-                <div className="text-lg font-bold text-yellow-300">BASE</div>
-                <div className="text-[11px] text-gray-400">중립장 (Base / Normal)</div>
+                <div className="text-[20px] font-bold text-[#B85C00]">BASE</div>
+                <div className="text-[13px] text-[#66605C]">중립장 (Base / Normal)</div>
               </div>
             </div>
-            <div className="text-xs text-gray-300 mb-3 leading-relaxed">
+            <div className="text-[14px] text-[#33302E] mb-3 leading-relaxed">
               <b>의미:</b> 평소 시장. 큰 상승도, 큰 하락도 아닌 상태.
               BULL 또는 BEAR 조건이 충족되지 않은 모든 경우.
             </div>
-            <div className="bg-[#0a0e17]/50 rounded p-3 mb-2">
-              <div className="text-[10px] text-yellow-300 mb-1">자산배분</div>
+            <div className="bg-[#FFF1E5]/50 rounded p-3 mb-2">
+              <div className="text-[12px] text-[#B85C00] mb-1">자산배분</div>
               <div className="grid grid-cols-3 gap-1 text-center">
-                <div><div className="text-2xl font-bold text-green-300">75%</div><div className="text-[10px] text-gray-500">주식</div></div>
-                <div><div className="text-2xl font-bold text-blue-300">10%</div><div className="text-[10px] text-gray-500">채권</div></div>
-                <div><div className="text-2xl font-bold text-yellow-300">15%</div><div className="text-[10px] text-gray-500">현금</div></div>
+                <div><div className="text-[26px] font-bold text-[#0A7D3F]">75%</div><div className="text-[12px] text-[#857F7A]">주식</div></div>
+                <div><div className="text-[26px] font-bold text-[#0F5499]">10%</div><div className="text-[12px] text-[#857F7A]">채권</div></div>
+                <div><div className="text-[26px] font-bold text-[#B85C00]">15%</div><div className="text-[12px] text-[#857F7A]">현금</div></div>
               </div>
             </div>
-            <div className="text-[11px] text-gray-400 italic">
+            <div className="text-[13px] text-[#66605C] italic">
               "주식 위주, 적당한 안전자산 — 표준 balanced fund"
             </div>
-            <div className="text-[10px] text-gray-500 mt-2">발생 빈도 ≈ 51%</div>
+            <div className="text-[12px] text-[#857F7A] mt-2">발생 빈도 ≈ 51%</div>
           </div>
 
           {/* BEAR */}
-          <div className="bg-gradient-to-br from-red-900/30 to-[#0a0e17] border-2 border-red-700/50 rounded-lg p-4">
+          <div className="bg-gradient-to-br from-red-900/30 to-[#FFF1E5] border-2 border-[#E0AAAA]/50 rounded-lg p-4">
             <div className="flex items-center gap-2 mb-3">
               <span className="text-3xl">🔴</span>
               <div>
-                <div className="text-lg font-bold text-red-300">BEAR</div>
-                <div className="text-[11px] text-gray-400">약세장 (Bear Market)</div>
+                <div className="text-[20px] font-bold text-[#CC0000]">BEAR</div>
+                <div className="text-[13px] text-[#66605C]">약세장 (Bear Market)</div>
               </div>
             </div>
-            <div className="text-xs text-gray-300 mb-3 leading-relaxed">
+            <div className="text-[14px] text-[#33302E] mb-3 leading-relaxed">
               <b>의미:</b> 다음 1개월간 주식이 −3% 이상 하락 예상,
               또는 −5% 이상 drawdown 예상, 또는 VIX &gt; 30 (스트레스).
             </div>
-            <div className="bg-[#0a0e17]/50 rounded p-3 mb-2">
-              <div className="text-[10px] text-red-300 mb-1">자산배분</div>
+            <div className="bg-[#FFF1E5]/50 rounded p-3 mb-2">
+              <div className="text-[12px] text-[#CC0000] mb-1">자산배분</div>
               <div className="grid grid-cols-3 gap-1 text-center">
-                <div><div className="text-2xl font-bold text-green-300">60%</div><div className="text-[10px] text-gray-500">주식</div></div>
-                <div><div className="text-2xl font-bold text-blue-300">15%</div><div className="text-[10px] text-gray-500">채권</div></div>
-                <div><div className="text-2xl font-bold text-yellow-300">25%</div><div className="text-[10px] text-gray-500">현금</div></div>
+                <div><div className="text-[26px] font-bold text-[#0A7D3F]">60%</div><div className="text-[12px] text-[#857F7A]">주식</div></div>
+                <div><div className="text-[26px] font-bold text-[#0F5499]">15%</div><div className="text-[12px] text-[#857F7A]">채권</div></div>
+                <div><div className="text-[26px] font-bold text-[#B85C00]">25%</div><div className="text-[12px] text-[#857F7A]">현금</div></div>
               </div>
             </div>
-            <div className="text-[11px] text-gray-400 italic">
+            <div className="text-[13px] text-[#66605C] italic">
               "방어적 — 주식 줄이고 안전자산 늘림"
             </div>
-            <div className="text-[10px] text-gray-500 mt-2">발생 빈도 ≈ 35%</div>
+            <div className="text-[12px] text-[#857F7A] mt-2">발생 빈도 ≈ 35%</div>
           </div>
         </div>
       </div>
 
       {/* ── 3. Two Decision Methods ── */}
-      <div className="bg-[#111827] rounded-lg p-5 border border-gray-800">
-        <div className="text-base font-semibold text-gray-100 mb-1">
+      <div className="bg-[#FFFFFF] rounded-lg p-5 border border-[#E6D9CE]">
+        <div className="text-[18px] font-semibold text-[#33302E] mb-1">
           3. 의사결정 방식 — 두 가지
         </div>
-        <div className="text-xs text-gray-500 mb-4">
+        <div className="text-[14px] text-[#857F7A] mb-4">
           모델이 출력한 확률을 가지고 자산배분 비율을 정하는 방법은 두 가지입니다.
           P0~P3는 방식 1, P4는 방식 2를 사용합니다.
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           {/* Method 1 — Posterior Blend */}
-          <div className="bg-[#0a0e17] border border-cyan-800/50 rounded-lg p-4">
+          <div className="bg-[#FFF1E5] border border-[#9CC3D5]/50 rounded-lg p-4">
             <div className="flex items-baseline gap-2 mb-2">
-              <span className="text-cyan-300 font-bold">방식 1</span>
-              <span className="text-sm text-gray-200 font-semibold">Posterior Blend (확률 가중 평균)</span>
+              <span className="text-[#0D7680] font-bold">방식 1</span>
+              <span className="text-[16px] text-[#33302E] font-semibold">Posterior Blend (확률 가중 평균)</span>
             </div>
-            <div className="text-[11px] text-gray-400 mb-3">사용 모델: <b>P0, P1, P2, P3</b></div>
-            <div className="bg-[#111827] rounded p-2 text-[11px] font-mono text-gray-300 mb-3">
-              <div className="text-cyan-300 text-[10px] mb-1">RULE</div>
+            <div className="text-[13px] text-[#66605C] mb-3">사용 모델: <b>P0, P1, P2, P3</b></div>
+            <div className="bg-[#FFFFFF] rounded p-2 text-[13px] font-mono text-[#33302E] mb-3">
+              <div className="text-[#0D7680] text-[12px] mb-1">RULE</div>
               w_final = Σ P(regime) × ALLOCATION[regime]
             </div>
-            <div className="text-[11px] text-gray-300 mb-2"><b>예시 계산</b>:</div>
-            <div className="bg-[#111827] rounded p-3 text-[11px] font-mono text-gray-300 mb-3">
-              <div className="text-yellow-300 text-[10px] mb-1">INPUT (확률)</div>
+            <div className="text-[13px] text-[#33302E] mb-2"><b>예시 계산</b>:</div>
+            <div className="bg-[#FFFFFF] rounded p-3 text-[13px] font-mono text-[#33302E] mb-3">
+              <div className="text-[#B85C00] text-[12px] mb-1">INPUT (확률)</div>
               P_BEAR = 0.30 &nbsp; P_BASE = 0.50 &nbsp; P_BULL = 0.20<br/>
-              <div className="text-green-300 text-[10px] mt-2 mb-1">OUTPUT (비율)</div>
-              주식 = 0.30×60% + 0.50×75% + 0.20×90% = <b className="text-green-300">73.5%</b><br/>
-              채권 = 0.30×15% + 0.50×10% + 0.20×5% &nbsp;= <b className="text-blue-300">10.5%</b><br/>
-              현금 = 0.30×25% + 0.50×15% + 0.20×5% &nbsp;= <b className="text-yellow-300">16.0%</b>
+              <div className="text-[#0A7D3F] text-[12px] mt-2 mb-1">OUTPUT (비율)</div>
+              주식 = 0.30×60% + 0.50×75% + 0.20×90% = <b className="text-[#0A7D3F]">73.5%</b><br/>
+              채권 = 0.30×15% + 0.50×10% + 0.20×5% &nbsp;= <b className="text-[#0F5499]">10.5%</b><br/>
+              현금 = 0.30×25% + 0.50×15% + 0.20×5% &nbsp;= <b className="text-[#B85C00]">16.0%</b>
             </div>
-            <div className="text-[11px] text-gray-400">
-              <b className="text-gray-300">장점:</b> 매월 부드럽게 변화 (whipsaw 적음)<br/>
-              <b className="text-gray-300">단점:</b> 강한 신호도 희석됨
+            <div className="text-[13px] text-[#66605C]">
+              <b className="text-[#33302E]">장점:</b> 매월 부드럽게 변화 (whipsaw 적음)<br/>
+              <b className="text-[#33302E]">단점:</b> 강한 신호도 희석됨
             </div>
           </div>
 
           {/* Method 2 — Hard Switch with Meta */}
-          <div className="bg-[#0a0e17] border-2 border-green-700/60 rounded-lg p-4">
+          <div className="bg-[#FFF1E5] border-2 border-[#A8CDB6]/60 rounded-lg p-4">
             <div className="flex items-baseline gap-2 mb-2">
-              <span className="text-green-300 font-bold">방식 2 ★</span>
-              <span className="text-sm text-gray-200 font-semibold">Hard Switch + Meta Filter</span>
+              <span className="text-[#0A7D3F] font-bold">방식 2 ★</span>
+              <span className="text-[16px] text-[#33302E] font-semibold">Hard Switch + Meta Filter</span>
             </div>
-            <div className="text-[11px] text-gray-400 mb-3">사용 모델: <b>P4 (production winner)</b></div>
-            <div className="bg-[#111827] rounded p-2 text-[11px] font-mono text-gray-300 mb-3">
-              <div className="text-green-300 text-[10px] mb-1">RULE</div>
-              <span className="text-gray-400">1.</span> primary = argmax(P_BEAR, P_BASE, P_BULL)<br/>
-              <span className="text-gray-400">2.</span> if meta_confidence &gt; 0.5:<br/>
+            <div className="text-[13px] text-[#66605C] mb-3">사용 모델: <b>P4 (production winner)</b></div>
+            <div className="bg-[#FFFFFF] rounded p-2 text-[13px] font-mono text-[#33302E] mb-3">
+              <div className="text-[#0A7D3F] text-[12px] mb-1">RULE</div>
+              <span className="text-[#66605C]">1.</span> primary = argmax(P_BEAR, P_BASE, P_BULL)<br/>
+              <span className="text-[#66605C]">2.</span> if meta_confidence &gt; 0.5:<br/>
               &nbsp;&nbsp;&nbsp;&nbsp;use ALLOCATION[primary]<br/>
-              <span className="text-gray-400">3.</span> else:<br/>
+              <span className="text-[#66605C]">3.</span> else:<br/>
               &nbsp;&nbsp;&nbsp;&nbsp;use ALLOCATION[BASE]
             </div>
-            <div className="text-[11px] text-gray-300 mb-2"><b>예시 계산</b>:</div>
-            <div className="bg-[#111827] rounded p-3 text-[11px] font-mono text-gray-300 mb-3">
-              <div className="text-yellow-300 text-[10px] mb-1">CASE A</div>
+            <div className="text-[13px] text-[#33302E] mb-2"><b>예시 계산</b>:</div>
+            <div className="bg-[#FFFFFF] rounded p-3 text-[13px] font-mono text-[#33302E] mb-3">
+              <div className="text-[#B85C00] text-[12px] mb-1">CASE A</div>
               P_BEAR=0.6, P_BASE=0.3, P_BULL=0.1, meta=0.7 (강한 BEAR + 높은 신뢰)<br/>
-              → primary = BEAR, meta &gt; 0.5 → <b className="text-red-300">BEAR 60/15/25</b><br/>
-              <div className="text-yellow-300 text-[10px] mt-2 mb-1">CASE B</div>
+              → primary = BEAR, meta &gt; 0.5 → <b className="text-[#CC0000]">BEAR 60/15/25</b><br/>
+              <div className="text-[#B85C00] text-[12px] mt-2 mb-1">CASE B</div>
               P_BEAR=0.6, P_BASE=0.3, P_BULL=0.1, meta=0.4 (강한 BEAR + 낮은 신뢰)<br/>
-              → primary = BEAR but meta ≤ 0.5 → <b className="text-yellow-300">BASE 75/10/15</b> (안전 후퇴)
+              → primary = BEAR but meta ≤ 0.5 → <b className="text-[#B85C00]">BASE 75/10/15</b> (안전 후퇴)
             </div>
-            <div className="text-[11px] text-gray-400">
-              <b className="text-gray-300">장점:</b> 명확한 의사결정, 잘못된 베팅 회피<br/>
-              <b className="text-gray-300">단점:</b> 경계영역에서 보수적 (BASE로 후퇴)
+            <div className="text-[13px] text-[#66605C]">
+              <b className="text-[#33302E]">장점:</b> 명확한 의사결정, 잘못된 베팅 회피<br/>
+              <b className="text-[#33302E]">단점:</b> 경계영역에서 보수적 (BASE로 후퇴)
             </div>
           </div>
         </div>
       </div>
 
       {/* ── 4. P0 → P4 Detailed Walk-through ── */}
-      <div className="bg-[#111827] rounded-lg p-5 border border-gray-800">
-        <div className="text-base font-semibold text-gray-100 mb-1">
+      <div className="bg-[#FFFFFF] rounded-lg p-5 border border-[#E6D9CE]">
+        <div className="text-[18px] font-semibold text-[#33302E] mb-1">
           4. P0 → P4 모델별 차이
         </div>
-        <div className="text-xs text-gray-500 mb-4">
+        <div className="text-[14px] text-[#857F7A] mb-4">
           5개 모델은 모두 동일한 시장 상태(BULL/BASE/BEAR)를 예측하지만,
           입력 feature와 의사결정 방식이 점진적으로 발전합니다.
         </div>
@@ -2174,95 +2174,95 @@ function SignalDefinitionContent() {
 
 
       {/* ── 6. Worked Example ── */}
-      <div className="bg-[#111827] rounded-lg p-5 border border-gray-800">
-        <div className="text-base font-semibold text-gray-100 mb-1">
+      <div className="bg-[#FFFFFF] rounded-lg p-5 border border-[#E6D9CE]">
+        <div className="text-[18px] font-semibold text-[#33302E] mb-1">
           7. 실제 한 달 의사결정 — Walkthrough
         </div>
-        <div className="text-xs text-gray-500 mb-4">
+        <div className="text-[14px] text-[#857F7A] mb-4">
           가상의 월말(예: 2024-12-31) 시점에서 P4가 어떻게 의사결정 하는지 단계별로.
         </div>
         <div className="space-y-3">
           <div className="grid grid-cols-12 gap-2 items-center">
-            <div className="col-span-1 text-center bg-cyan-900/30 border border-cyan-700 rounded-full w-8 h-8 flex items-center justify-center text-cyan-300 font-bold">1</div>
-            <div className="col-span-11 bg-[#0a0e17] border border-gray-800 rounded-lg p-3">
-              <div className="text-sm font-semibold text-gray-200 mb-1">데이터 수집 (월말)</div>
-              <div className="text-[11px] text-gray-400 grid grid-cols-3 gap-2 mt-2 font-mono">
+            <div className="col-span-1 text-center bg-[#E3EEF5]/30 border border-[#9CC3D5] rounded-full w-8 h-8 flex items-center justify-center text-[#0D7680] font-bold">1</div>
+            <div className="col-span-11 bg-[#FFF1E5] border border-[#E6D9CE] rounded-lg p-3">
+              <div className="text-[16px] font-semibold text-[#33302E] mb-1">데이터 수집 (월말)</div>
+              <div className="text-[13px] text-[#66605C] grid grid-cols-3 gap-2 mt-2 font-mono">
                 <div>VIX = 19.5</div>
                 <div>10Y yield = 4.2%</div>
                 <div>USD index 3M ret = +1.8%</div>
                 <div>ACWI 12M momentum = +18%</div>
                 <div>HY/IG ratio = 0.74</div>
                 <div>% bullish ETFs = 52%</div>
-                <div className="text-gray-500 col-span-3">… 27개 features 전체</div>
+                <div className="text-[#857F7A] col-span-3">… 27개 features 전체</div>
               </div>
             </div>
           </div>
 
           <div className="grid grid-cols-12 gap-2 items-center">
-            <div className="col-span-1 text-center bg-blue-900/30 border border-blue-700 rounded-full w-8 h-8 flex items-center justify-center text-blue-300 font-bold">2</div>
-            <div className="col-span-11 bg-[#0a0e17] border border-gray-800 rounded-lg p-3">
-              <div className="text-sm font-semibold text-gray-200 mb-1">Primary 모델 예측</div>
-              <div className="text-[11px] text-gray-400 mt-2 font-mono space-y-0.5">
+            <div className="col-span-1 text-center bg-[#E3EEF5]/30 border border-[#9CC3D5] rounded-full w-8 h-8 flex items-center justify-center text-[#0F5499] font-bold">2</div>
+            <div className="col-span-11 bg-[#FFF1E5] border border-[#E6D9CE] rounded-lg p-3">
+              <div className="text-[16px] font-semibold text-[#33302E] mb-1">Primary 모델 예측</div>
+              <div className="text-[13px] text-[#66605C] mt-2 font-mono space-y-0.5">
                 <div className="flex items-center gap-3">
                   <div className="w-20">P_BEAR</div>
-                  <div className="flex-1 bg-[#1f2937] rounded h-3 relative overflow-hidden">
-                    <div className="h-full bg-red-700/70" style={{ width: "15%" }}></div>
+                  <div className="flex-1 bg-[#F2E5D7] rounded h-3 relative overflow-hidden">
+                    <div className="h-full bg-[#F7E3E3]/70" style={{ width: "15%" }}></div>
                   </div>
-                  <div className="w-12 text-right text-red-300">0.15</div>
+                  <div className="w-12 text-right text-[#CC0000]">0.15</div>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="w-20">P_BASE</div>
-                  <div className="flex-1 bg-[#1f2937] rounded h-3 relative overflow-hidden">
-                    <div className="h-full bg-yellow-600/70" style={{ width: "50%" }}></div>
+                  <div className="flex-1 bg-[#F2E5D7] rounded h-3 relative overflow-hidden">
+                    <div className="h-full bg-[#F5EEDA]/70" style={{ width: "50%" }}></div>
                   </div>
-                  <div className="w-12 text-right text-yellow-300">0.50</div>
+                  <div className="w-12 text-right text-[#B85C00]">0.50</div>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="w-20">P_BULL</div>
-                  <div className="flex-1 bg-[#1f2937] rounded h-3 relative overflow-hidden">
-                    <div className="h-full bg-green-700/70" style={{ width: "35%" }}></div>
+                  <div className="flex-1 bg-[#F2E5D7] rounded h-3 relative overflow-hidden">
+                    <div className="h-full bg-[#E3F0E8]/70" style={{ width: "35%" }}></div>
                   </div>
-                  <div className="w-12 text-right text-green-300">0.35</div>
+                  <div className="w-12 text-right text-[#0A7D3F]">0.35</div>
                 </div>
-                <div className="text-cyan-300 mt-1">→ argmax = <b>BASE</b></div>
+                <div className="text-[#0D7680] mt-1">→ argmax = <b>BASE</b></div>
               </div>
             </div>
           </div>
 
           <div className="grid grid-cols-12 gap-2 items-center">
-            <div className="col-span-1 text-center bg-green-900/30 border border-green-700 rounded-full w-8 h-8 flex items-center justify-center text-green-300 font-bold">3</div>
-            <div className="col-span-11 bg-[#0a0e17] border border-gray-800 rounded-lg p-3">
-              <div className="text-sm font-semibold text-gray-200 mb-1">Meta 모델 — 신뢰도 평가</div>
-              <div className="text-[11px] text-gray-400 mt-2 font-mono">
+            <div className="col-span-1 text-center bg-[#E3F0E8]/30 border border-[#A8CDB6] rounded-full w-8 h-8 flex items-center justify-center text-[#0A7D3F] font-bold">3</div>
+            <div className="col-span-11 bg-[#FFF1E5] border border-[#E6D9CE] rounded-lg p-3">
+              <div className="text-[16px] font-semibold text-[#33302E] mb-1">Meta 모델 — 신뢰도 평가</div>
+              <div className="text-[13px] text-[#66605C] mt-2 font-mono">
                 <div className="flex items-center gap-3">
                   <div className="w-32">meta_confidence</div>
-                  <div className="flex-1 bg-[#1f2937] rounded h-3 relative overflow-hidden">
-                    <div className="h-full bg-green-700/70" style={{ width: "62%" }}></div>
-                    <div className="absolute top-0 bottom-0 border-l border-yellow-400" style={{ left: "50%" }}></div>
+                  <div className="flex-1 bg-[#F2E5D7] rounded h-3 relative overflow-hidden">
+                    <div className="h-full bg-[#E3F0E8]/70" style={{ width: "62%" }}></div>
+                    <div className="absolute top-0 bottom-0 border-l border-[#DCC9A0]" style={{ left: "50%" }}></div>
                   </div>
-                  <div className="w-12 text-right text-green-300">0.62</div>
+                  <div className="w-12 text-right text-[#0A7D3F]">0.62</div>
                 </div>
-                <div className="text-green-300 mt-1">→ 0.62 &gt; 0.5 (threshold) → <b>Primary 신뢰</b></div>
+                <div className="text-[#0A7D3F] mt-1">→ 0.62 &gt; 0.5 (threshold) → <b>Primary 신뢰</b></div>
               </div>
             </div>
           </div>
 
           <div className="grid grid-cols-12 gap-2 items-center">
-            <div className="col-span-1 text-center bg-yellow-900/30 border border-yellow-700 rounded-full w-8 h-8 flex items-center justify-center text-yellow-300 font-bold">4</div>
-            <div className="col-span-11 bg-[#0a0e17] border-2 border-yellow-700/50 rounded-lg p-3">
-              <div className="text-sm font-semibold text-gray-200 mb-2">최종 자산배분 — BASE grid 적용</div>
+            <div className="col-span-1 text-center bg-[#F5EEDA]/30 border border-[#DCC9A0] rounded-full w-8 h-8 flex items-center justify-center text-[#B85C00] font-bold">4</div>
+            <div className="col-span-11 bg-[#FFF1E5] border-2 border-[#DCC9A0]/50 rounded-lg p-3">
+              <div className="text-[16px] font-semibold text-[#33302E] mb-2">최종 자산배분 — BASE grid 적용</div>
               <div className="grid grid-cols-3 gap-3 text-center">
-                <div className="bg-[#111827] rounded p-3">
-                  <div className="text-3xl font-bold text-green-300">75%</div>
-                  <div className="text-[11px] text-gray-400 mt-1">주식 (ACWI)</div>
+                <div className="bg-[#FFFFFF] rounded p-3">
+                  <div className="text-3xl font-bold text-[#0A7D3F]">75%</div>
+                  <div className="text-[13px] text-[#66605C] mt-1">주식 (ACWI)</div>
                 </div>
-                <div className="bg-[#111827] rounded p-3">
-                  <div className="text-3xl font-bold text-blue-300">10%</div>
-                  <div className="text-[11px] text-gray-400 mt-1">채권 (Global Agg)</div>
+                <div className="bg-[#FFFFFF] rounded p-3">
+                  <div className="text-3xl font-bold text-[#0F5499]">10%</div>
+                  <div className="text-[13px] text-[#66605C] mt-1">채권 (Global Agg)</div>
                 </div>
-                <div className="bg-[#111827] rounded p-3">
-                  <div className="text-3xl font-bold text-yellow-300">15%</div>
-                  <div className="text-[11px] text-gray-400 mt-1">현금 (T-bill)</div>
+                <div className="bg-[#FFFFFF] rounded p-3">
+                  <div className="text-3xl font-bold text-[#B85C00]">15%</div>
+                  <div className="text-[13px] text-[#66605C] mt-1">현금 (T-bill)</div>
                 </div>
               </div>
             </div>
@@ -2271,25 +2271,25 @@ function SignalDefinitionContent() {
       </div>
 
       {/* ── 7. Training & CV ── */}
-      <div className="bg-[#111827] rounded-lg p-5 border border-gray-800">
-        <div className="text-base font-semibold text-gray-100 mb-1">
+      <div className="bg-[#FFFFFF] rounded-lg p-5 border border-[#E6D9CE]">
+        <div className="text-[18px] font-semibold text-[#33302E] mb-1">
           8. 모델은 어떻게 학습되나? (간단)
         </div>
-        <div className="text-xs text-gray-500 mb-4">
+        <div className="text-[14px] text-[#857F7A] mb-4">
           과거 데이터만 사용해 학습 → 미래 데이터에서 검증 (lookahead 차단).
         </div>
-        <div className="grid grid-cols-2 gap-4 text-xs text-gray-300 leading-relaxed">
-          <div className="bg-[#0a0e17] border border-gray-800 rounded p-3">
-            <div className="text-cyan-300 font-semibold mb-2">📚 학습 표본</div>
-            <ul className="list-disc pl-4 space-y-1 text-[11px]">
+        <div className="grid grid-cols-2 gap-4 text-[14px] text-[#33302E] leading-relaxed">
+          <div className="bg-[#FFF1E5] border border-[#E6D9CE] rounded p-3">
+            <div className="text-[#0D7680] font-semibold mb-2">📚 학습 표본</div>
+            <ul className="list-disc pl-4 space-y-1 text-[13px]">
               <li>2007년 7월부터 매월 말 데이터 사용</li>
               <li>각 월마다: 입력 feature(t시점) + 정답 라벨(t+1개월 후 결과)</li>
               <li>총 ~225개월 (2007-07 ~ 현재)</li>
             </ul>
           </div>
-          <div className="bg-[#0a0e17] border border-gray-800 rounded p-3">
-            <div className="text-cyan-300 font-semibold mb-2">🛡️ 검증 방식 (Walk-Forward)</div>
-            <ul className="list-disc pl-4 space-y-1 text-[11px]">
+          <div className="bg-[#FFF1E5] border border-[#E6D9CE] rounded p-3">
+            <div className="text-[#0D7680] font-semibold mb-2">🛡️ 검증 방식 (Walk-Forward)</div>
+            <ul className="list-disc pl-4 space-y-1 text-[13px]">
               <li>모델은 항상 <b>과거 데이터만</b> 학습 (미래 정보 금지)</li>
               <li>21일 embargo: train/test 경계에서 라벨 누설 방지</li>
               <li>매 fold에서 모델 새로 학습 (expanding window)</li>
@@ -2297,16 +2297,16 @@ function SignalDefinitionContent() {
             </ul>
           </div>
         </div>
-        <div className="mt-3 text-[10.5px] text-gray-500 italic">
+        <div className="mt-3 text-[10.5px] text-[#857F7A] italic">
           이 방법론은 Lopez de Prado <i>Advances in Financial Machine Learning</i> Ch.7 (Cross-Validation in Finance)
           의 표준을 따릅니다 — 일반 K-Fold는 시계열에서 future leakage 발생, Purged Walk-Forward는 이를 차단.
         </div>
       </div>
 
       {/* ── 8. Summary ── */}
-      <div className="bg-gradient-to-br from-cyan-900/20 to-[#0a0e17] border-2 border-cyan-700/50 rounded-lg p-5">
-        <div className="text-base font-semibold text-cyan-100 mb-3">📌 핵심 요약</div>
-        <ul className="list-disc pl-6 space-y-1.5 text-sm text-gray-300 leading-relaxed">
+      <div className="bg-gradient-to-br from-cyan-900/20 to-[#FFF1E5] border-2 border-[#9CC3D5]/50 rounded-lg p-5">
+        <div className="text-[18px] font-semibold text-[#0D7680] mb-3">📌 핵심 요약</div>
+        <ul className="list-disc pl-6 space-y-1.5 text-[16px] text-[#33302E] leading-relaxed">
           <li>매월 말 시장 데이터를 보고 ML이 <b>BULL / BASE / BEAR</b> 셋 중 하나로 분류</li>
           <li>각 상태에 미리 정해진 <b>주식/채권/현금 비율</b> 적용 (BULL 90/5/5, BASE 75/10/15, BEAR 60/15/25)</li>
           <li>P0~P3는 <b>확률 가중 평균</b> 방식 — 부드러운 변화</li>
@@ -2329,28 +2329,28 @@ function ModelExplainCard({
   isWinner?: boolean;
 }) {
   return (
-    <div className={`bg-[#0a0e17] rounded-lg p-3 grid grid-cols-12 gap-3 items-start ${
-      isWinner ? "border-2 border-green-700/60 ring-1 ring-green-700/30" : "border border-gray-800"
+    <div className={`bg-[#FFF1E5] rounded-lg p-3 grid grid-cols-12 gap-3 items-start ${
+      isWinner ? "border-2 border-[#A8CDB6]/60 ring-1 ring-[#A8CDB6]/30" : "border border-[#E6D9CE]"
     }`}>
       <div className="col-span-1 flex flex-col items-center justify-center pt-1">
-        <span className="text-2xl font-bold" style={{ color: tagColor }}>{tag}</span>
-        {isWinner && <span className="text-[9px] text-green-400 font-semibold mt-0.5">WINNER</span>}
+        <span className="text-[26px] font-bold" style={{ color: tagColor }}>{tag}</span>
+        {isWinner && <span className="text-[11px] text-[#0A7D3F] font-semibold mt-0.5">WINNER</span>}
       </div>
       <div className="col-span-11">
-        <div className="text-sm font-semibold text-gray-100">{title}</div>
+        <div className="text-[16px] font-semibold text-[#33302E]">{title}</div>
         <div className="grid grid-cols-3 gap-3 mt-2">
           <div>
-            <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-0.5">Features</div>
-            <div className="text-[11px] text-gray-300 font-medium">{features}</div>
-            <div className="text-[10px] text-gray-500 mt-0.5">{featureExamples}</div>
+            <div className="text-[12px] uppercase tracking-wider text-[#857F7A] mb-0.5">Features</div>
+            <div className="text-[13px] text-[#33302E] font-medium">{features}</div>
+            <div className="text-[12px] text-[#857F7A] mt-0.5">{featureExamples}</div>
           </div>
           <div>
-            <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-0.5">의사결정</div>
-            <div className="text-[11px] text-gray-300">{decision}</div>
+            <div className="text-[12px] uppercase tracking-wider text-[#857F7A] mb-0.5">의사결정</div>
+            <div className="text-[13px] text-[#33302E]">{decision}</div>
           </div>
           <div>
-            <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-0.5">핵심 차이</div>
-            <div className="text-[11px] text-gray-400 italic leading-snug">{insight}</div>
+            <div className="text-[12px] uppercase tracking-wider text-[#857F7A] mb-0.5">핵심 차이</div>
+            <div className="text-[13px] text-[#66605C] italic leading-snug">{insight}</div>
           </div>
         </div>
       </div>
@@ -2493,34 +2493,34 @@ function FeatureUsageMatrix() {
   ];
   const totals = { p0: 15, p1: 21, p2: 15, p3: 21, p4: 27 };
   return (
-    <div className="overflow-x-auto border border-gray-800 rounded">
-      <table className="w-full text-xs">
-        <thead className="bg-[#1f2937]">
+    <div className="overflow-x-auto border border-[#E6D9CE] rounded">
+      <table className="w-full text-[14px]">
+        <thead className="bg-[#F2E5D7]">
           <tr>
-            <th className="px-2 py-1.5 text-left text-gray-400 border-b border-gray-700">Feature 그룹</th>
-            <th className="px-2 py-1.5 text-right text-gray-400 border-b border-gray-700">개수</th>
-            <th className="px-2 py-1.5 text-center border-b border-gray-700" style={{ color: VARIANT_COLORS.P0 }}>P0</th>
-            <th className="px-2 py-1.5 text-center border-b border-gray-700" style={{ color: VARIANT_COLORS.P1 }}>P1</th>
-            <th className="px-2 py-1.5 text-center border-b border-gray-700" style={{ color: VARIANT_COLORS.P2 }}>P2</th>
-            <th className="px-2 py-1.5 text-center border-b border-gray-700" style={{ color: VARIANT_COLORS.P3 }}>P3</th>
-            <th className="px-2 py-1.5 text-center border-b border-gray-700" style={{ color: VARIANT_COLORS.P4 }}>P4 ★</th>
+            <th className="px-2 py-1.5 text-left text-[#66605C] border-b border-[#E6D9CE]">Feature 그룹</th>
+            <th className="px-2 py-1.5 text-right text-[#66605C] border-b border-[#E6D9CE]">개수</th>
+            <th className="px-2 py-1.5 text-center border-b border-[#E6D9CE]" style={{ color: VARIANT_COLORS.P0 }}>P0</th>
+            <th className="px-2 py-1.5 text-center border-b border-[#E6D9CE]" style={{ color: VARIANT_COLORS.P1 }}>P1</th>
+            <th className="px-2 py-1.5 text-center border-b border-[#E6D9CE]" style={{ color: VARIANT_COLORS.P2 }}>P2</th>
+            <th className="px-2 py-1.5 text-center border-b border-[#E6D9CE]" style={{ color: VARIANT_COLORS.P3 }}>P3</th>
+            <th className="px-2 py-1.5 text-center border-b border-[#E6D9CE]" style={{ color: VARIANT_COLORS.P4 }}>P4 ★</th>
           </tr>
         </thead>
         <tbody>
           {groups.map((g) => (
-            <tr key={g.name} className="border-b border-gray-800/50">
-              <td className="px-2 py-1.5 text-gray-200 font-medium">{g.name}</td>
-              <td className="px-2 py-1.5 text-right text-gray-300">{g.count}</td>
+            <tr key={g.name} className="border-b border-[#E6D9CE]/50">
+              <td className="px-2 py-1.5 text-[#33302E] font-medium">{g.name}</td>
+              <td className="px-2 py-1.5 text-right text-[#33302E]">{g.count}</td>
               {(["p0", "p1", "p2", "p3", "p4"] as const).map((k) => (
                 <td key={k} className="px-2 py-1.5 text-center">
-                  {g[k] ? <span className="text-green-300 font-bold">✓</span> : <span className="text-gray-600">−</span>}
+                  {g[k] ? <span className="text-[#0A7D3F] font-bold">✓</span> : <span className="text-[#857F7A]">−</span>}
                 </td>
               ))}
             </tr>
           ))}
-          <tr className="bg-[#0a0e17] font-semibold">
-            <td className="px-2 py-1.5 text-gray-100">Total features</td>
-            <td className="px-2 py-1.5 text-right text-gray-100">27</td>
+          <tr className="bg-[#FFF1E5] font-semibold">
+            <td className="px-2 py-1.5 text-[#33302E]">Total features</td>
+            <td className="px-2 py-1.5 text-right text-[#33302E]">27</td>
             {(["p0", "p1", "p2", "p3", "p4"] as const).map((k) => (
               <td key={k} className="px-2 py-1.5 text-center" style={{ color: VARIANT_COLORS[k.toUpperCase()] }}>
                 {totals[k]}
@@ -2534,33 +2534,33 @@ function FeatureUsageMatrix() {
 }
 
 function FeatureCard({ f }: { f: FeatureSpec }) {
-  const dirColor = f.signal === "bull" ? "text-green-300 bg-green-900/20"
-                 : f.signal === "bear" ? "text-red-300 bg-red-900/20"
-                 : "text-gray-400 bg-gray-800/40";
+  const dirColor = f.signal === "bull" ? "text-[#0A7D3F] bg-[#E3F0E8]/20"
+                 : f.signal === "bear" ? "text-[#CC0000] bg-[#F7E3E3]/20"
+                 : "text-[#66605C] bg-[#F2E5D7]/40";
   const dirText = f.signal === "bull" ? "↑ Bull 시그널"
                 : f.signal === "bear" ? "↓ Bear 시그널"
                 : "≈ Neutral / 양면";
   return (
-    <div className="bg-[#0a0e17] border border-gray-800 rounded-lg p-3 hover:border-gray-700 transition-colors">
+    <div className="bg-[#FFF1E5] border border-[#E6D9CE] rounded-lg p-3 hover:border-[#E6D9CE] transition-colors">
       <div className="flex items-baseline justify-between mb-1.5 gap-2 flex-wrap">
-        <code className="text-cyan-300 text-[12px] font-bold">{f.name}</code>
+        <code className="text-[#0D7680] text-[14px] font-bold">{f.name}</code>
         <span className={`text-[9.5px] px-1.5 py-0.5 rounded font-semibold ${dirColor}`}>{dirText}</span>
       </div>
-      <div className="text-[12.5px] text-gray-200 font-medium mb-1">{f.ko}</div>
-      <div className="text-[10.5px] text-gray-500 font-mono mb-1">계산: {f.formula}</div>
-      <div className="text-[11px] text-gray-400 leading-snug">{f.intuition}</div>
+      <div className="text-[12.5px] text-[#33302E] font-medium mb-1">{f.ko}</div>
+      <div className="text-[10.5px] text-[#857F7A] font-mono mb-1">계산: {f.formula}</div>
+      <div className="text-[13px] text-[#66605C] leading-snug">{f.intuition}</div>
     </div>
   );
 }
 
 function FeaturesDetailSection() {
   return (
-    <div className="bg-[#111827] rounded-lg p-5 border border-gray-800 space-y-5">
+    <div className="bg-[#FFFFFF] rounded-lg p-5 border border-[#E6D9CE] space-y-5">
       <div>
-        <div className="text-base font-semibold text-gray-100 mb-1">
+        <div className="text-[18px] font-semibold text-[#33302E] mb-1">
           5. 사용된 Feature 상세
         </div>
-        <div className="text-xs text-gray-500">
+        <div className="text-[14px] text-[#857F7A]">
           모든 모델이 같은 출력(BULL/BASE/BEAR 확률)을 만들지만, <b>입력 feature는 모델마다 다릅니다</b>.
           각 feature가 무엇을 의미하고 어떤 신호를 잡는지 정리합니다.
         </div>
@@ -2568,28 +2568,28 @@ function FeaturesDetailSection() {
 
       {/* Usage matrix */}
       <div>
-        <div className="text-sm font-semibold text-gray-200 mb-2">📊 Feature 그룹 사용 매트릭스</div>
+        <div className="text-[16px] font-semibold text-[#33302E] mb-2">📊 Feature 그룹 사용 매트릭스</div>
         <FeatureUsageMatrix />
       </div>
 
       {/* Group A: Baseline */}
       <div>
         <div className="flex items-baseline justify-between mb-1">
-          <div className="text-sm font-semibold text-gray-200">
-            <span className="text-cyan-300">A.</span> Baseline Macro Features
-            <span className="text-xs text-gray-500 ml-2">— 15개 · 모든 모델(P0~P4) 공통 사용</span>
+          <div className="text-[16px] font-semibold text-[#33302E]">
+            <span className="text-[#0D7680]">A.</span> Baseline Macro Features
+            <span className="text-[14px] text-[#857F7A] ml-2">— 15개 · 모든 모델(P0~P4) 공통 사용</span>
           </div>
         </div>
-        <div className="text-[11px] text-gray-500 mb-3 italic">
+        <div className="text-[13px] text-[#857F7A] mb-3 italic">
           AQR / Bridgewater 등 글로벌 자산운용사가 standard로 쓰는 macro / cross-asset signals.
         </div>
         <div className="space-y-3">
           {BASELINE_FEATURE_GROUPS.map((g) => (
             <div key={g.title}>
-              <div className="text-[12px] font-semibold text-gray-300 mb-1.5 flex items-baseline gap-2">
-                <span className="text-base">{g.emoji}</span>
+              <div className="text-[14px] font-semibold text-[#33302E] mb-1.5 flex items-baseline gap-2">
+                <span className="text-[18px]">{g.emoji}</span>
                 <span>{g.title}</span>
-                <span className="text-[10px] text-gray-500">({g.items.length}개)</span>
+                <span className="text-[12px] text-[#857F7A]">({g.items.length}개)</span>
               </div>
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-2.5">
                 {g.items.map((f) => <FeatureCard key={f.name} f={f} />)}
@@ -2601,11 +2601,11 @@ function FeaturesDetailSection() {
 
       {/* Group B: P3 Macro */}
       <div>
-        <div className="text-sm font-semibold text-gray-200 mb-1">
-          <span className="text-blue-300">B.</span> P3 Macro Extended (cross-asset / term structure)
-          <span className="text-xs text-gray-500 ml-2">— 6개 · P3, P4 사용</span>
+        <div className="text-[16px] font-semibold text-[#33302E] mb-1">
+          <span className="text-[#0F5499]">B.</span> P3 Macro Extended (cross-asset / term structure)
+          <span className="text-[14px] text-[#857F7A] ml-2">— 6개 · P3, P4 사용</span>
         </div>
-        <div className="text-[11px] text-gray-500 mb-3 italic">
+        <div className="text-[13px] text-[#857F7A] mb-3 italic">
           기본 macro feature를 보완하는 cross-asset 비율 / term-structure 지표. 시장 stress의 다층적 신호 포착.
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-2.5">
@@ -2615,11 +2615,11 @@ function FeaturesDetailSection() {
 
       {/* Group C: Breadth */}
       <div>
-        <div className="text-sm font-semibold text-gray-200 mb-1">
-          <span className="text-orange-300">C.</span> Breadth Features (bottom-up from price_discovery)
-          <span className="text-xs text-gray-500 ml-2">— 6개 · P1, P4 사용</span>
+        <div className="text-[16px] font-semibold text-[#33302E] mb-1">
+          <span className="text-[#C2701C]">C.</span> Breadth Features (bottom-up from price_discovery)
+          <span className="text-[14px] text-[#857F7A] ml-2">— 6개 · P1, P4 사용</span>
         </div>
-        <div className="text-[11px] text-gray-500 mb-3 italic">
+        <div className="text-[13px] text-[#857F7A] mb-3 italic">
           매월 말 170개 글로벌 ETF에 대해 price_discovery scanner를 historical replay 후 cross-sectional 집계.
           BlackRock SAE의 "bottom-up signal aggregation" 철학.
         </div>
@@ -2629,9 +2629,9 @@ function FeaturesDetailSection() {
       </div>
 
       {/* Footer note */}
-      <div className="bg-[#0a0e17] border border-cyan-900/40 rounded-lg p-3 text-[11px] text-cyan-200/90 leading-relaxed">
-        <b className="text-cyan-100">📝 참고</b> —&nbsp;
-        <span className="text-gray-300">
+      <div className="bg-[#FFF1E5] border border-[#9CC3D5]/40 rounded-lg p-3 text-[13px] text-[#0D7680]/90 leading-relaxed">
+        <b className="text-[#0D7680]">📝 참고</b> —&nbsp;
+        <span className="text-[#33302E]">
           <b>"신호 방향"</b> 라벨(↑Bull / ↓Bear / ≈Neutral)은 단변량 직관일 뿐, 실제 ML 모델은
           27개 feature의 <b>비선형 상호작용</b>을 학습합니다 (LightGBM gradient boosting).
           예컨대 'VIX 높음 + 12M momentum 강함'은 단일 신호로 보면 충돌이지만,
@@ -2654,11 +2654,11 @@ function WinRatioSection({ wr }: { wr: WinRatioData }) {
 
   // Cell color helper for win-ratio scale
   const cellShade = (v: number | null | undefined) => {
-    if (v == null || !Number.isFinite(v)) return "text-gray-500";
-    if (v >= 0.65) return "text-green-300 font-semibold";
-    if (v >= 0.50) return "text-cyan-300";
-    if (v >= 0.35) return "text-yellow-300";
-    return "text-red-300";
+    if (v == null || !Number.isFinite(v)) return "text-[#857F7A]";
+    if (v >= 0.65) return "text-[#0A7D3F] font-semibold";
+    if (v >= 0.50) return "text-[#0D7680]";
+    if (v >= 0.35) return "text-[#B85C00]";
+    return "text-[#CC0000]";
   };
 
   const fmtPct0 = (v: number | null | undefined) => {
@@ -2691,31 +2691,31 @@ function WinRatioSection({ wr }: { wr: WinRatioData }) {
   const directionalMatrix = buildMatrix("directional");
 
   return (
-    <div className="bg-[#111827] rounded-lg p-5 border border-gray-800 space-y-5">
+    <div className="bg-[#FFFFFF] rounded-lg p-5 border border-[#E6D9CE] space-y-5">
       <div>
-        <div className="text-base font-semibold text-gray-100">
+        <div className="text-[18px] font-semibold text-[#33302E]">
           Per-Signal Win Ratio — P0~P4 × BEAR / BASE / BULL
         </div>
-        <div className="text-xs text-gray-500 mt-1">
+        <div className="text-[14px] text-[#857F7A] mt-1">
           각 모델이 특정 시그널을 출력한 시점 기준으로 두 가지 win ratio 계산:&nbsp;
-          <span className="text-cyan-300">Precision</span> = 분류 정확도 (예측이 실제 regime과 일치),&nbsp;
-          <span className="text-cyan-300">Directional</span> = 방향성 베팅 성공률.
+          <span className="text-[#0D7680]">Precision</span> = 분류 정확도 (예측이 실제 regime과 일치),&nbsp;
+          <span className="text-[#0D7680]">Directional</span> = 방향성 베팅 성공률.
         </div>
       </div>
 
       {/* Definition cards */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-[#0a0e17] border border-red-800/40 rounded p-2 text-[11px]">
-          <div className="text-red-300 font-semibold mb-1">🔴 BEAR signal win</div>
-          <div className="text-gray-300">fwd_ret &lt; 0 — <span className="text-gray-500 italic">시장이 실제로 하락 (방어적 베팅 성공)</span></div>
+        <div className="bg-[#FFF1E5] border border-[#E0AAAA]/40 rounded p-2 text-[13px]">
+          <div className="text-[#CC0000] font-semibold mb-1">🔴 BEAR signal win</div>
+          <div className="text-[#33302E]">fwd_ret &lt; 0 — <span className="text-[#857F7A] italic">시장이 실제로 하락 (방어적 베팅 성공)</span></div>
         </div>
-        <div className="bg-[#0a0e17] border border-yellow-800/40 rounded p-2 text-[11px]">
-          <div className="text-yellow-300 font-semibold mb-1">🟡 BASE signal win</div>
-          <div className="text-gray-300">|fwd_ret| &lt; {(baseRange * 100).toFixed(0)}% — <span className="text-gray-500 italic">중립 구간에 안착 (큰 움직임 없음)</span></div>
+        <div className="bg-[#FFF1E5] border border-[#DCC9A0]/40 rounded p-2 text-[13px]">
+          <div className="text-[#B85C00] font-semibold mb-1">🟡 BASE signal win</div>
+          <div className="text-[#33302E]">|fwd_ret| &lt; {(baseRange * 100).toFixed(0)}% — <span className="text-[#857F7A] italic">중립 구간에 안착 (큰 움직임 없음)</span></div>
         </div>
-        <div className="bg-[#0a0e17] border border-green-800/40 rounded p-2 text-[11px]">
-          <div className="text-green-300 font-semibold mb-1">🟢 BULL signal win</div>
-          <div className="text-gray-300">fwd_ret &gt; 0 — <span className="text-gray-500 italic">시장이 실제로 상승 (공격적 베팅 성공)</span></div>
+        <div className="bg-[#FFF1E5] border border-[#A8CDB6]/40 rounded p-2 text-[13px]">
+          <div className="text-[#0A7D3F] font-semibold mb-1">🟢 BULL signal win</div>
+          <div className="text-[#33302E]">fwd_ret &gt; 0 — <span className="text-[#857F7A] italic">시장이 실제로 상승 (공격적 베팅 성공)</span></div>
         </div>
       </div>
 
@@ -2723,7 +2723,7 @@ function WinRatioSection({ wr }: { wr: WinRatioData }) {
       <div className="grid grid-cols-2 gap-4">
         {/* Precision heatmap */}
         <div>
-          <div className="text-sm font-semibold text-gray-200 mb-1">
+          <div className="text-[16px] font-semibold text-[#33302E] mb-1">
             Classification Precision (예측 = 실제 regime)
           </div>
           <Plot
@@ -2733,8 +2733,8 @@ function WinRatioSection({ wr }: { wr: WinRatioData }) {
               x: regimes,
               y: order,
               colorscale: [
-                [0.0, "#7f1d1d"], [0.35, "#dc2626"], [0.5, "#facc15"],
-                [0.65, "#06b6d4"], [1.0, "#16a34a"],
+                [0.0, "#7f1d1d"], [0.35, "#990F3D"], [0.5, "#B85C00"],
+                [0.65, "#0D7680"], [1.0, "#16a34a"],
               ],
               zmin: 0, zmax: 1,
               text: precisionMatrix.map((row, i) =>
@@ -2757,14 +2757,14 @@ function WinRatioSection({ wr }: { wr: WinRatioData }) {
             config={{ displayModeBar: false, responsive: true }}
             style={{ width: "100%" }}
           />
-          <div className="text-[10px] text-gray-500 mt-1">
+          <div className="text-[12px] text-[#857F7A] mt-1">
             모델이 특정 regime을 예측했을 때 실제도 그 regime이었던 비율 (분류 정확도).
           </div>
         </div>
 
         {/* Directional heatmap */}
         <div>
-          <div className="text-sm font-semibold text-gray-200 mb-1">
+          <div className="text-[16px] font-semibold text-[#33302E] mb-1">
             Directional Hit Rate (방향성 베팅 정확도)
           </div>
           <Plot
@@ -2774,8 +2774,8 @@ function WinRatioSection({ wr }: { wr: WinRatioData }) {
               x: regimes,
               y: order,
               colorscale: [
-                [0.0, "#7f1d1d"], [0.35, "#dc2626"], [0.5, "#facc15"],
-                [0.65, "#06b6d4"], [1.0, "#16a34a"],
+                [0.0, "#7f1d1d"], [0.35, "#990F3D"], [0.5, "#B85C00"],
+                [0.65, "#0D7680"], [1.0, "#16a34a"],
               ],
               zmin: 0, zmax: 1,
               text: directionalMatrix.map((row, i) =>
@@ -2798,7 +2798,7 @@ function WinRatioSection({ wr }: { wr: WinRatioData }) {
             config={{ displayModeBar: false, responsive: true }}
             style={{ width: "100%" }}
           />
-          <div className="text-[10px] text-gray-500 mt-1">
+          <div className="text-[12px] text-[#857F7A] mt-1">
             BEAR: fwd&lt;0 / BASE: |fwd|&lt;{(baseRange * 100).toFixed(0)}% / BULL: fwd&gt;0 비율.
           </div>
         </div>
@@ -2806,29 +2806,29 @@ function WinRatioSection({ wr }: { wr: WinRatioData }) {
 
       {/* Detailed table — 3 sub-tables side-by-side, one per regime */}
       <div className="space-y-3">
-        <div className="text-sm font-semibold text-gray-200">상세 표 — Variant별 시그널 발화 횟수와 정확도</div>
+        <div className="text-[16px] font-semibold text-[#33302E]">상세 표 — Variant별 시그널 발화 횟수와 정확도</div>
         <div className="grid grid-cols-3 gap-3">
           {regimes.map((regime) => {
             const color = regime === "BEAR" ? "red" : regime === "BULL" ? "green" : "yellow";
             const colorClass =
-              regime === "BEAR" ? "text-red-300 border-red-800/40"
-              : regime === "BULL" ? "text-green-300 border-green-800/40"
-              : "text-yellow-300 border-yellow-800/40";
+              regime === "BEAR" ? "text-[#CC0000] border-[#E0AAAA]/40"
+              : regime === "BULL" ? "text-[#0A7D3F] border-[#A8CDB6]/40"
+              : "text-[#B85C00] border-[#DCC9A0]/40";
             return (
-              <div key={regime} className={`bg-[#0a0e17] border ${colorClass.split(" ")[1]} rounded-lg overflow-hidden`}>
-                <div className={`px-2 py-1.5 bg-[#111827] border-b ${colorClass.split(" ")[1]}`}>
-                  <span className={`font-bold text-sm ${colorClass.split(" ")[0]}`}>
+              <div key={regime} className={`bg-[#FFF1E5] border ${colorClass.split(" ")[1]} rounded-lg overflow-hidden`}>
+                <div className={`px-2 py-1.5 bg-[#FFFFFF] border-b ${colorClass.split(" ")[1]}`}>
+                  <span className={`font-bold text-[16px] ${colorClass.split(" ")[0]}`}>
                     {regime === "BEAR" && "🔴"} {regime === "BASE" && "🟡"} {regime === "BULL" && "🟢"} {regime} signal
                   </span>
                 </div>
-                <table className="w-full text-[11px]">
-                  <thead className="bg-[#111827]">
+                <table className="w-full text-[13px]">
+                  <thead className="bg-[#FFFFFF]">
                     <tr>
-                      <th className="px-1.5 py-1 text-left text-gray-400">Variant</th>
-                      <th className="px-1.5 py-1 text-right text-gray-400">N</th>
-                      <th className="px-1.5 py-1 text-right text-gray-400">Prec.</th>
-                      <th className="px-1.5 py-1 text-right text-gray-400">Dir.</th>
-                      <th className="px-1.5 py-1 text-right text-gray-400">AvgRet</th>
+                      <th className="px-1.5 py-1 text-left text-[#66605C]">Variant</th>
+                      <th className="px-1.5 py-1 text-right text-[#66605C]">N</th>
+                      <th className="px-1.5 py-1 text-right text-[#66605C]">Prec.</th>
+                      <th className="px-1.5 py-1 text-right text-[#66605C]">Dir.</th>
+                      <th className="px-1.5 py-1 text-right text-[#66605C]">AvgRet</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -2837,11 +2837,11 @@ function WinRatioSection({ wr }: { wr: WinRatioData }) {
                       const isP4 = tag === "P4";
                       return (
                         <tr key={tag}
-                            className={`border-b border-gray-800/30 ${isP4 ? "bg-green-900/15" : ""}`}>
+                            className={`border-b border-[#E6D9CE]/30 ${isP4 ? "bg-[#E3F0E8]/15" : ""}`}>
                           <td className="px-1.5 py-1 font-semibold" style={{ color: VARIANT_COLORS[tag] }}>
                             {tag}{isP4 && " ★"}
                           </td>
-                          <td className="px-1.5 py-1 text-right text-gray-300">{row?.n ?? 0}</td>
+                          <td className="px-1.5 py-1 text-right text-[#33302E]">{row?.n ?? 0}</td>
                           <td className={`px-1.5 py-1 text-right ${cellShade(row?.precision)}`}>
                             {fmtPct0(row?.precision)}
                           </td>
@@ -2850,10 +2850,10 @@ function WinRatioSection({ wr }: { wr: WinRatioData }) {
                           </td>
                           <td className={`px-1.5 py-1 text-right ${
                             row?.fwd_ret_mean != null
-                              ? (regime === "BEAR" ? (row.fwd_ret_mean < 0 ? "text-green-400" : "text-red-400")
-                                : regime === "BULL" ? (row.fwd_ret_mean > 0 ? "text-green-400" : "text-red-400")
-                                : "text-gray-300")
-                              : "text-gray-500"
+                              ? (regime === "BEAR" ? (row.fwd_ret_mean < 0 ? "text-[#0A7D3F]" : "text-[#CC0000]")
+                                : regime === "BULL" ? (row.fwd_ret_mean > 0 ? "text-[#0A7D3F]" : "text-[#CC0000]")
+                                : "text-[#33302E]")
+                              : "text-[#857F7A]"
                           }`}>
                             {fmtPctSig(row?.fwd_ret_mean)}
                           </td>
@@ -2869,14 +2869,14 @@ function WinRatioSection({ wr }: { wr: WinRatioData }) {
       </div>
 
       {/* Key insights */}
-      <div className="bg-[#0a0e17] border border-cyan-900/40 rounded-lg p-3 text-[11px] text-cyan-200/90 leading-relaxed">
-        <b className="text-cyan-100">📌 해석 가이드</b> —&nbsp;
-        <span className="text-gray-300">
+      <div className="bg-[#FFF1E5] border border-[#9CC3D5]/40 rounded-lg p-3 text-[13px] text-[#0D7680]/90 leading-relaxed">
+        <b className="text-[#0D7680]">📌 해석 가이드</b> —&nbsp;
+        <span className="text-[#33302E]">
           <b>Precision &gt; 50%</b>이면 단순 random보다 분류 우수.
           <b> Directional &gt; 50%</b>이면 방향성 베팅이 평균 이상.&nbsp;
-          <b className="text-green-300">P4 BULL 시그널의 directional 100%</b> (n=5): 발화는 적지만 한번 발화하면 다음 달 ACWI가 100% 상승 — 메타 필터의 selectivity가 만들어낸 "high-conviction signal".&nbsp;
+          <b className="text-[#0A7D3F]">P4 BULL 시그널의 directional 100%</b> (n=5): 발화는 적지만 한번 발화하면 다음 달 ACWI가 100% 상승 — 메타 필터의 selectivity가 만들어낸 "high-conviction signal".&nbsp;
           <b>BEAR 시그널의 precision 높지만 directional 낮음</b>: 실제 BEAR regime이라도 ACWI가 항상 음수 수익은 아님 (라벨에 VIX&gt;30 조건 포함).&nbsp;
-          <b>색상 스케일</b>: <span className="text-green-300">≥65%</span> · <span className="text-cyan-300">50-65%</span> · <span className="text-yellow-300">35-50%</span> · <span className="text-red-300">&lt;35%</span>.
+          <b>색상 스케일</b>: <span className="text-[#0A7D3F]">≥65%</span> · <span className="text-[#0D7680]">50-65%</span> · <span className="text-[#B85C00]">35-50%</span> · <span className="text-[#CC0000]">&lt;35%</span>.
         </span>
       </div>
     </div>
@@ -2889,24 +2889,24 @@ function WinRatioSection({ wr }: { wr: WinRatioData }) {
 // ─────────────────────────────────────────────────────────────────────────────
 function MetaLabelingDeepDive() {
   return (
-    <div className="bg-[#111827] rounded-lg p-5 border border-gray-800 space-y-5">
+    <div className="bg-[#FFFFFF] rounded-lg p-5 border border-[#E6D9CE] space-y-5">
       <div>
-        <div className="text-base font-semibold text-gray-100">
+        <div className="text-[18px] font-semibold text-[#33302E]">
           6. Meta-Labeling 구조 자세히 (Deep Dive)
         </div>
-        <div className="text-xs text-gray-500 mt-1">
+        <div className="text-[14px] text-[#857F7A] mt-1">
           P4 winner의 핵심 2단계 ML 아키텍처. López de Prado <i>Advances in Financial Machine Learning</i> Ch.3 표준 구현.
           단순 multiclass + argmax 대비 이 구조가 왜·어떻게 더 나은지 단계별로 설명합니다.
         </div>
       </div>
 
       {/* 6.1 The Problem Meta-Labeling Solves */}
-      <div className="bg-[#0a0e17] rounded-lg p-4 border border-gray-800">
-        <div className="text-sm font-bold text-cyan-300 mb-3">6.1 왜 메타-라벨링인가? — 해결하는 문제</div>
+      <div className="bg-[#FFF1E5] rounded-lg p-4 border border-[#E6D9CE]">
+        <div className="text-[16px] font-bold text-[#0D7680] mb-3">6.1 왜 메타-라벨링인가? — 해결하는 문제</div>
         <div className="grid grid-cols-2 gap-4">
-          <div className="bg-red-900/15 border border-red-800/40 rounded p-3">
-            <div className="text-[12px] font-bold text-red-300 mb-1">⚠️ 단일 모델의 문제</div>
-            <div className="text-[11px] text-gray-300 leading-relaxed">
+          <div className="bg-[#F7E3E3]/15 border border-[#E0AAAA]/40 rounded p-3">
+            <div className="text-[14px] font-bold text-[#CC0000] mb-1">⚠️ 단일 모델의 문제</div>
+            <div className="text-[13px] text-[#33302E] leading-relaxed">
               일반 multiclass classifier는 한 번에 두 가지를 동시에 학습:
               <ul className="list-disc pl-4 mt-1 space-y-0.5">
                 <li><b>방향(side)</b>: BULL이냐 BASE냐 BEAR냐?</li>
@@ -2917,9 +2917,9 @@ function MetaLabelingDeepDive() {
               </div>
             </div>
           </div>
-          <div className="bg-green-900/15 border border-green-700/40 rounded p-3">
-            <div className="text-[12px] font-bold text-green-300 mb-1">✓ 메타-라벨링 해결책</div>
-            <div className="text-[11px] text-gray-300 leading-relaxed">
+          <div className="bg-[#E3F0E8]/15 border border-[#A8CDB6]/40 rounded p-3">
+            <div className="text-[14px] font-bold text-[#0A7D3F] mb-1">✓ 메타-라벨링 해결책</div>
+            <div className="text-[13px] text-[#33302E] leading-relaxed">
               한 모델에 모든 부담을 주지 말고 <b>두 모델로 분리</b>:
               <ul className="list-disc pl-4 mt-1 space-y-0.5">
                 <li><b>Primary</b>: 방향만 판단 ("BULL/BASE/BEAR 중 뭐?")</li>
@@ -2932,75 +2932,75 @@ function MetaLabelingDeepDive() {
             </div>
           </div>
         </div>
-        <div className="mt-3 text-[10.5px] text-gray-500 italic">
+        <div className="mt-3 text-[10.5px] text-[#857F7A] italic">
           ※ AQR이 trend-following 전략, BlackRock이 SAE alpha 신호에서 사용하는 standard pattern.
           보험·신용평가에서도 동일 구조 (1차 점수 → 2차 confidence filter).
         </div>
       </div>
 
       {/* 6.2 Architecture Flow Diagram */}
-      <div className="bg-[#0a0e17] rounded-lg p-4 border border-gray-800">
-        <div className="text-sm font-bold text-cyan-300 mb-3">6.2 전체 아키텍처 — 데이터가 흐르는 모습</div>
+      <div className="bg-[#FFF1E5] rounded-lg p-4 border border-[#E6D9CE]">
+        <div className="text-[16px] font-bold text-[#0D7680] mb-3">6.2 전체 아키텍처 — 데이터가 흐르는 모습</div>
         <div className="space-y-2">
           {/* Input row */}
           <div className="grid grid-cols-12 gap-2 items-center">
-            <div className="col-span-2 text-right text-[11px] text-gray-400 font-semibold">입력 데이터</div>
-            <div className="col-span-10 bg-[#111827] border border-cyan-900/40 rounded p-2 text-[11px] text-gray-300 font-mono">
+            <div className="col-span-2 text-right text-[13px] text-[#66605C] font-semibold">입력 데이터</div>
+            <div className="col-span-10 bg-[#FFFFFF] border border-[#9CC3D5]/40 rounded p-2 text-[13px] text-[#33302E] font-mono">
               📊 27 features (15 baseline macro + 6 P3 macro + 6 breadth)
             </div>
           </div>
-          <div className="grid grid-cols-12 gap-2"><div className="col-span-2"></div><div className="col-span-10 text-center text-gray-600 text-lg">↓</div></div>
+          <div className="grid grid-cols-12 gap-2"><div className="col-span-2"></div><div className="col-span-10 text-center text-[#857F7A] text-[20px]">↓</div></div>
 
           {/* Primary stage */}
           <div className="grid grid-cols-12 gap-2 items-center">
-            <div className="col-span-2 text-right text-[11px] text-cyan-400 font-bold">① Primary</div>
-            <div className="col-span-10 bg-[#111827] border-2 border-cyan-700/60 rounded p-3">
-              <div className="text-[11px] text-gray-200 mb-1">
+            <div className="col-span-2 text-right text-[13px] text-[#0F5499] font-bold">① Primary</div>
+            <div className="col-span-10 bg-[#FFFFFF] border-2 border-[#9CC3D5]/60 rounded p-3">
+              <div className="text-[13px] text-[#33302E] mb-1">
                 <b>모델</b>: LightGBM Multiclass (3 classes: BEAR/BASE/BULL)
               </div>
-              <div className="text-[11px] text-gray-200 mb-1">
-                <b>학습</b>: <code className="text-cyan-300">class_weight={"{BULL: 3.0}"}</code> (소수 클래스 보정), <code className="text-cyan-300">bull_threshold=0.25</code>
+              <div className="text-[13px] text-[#33302E] mb-1">
+                <b>학습</b>: <code className="text-[#0D7680]">class_weight={"{BULL: 3.0}"}</code> (소수 클래스 보정), <code className="text-[#0D7680]">bull_threshold=0.25</code>
               </div>
-              <div className="text-[11px] text-gray-200">
-                <b>출력</b>: <code className="text-cyan-300">[P_BEAR, P_BASE, P_BULL]</code> 확률 + argmax 예측 regime
+              <div className="text-[13px] text-[#33302E]">
+                <b>출력</b>: <code className="text-[#0D7680]">[P_BEAR, P_BASE, P_BULL]</code> 확률 + argmax 예측 regime
               </div>
             </div>
           </div>
-          <div className="grid grid-cols-12 gap-2"><div className="col-span-2"></div><div className="col-span-10 text-center text-gray-600 text-lg">↓</div></div>
+          <div className="grid grid-cols-12 gap-2"><div className="col-span-2"></div><div className="col-span-10 text-center text-[#857F7A] text-[20px]">↓</div></div>
 
           {/* Meta stage */}
           <div className="grid grid-cols-12 gap-2 items-center">
-            <div className="col-span-2 text-right text-[11px] text-green-400 font-bold">② Meta</div>
-            <div className="col-span-10 bg-[#111827] border-2 border-green-700/60 rounded p-3">
-              <div className="text-[11px] text-gray-200 mb-1">
+            <div className="col-span-2 text-right text-[13px] text-[#0A7D3F] font-bold">② Meta</div>
+            <div className="col-span-10 bg-[#FFFFFF] border-2 border-[#A8CDB6]/60 rounded p-3">
+              <div className="text-[13px] text-[#33302E] mb-1">
                 <b>모델</b>: LightGBM Binary (1 = primary correct, 0 = primary wrong)
               </div>
-              <div className="text-[11px] text-gray-200 mb-1">
+              <div className="text-[13px] text-[#33302E] mb-1">
                 <b>입력</b>: 27 features (daily-resolution 10개 제외) + Primary의 3개 확률 + 확률 분포 entropy = <b>21개 차원</b>
               </div>
-              <div className="text-[11px] text-gray-200">
-                <b>출력</b>: <code className="text-green-300">meta_confidence ∈ [0, 1]</code>
+              <div className="text-[13px] text-[#33302E]">
+                <b>출력</b>: <code className="text-[#0A7D3F]">meta_confidence ∈ [0, 1]</code>
               </div>
             </div>
           </div>
-          <div className="grid grid-cols-12 gap-2"><div className="col-span-2"></div><div className="col-span-10 text-center text-gray-600 text-lg">↓</div></div>
+          <div className="grid grid-cols-12 gap-2"><div className="col-span-2"></div><div className="col-span-10 text-center text-[#857F7A] text-[20px]">↓</div></div>
 
           {/* Decision */}
           <div className="grid grid-cols-12 gap-2 items-center">
-            <div className="col-span-2 text-right text-[11px] text-yellow-400 font-bold">③ Decision</div>
-            <div className="col-span-10 bg-[#111827] border-2 border-yellow-700/60 rounded p-3">
-              <div className="text-[11px] text-gray-200 font-mono">
-                <span className="text-yellow-300">if</span> meta_confidence &gt; 0.5: → ALLOCATION[primary regime]<br/>
-                <span className="text-yellow-300">else</span>: → ALLOCATION["BASE"] &nbsp;(안전 후퇴)
+            <div className="col-span-2 text-right text-[13px] text-[#B85C00] font-bold">③ Decision</div>
+            <div className="col-span-10 bg-[#FFFFFF] border-2 border-[#DCC9A0]/60 rounded p-3">
+              <div className="text-[13px] text-[#33302E] font-mono">
+                <span className="text-[#B85C00]">if</span> meta_confidence &gt; 0.5: → ALLOCATION[primary regime]<br/>
+                <span className="text-[#B85C00]">else</span>: → ALLOCATION["BASE"] &nbsp;(안전 후퇴)
               </div>
             </div>
           </div>
-          <div className="grid grid-cols-12 gap-2"><div className="col-span-2"></div><div className="col-span-10 text-center text-gray-600 text-lg">↓</div></div>
+          <div className="grid grid-cols-12 gap-2"><div className="col-span-2"></div><div className="col-span-10 text-center text-[#857F7A] text-[20px]">↓</div></div>
 
           {/* Output */}
           <div className="grid grid-cols-12 gap-2 items-center">
-            <div className="col-span-2 text-right text-[11px] text-gray-400 font-semibold">최종 출력</div>
-            <div className="col-span-10 bg-[#111827] border border-green-900/40 rounded p-2 text-[11px] text-gray-300 font-mono">
+            <div className="col-span-2 text-right text-[13px] text-[#66605C] font-semibold">최종 출력</div>
+            <div className="col-span-10 bg-[#FFFFFF] border border-[#A8CDB6]/40 rounded p-2 text-[13px] text-[#33302E] font-mono">
               💼 (w_equity, w_bond, w_cash) — 그 달의 자산배분 비율
             </div>
           </div>
@@ -3008,9 +3008,9 @@ function MetaLabelingDeepDive() {
       </div>
 
       {/* 6.3 Training Procedure (5 steps) */}
-      <div className="bg-[#0a0e17] rounded-lg p-4 border border-gray-800">
-        <div className="text-sm font-bold text-cyan-300 mb-1">6.3 학습 절차 — 5단계</div>
-        <div className="text-[11px] text-gray-500 mb-3">
+      <div className="bg-[#FFF1E5] rounded-lg p-4 border border-[#E6D9CE]">
+        <div className="text-[16px] font-bold text-[#0D7680] mb-1">6.3 학습 절차 — 5단계</div>
+        <div className="text-[13px] text-[#857F7A] mb-3">
           Train과 Test 모두 같은 Purged Walk-Forward CV로 진행. 누설(leakage) 차단이 핵심.
         </div>
         <div className="space-y-2">
@@ -3028,7 +3028,7 @@ function MetaLabelingDeepDive() {
             {
               n: 3, color: C.green,
               title: "Meta 라벨 생성",
-              detail: <span><code className="text-green-300">y_meta = 1 if primary_argmax == true_regime else 0</code><br/>즉, "primary가 정답을 맞췄나?"의 binary label.</span>
+              detail: <span><code className="text-[#0A7D3F]">y_meta = 1 if primary_argmax == true_regime else 0</code><br/>즉, "primary가 정답을 맞췄나?"의 binary label.</span>
             },
             {
               n: 4, color: C.green,
@@ -3045,14 +3045,14 @@ function MetaLabelingDeepDive() {
               detail: "21개 meta features + y_meta target → LightGBM binary classifier. 같은 Purged Walk-Forward (n_splits=5, embargo=1) 사용. min_train=36으로 burn-in 후 OOS meta_confidence 산출."
             },
           ].map((s) => (
-            <div key={s.n} className="grid grid-cols-12 gap-2 items-start bg-[#111827] rounded p-2.5">
+            <div key={s.n} className="grid grid-cols-12 gap-2 items-start bg-[#FFFFFF] rounded p-2.5">
               <div className="col-span-1 flex items-center justify-center pt-0.5">
-                <div className="w-7 h-7 rounded-full border-2 flex items-center justify-center font-bold text-[12px]"
+                <div className="w-7 h-7 rounded-full border-2 flex items-center justify-center font-bold text-[14px]"
                      style={{ borderColor: s.color, color: s.color }}>{s.n}</div>
               </div>
               <div className="col-span-11">
-                <div className="text-[12px] font-semibold text-gray-200">{s.title}</div>
-                <div className="text-[11px] text-gray-400 mt-0.5 leading-snug">{s.detail}</div>
+                <div className="text-[14px] font-semibold text-[#33302E]">{s.title}</div>
+                <div className="text-[13px] text-[#66605C] mt-0.5 leading-snug">{s.detail}</div>
               </div>
             </div>
           ))}
@@ -3060,100 +3060,100 @@ function MetaLabelingDeepDive() {
       </div>
 
       {/* 6.4 Implementation Details */}
-      <div className="bg-[#0a0e17] rounded-lg p-4 border border-gray-800">
-        <div className="text-sm font-bold text-cyan-300 mb-3">6.4 구현 디테일 — Hyperparameters</div>
+      <div className="bg-[#FFF1E5] rounded-lg p-4 border border-[#E6D9CE]">
+        <div className="text-[16px] font-bold text-[#0D7680] mb-3">6.4 구현 디테일 — Hyperparameters</div>
         <div className="grid grid-cols-2 gap-3">
-          <div className="bg-[#111827] rounded p-3 border border-cyan-900/40">
-            <div className="text-[12px] font-bold text-cyan-300 mb-2">① Primary (Multiclass)</div>
+          <div className="bg-[#FFFFFF] rounded p-3 border border-[#9CC3D5]/40">
+            <div className="text-[14px] font-bold text-[#0D7680] mb-2">① Primary (Multiclass)</div>
             <table className="w-full text-[10.5px] font-mono">
               <tbody>
-                <tr className="border-b border-gray-800/50">
-                  <td className="py-1 text-gray-400">objective</td>
-                  <td className="py-1 text-right text-gray-200">multiclass</td>
+                <tr className="border-b border-[#E6D9CE]/50">
+                  <td className="py-1 text-[#66605C]">objective</td>
+                  <td className="py-1 text-right text-[#33302E]">multiclass</td>
                 </tr>
-                <tr className="border-b border-gray-800/50">
-                  <td className="py-1 text-gray-400">num_class</td>
-                  <td className="py-1 text-right text-gray-200">3</td>
+                <tr className="border-b border-[#E6D9CE]/50">
+                  <td className="py-1 text-[#66605C]">num_class</td>
+                  <td className="py-1 text-right text-[#33302E]">3</td>
                 </tr>
-                <tr className="border-b border-gray-800/50">
-                  <td className="py-1 text-gray-400">learning_rate</td>
-                  <td className="py-1 text-right text-gray-200">0.03</td>
+                <tr className="border-b border-[#E6D9CE]/50">
+                  <td className="py-1 text-[#66605C]">learning_rate</td>
+                  <td className="py-1 text-right text-[#33302E]">0.03</td>
                 </tr>
-                <tr className="border-b border-gray-800/50">
-                  <td className="py-1 text-gray-400">n_estimators</td>
-                  <td className="py-1 text-right text-gray-200">400</td>
+                <tr className="border-b border-[#E6D9CE]/50">
+                  <td className="py-1 text-[#66605C]">n_estimators</td>
+                  <td className="py-1 text-right text-[#33302E]">400</td>
                 </tr>
-                <tr className="border-b border-gray-800/50">
-                  <td className="py-1 text-gray-400">max_depth</td>
-                  <td className="py-1 text-right text-gray-200">4</td>
+                <tr className="border-b border-[#E6D9CE]/50">
+                  <td className="py-1 text-[#66605C]">max_depth</td>
+                  <td className="py-1 text-right text-[#33302E]">4</td>
                 </tr>
-                <tr className="border-b border-gray-800/50">
-                  <td className="py-1 text-gray-400">num_leaves</td>
-                  <td className="py-1 text-right text-gray-200">15</td>
+                <tr className="border-b border-[#E6D9CE]/50">
+                  <td className="py-1 text-[#66605C]">num_leaves</td>
+                  <td className="py-1 text-right text-[#33302E]">15</td>
                 </tr>
-                <tr className="border-b border-gray-800/50">
-                  <td className="py-1 text-gray-400">reg_alpha / reg_lambda</td>
-                  <td className="py-1 text-right text-gray-200">0.5 / 1.0</td>
+                <tr className="border-b border-[#E6D9CE]/50">
+                  <td className="py-1 text-[#66605C]">reg_alpha / reg_lambda</td>
+                  <td className="py-1 text-right text-[#33302E]">0.5 / 1.0</td>
                 </tr>
-                <tr className="border-b border-gray-800/50">
-                  <td className="py-1 text-gray-400">class_weight</td>
-                  <td className="py-1 text-right text-cyan-300">{"{BULL: 3.0}"}</td>
+                <tr className="border-b border-[#E6D9CE]/50">
+                  <td className="py-1 text-[#66605C]">class_weight</td>
+                  <td className="py-1 text-right text-[#0D7680]">{"{BULL: 3.0}"}</td>
                 </tr>
                 <tr>
-                  <td className="py-1 text-gray-400">bull_threshold</td>
-                  <td className="py-1 text-right text-cyan-300">0.25</td>
+                  <td className="py-1 text-[#66605C]">bull_threshold</td>
+                  <td className="py-1 text-right text-[#0D7680]">0.25</td>
                 </tr>
               </tbody>
             </table>
           </div>
 
-          <div className="bg-[#111827] rounded p-3 border border-green-700/40">
-            <div className="text-[12px] font-bold text-green-300 mb-2">② Meta (Binary)</div>
+          <div className="bg-[#FFFFFF] rounded p-3 border border-[#A8CDB6]/40">
+            <div className="text-[14px] font-bold text-[#0A7D3F] mb-2">② Meta (Binary)</div>
             <table className="w-full text-[10.5px] font-mono">
               <tbody>
-                <tr className="border-b border-gray-800/50">
-                  <td className="py-1 text-gray-400">objective</td>
-                  <td className="py-1 text-right text-gray-200">binary</td>
+                <tr className="border-b border-[#E6D9CE]/50">
+                  <td className="py-1 text-[#66605C]">objective</td>
+                  <td className="py-1 text-right text-[#33302E]">binary</td>
                 </tr>
-                <tr className="border-b border-gray-800/50">
-                  <td className="py-1 text-gray-400">learning_rate</td>
-                  <td className="py-1 text-right text-gray-200">0.03</td>
+                <tr className="border-b border-[#E6D9CE]/50">
+                  <td className="py-1 text-[#66605C]">learning_rate</td>
+                  <td className="py-1 text-right text-[#33302E]">0.03</td>
                 </tr>
-                <tr className="border-b border-gray-800/50">
-                  <td className="py-1 text-gray-400">n_estimators</td>
-                  <td className="py-1 text-right text-gray-200">300</td>
+                <tr className="border-b border-[#E6D9CE]/50">
+                  <td className="py-1 text-[#66605C]">n_estimators</td>
+                  <td className="py-1 text-right text-[#33302E]">300</td>
                 </tr>
-                <tr className="border-b border-gray-800/50">
-                  <td className="py-1 text-gray-400">max_depth</td>
-                  <td className="py-1 text-right text-gray-200">4</td>
+                <tr className="border-b border-[#E6D9CE]/50">
+                  <td className="py-1 text-[#66605C]">max_depth</td>
+                  <td className="py-1 text-right text-[#33302E]">4</td>
                 </tr>
-                <tr className="border-b border-gray-800/50">
-                  <td className="py-1 text-gray-400">num_leaves</td>
-                  <td className="py-1 text-right text-gray-200">15</td>
+                <tr className="border-b border-[#E6D9CE]/50">
+                  <td className="py-1 text-[#66605C]">num_leaves</td>
+                  <td className="py-1 text-right text-[#33302E]">15</td>
                 </tr>
-                <tr className="border-b border-gray-800/50">
-                  <td className="py-1 text-gray-400">reg_alpha / reg_lambda</td>
-                  <td className="py-1 text-right text-gray-200">0.5 / 1.0</td>
+                <tr className="border-b border-[#E6D9CE]/50">
+                  <td className="py-1 text-[#66605C]">reg_alpha / reg_lambda</td>
+                  <td className="py-1 text-right text-[#33302E]">0.5 / 1.0</td>
                 </tr>
-                <tr className="border-b border-gray-800/50">
-                  <td className="py-1 text-gray-400">class_weight</td>
-                  <td className="py-1 text-right text-green-300">'balanced'</td>
+                <tr className="border-b border-[#E6D9CE]/50">
+                  <td className="py-1 text-[#66605C]">class_weight</td>
+                  <td className="py-1 text-right text-[#0A7D3F]">'balanced'</td>
                 </tr>
-                <tr className="border-b border-gray-800/50">
-                  <td className="py-1 text-gray-400">decision threshold</td>
-                  <td className="py-1 text-right text-green-300">0.5</td>
+                <tr className="border-b border-[#E6D9CE]/50">
+                  <td className="py-1 text-[#66605C]">decision threshold</td>
+                  <td className="py-1 text-right text-[#0A7D3F]">0.5</td>
                 </tr>
                 <tr>
-                  <td className="py-1 text-gray-400">feature exclusion</td>
-                  <td className="py-1 text-right text-yellow-300">daily features 제외</td>
+                  <td className="py-1 text-[#66605C]">feature exclusion</td>
+                  <td className="py-1 text-right text-[#B85C00]">daily features 제외</td>
                 </tr>
               </tbody>
             </table>
           </div>
         </div>
 
-        <div className="mt-3 bg-[#111827] border border-yellow-900/40 rounded p-2.5 text-[10.5px] text-gray-300 leading-relaxed">
-          <b className="text-yellow-300">⚠️ Daily features 제외 이유</b>:&nbsp;
+        <div className="mt-3 bg-[#FFFFFF] border border-[#DCC9A0]/40 rounded p-2.5 text-[10.5px] text-[#33302E] leading-relaxed">
+          <b className="text-[#B85C00]">⚠️ Daily features 제외 이유</b>:&nbsp;
           Plan A 실험 결과 — 메타에 daily-resolution path features (vix_max_in_month 등) 10개를 포함하면
           P4 Sharpe 0.86 → 0.83으로 <b>감소</b>. 메타는 ~36-month 학습 표본만 보는데 추가 features 부담이 overfit
           유발. 따라서 <code>META_EXCLUDE</code> 상수로 일별 feature를 메타 입력에서 제외.
@@ -3162,17 +3162,17 @@ function MetaLabelingDeepDive() {
       </div>
 
       {/* 6.5 Trade-off Analysis */}
-      <div className="bg-[#0a0e17] rounded-lg p-4 border border-gray-800">
-        <div className="text-sm font-bold text-cyan-300 mb-3">6.5 Trade-off — P4 (Meta) vs P0 (Argmax)</div>
+      <div className="bg-[#FFF1E5] rounded-lg p-4 border border-[#E6D9CE]">
+        <div className="text-[16px] font-bold text-[#0D7680] mb-3">6.5 Trade-off — P4 (Meta) vs P0 (Argmax)</div>
         <div className="overflow-x-auto">
-          <table className="w-full text-[11px]">
-            <thead className="bg-[#111827]">
+          <table className="w-full text-[13px]">
+            <thead className="bg-[#FFFFFF]">
               <tr>
-                <th className="px-2 py-1.5 text-left text-gray-400 border-b border-gray-700">지표</th>
-                <th className="px-2 py-1.5 text-right text-gray-400 border-b border-gray-700">P0 (Argmax)</th>
-                <th className="px-2 py-1.5 text-right text-gray-400 border-b border-gray-700">P4 (Meta)</th>
-                <th className="px-2 py-1.5 text-center border-b border-gray-700 text-gray-400">변화</th>
-                <th className="px-2 py-1.5 text-left border-b border-gray-700 text-gray-400">해석</th>
+                <th className="px-2 py-1.5 text-left text-[#66605C] border-b border-[#E6D9CE]">지표</th>
+                <th className="px-2 py-1.5 text-right text-[#66605C] border-b border-[#E6D9CE]">P0 (Argmax)</th>
+                <th className="px-2 py-1.5 text-right text-[#66605C] border-b border-[#E6D9CE]">P4 (Meta)</th>
+                <th className="px-2 py-1.5 text-center border-b border-[#E6D9CE] text-[#66605C]">변화</th>
+                <th className="px-2 py-1.5 text-left border-b border-[#E6D9CE] text-[#66605C]">해석</th>
               </tr>
             </thead>
             <tbody>
@@ -3188,102 +3188,102 @@ function MetaLabelingDeepDive() {
                 ["Up Capture", "0.78", "0.73", "−0.05", "↓ 상승장 일부 못 따라감", "bad"],
                 ["BASE Precision", "67%", "54%", "−13pp", "↓ 메타 후퇴 시 BASE에 noise 섞임", "bad"],
               ].map(([metric, p0, p4, chg, interp, sign]) => (
-                <tr key={metric as string} className="border-b border-gray-800/50">
-                  <td className="px-2 py-1 text-gray-300 font-semibold">{metric}</td>
-                  <td className="px-2 py-1 text-right text-gray-300 font-mono">{p0}</td>
-                  <td className="px-2 py-1 text-right text-gray-100 font-mono font-semibold">{p4}</td>
+                <tr key={metric as string} className="border-b border-[#E6D9CE]/50">
+                  <td className="px-2 py-1 text-[#33302E] font-semibold">{metric}</td>
+                  <td className="px-2 py-1 text-right text-[#33302E] font-mono">{p0}</td>
+                  <td className="px-2 py-1 text-right text-[#33302E] font-mono font-semibold">{p4}</td>
                   <td className="px-2 py-1 text-center font-mono">{chg}</td>
-                  <td className={`px-2 py-1 text-[11px] ${
-                    sign === "good" ? "text-green-300"
-                    : sign === "bad" ? "text-red-300"
-                    : "text-gray-400"
+                  <td className={`px-2 py-1 text-[13px] ${
+                    sign === "good" ? "text-[#0A7D3F]"
+                    : sign === "bad" ? "text-[#CC0000]"
+                    : "text-[#66605C]"
                   }`}>{interp}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        <div className="mt-3 text-[11px] text-gray-400 leading-relaxed">
-          <b className="text-gray-200">핵심</b>: 메타 라벨링은 <b className="text-green-300">precision 우선, recall은 약간 양보</b>하는 설계.
+        <div className="mt-3 text-[13px] text-[#66605C] leading-relaxed">
+          <b className="text-[#33302E]">핵심</b>: 메타 라벨링은 <b className="text-[#0A7D3F]">precision 우선, recall은 약간 양보</b>하는 설계.
           그 결과 거래비용/하방방어/false positive 감소가 절대수익 일부 양보를 초과 보상.
-          <b className="text-gray-200"> 단점</b>은 강한 상승장에서 일부 BULL을 BASE로 후퇴시켜 upside capture가 5pp 떨어진다는 점.
+          <b className="text-[#33302E]"> 단점</b>은 강한 상승장에서 일부 BULL을 BASE로 후퇴시켜 upside capture가 5pp 떨어진다는 점.
         </div>
       </div>
 
       {/* 6.6 Worked Example Cases */}
-      <div className="bg-[#0a0e17] rounded-lg p-4 border border-gray-800">
-        <div className="text-sm font-bold text-cyan-300 mb-3">6.6 실제 사례 — 3가지 시나리오</div>
+      <div className="bg-[#FFF1E5] rounded-lg p-4 border border-[#E6D9CE]">
+        <div className="text-[16px] font-bold text-[#0D7680] mb-3">6.6 실제 사례 — 3가지 시나리오</div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
 
           {/* Case A: Confident & correct */}
-          <div className="bg-[#111827] border-l-4 border-green-600 rounded p-3">
-            <div className="text-[12px] font-bold text-green-300 mb-1">Case A — 확신 & 적중 ✓</div>
-            <div className="text-[10.5px] text-gray-400 mb-2 italic">"메타 통과 → primary 채택 → 결과 옳음"</div>
+          <div className="bg-[#FFFFFF] border-l-4 border-[#A8CDB6] rounded p-3">
+            <div className="text-[14px] font-bold text-[#0A7D3F] mb-1">Case A — 확신 & 적중 ✓</div>
+            <div className="text-[10.5px] text-[#66605C] mb-2 italic">"메타 통과 → primary 채택 → 결과 옳음"</div>
 
-            <div className="space-y-1.5 text-[10.5px] font-mono bg-[#0a0e17] rounded p-2">
-              <div><span className="text-gray-500">P_BEAR:</span> <span className="text-red-300">0.15</span></div>
-              <div><span className="text-gray-500">P_BASE:</span> <span className="text-yellow-300">0.30</span></div>
-              <div><span className="text-gray-500">P_BULL:</span> <span className="text-green-300">0.55</span> ← argmax</div>
-              <div><span className="text-gray-500">meta_conf:</span> <span className="text-green-300">0.71</span> &gt; 0.5</div>
-              <div className="border-t border-gray-700 my-1"></div>
-              <div className="text-cyan-300">→ ALLOCATION[BULL] = 90/5/5</div>
-              <div><span className="text-gray-500">true regime:</span> <span className="text-green-300">BULL</span></div>
-              <div><span className="text-gray-500">fwd_ret:</span> <span className="text-green-300">+5.3%</span></div>
+            <div className="space-y-1.5 text-[10.5px] font-mono bg-[#FFF1E5] rounded p-2">
+              <div><span className="text-[#857F7A]">P_BEAR:</span> <span className="text-[#CC0000]">0.15</span></div>
+              <div><span className="text-[#857F7A]">P_BASE:</span> <span className="text-[#B85C00]">0.30</span></div>
+              <div><span className="text-[#857F7A]">P_BULL:</span> <span className="text-[#0A7D3F]">0.55</span> ← argmax</div>
+              <div><span className="text-[#857F7A]">meta_conf:</span> <span className="text-[#0A7D3F]">0.71</span> &gt; 0.5</div>
+              <div className="border-t border-[#E6D9CE] my-1"></div>
+              <div className="text-[#0D7680]">→ ALLOCATION[BULL] = 90/5/5</div>
+              <div><span className="text-[#857F7A]">true regime:</span> <span className="text-[#0A7D3F]">BULL</span></div>
+              <div><span className="text-[#857F7A]">fwd_ret:</span> <span className="text-[#0A7D3F]">+5.3%</span></div>
             </div>
-            <div className="text-[10.5px] text-gray-300 mt-2 leading-snug">
+            <div className="text-[10.5px] text-[#33302E] mt-2 leading-snug">
               메타가 강한 BULL 신호의 신뢰도를 인정해 90% equity 적용. 다음 달 ACWI 5.3% 상승 → 정확히 적중.
-              <b className="text-green-300"> 가장 이상적인 케이스</b>.
+              <b className="text-[#0A7D3F]"> 가장 이상적인 케이스</b>.
             </div>
           </div>
 
           {/* Case B: Uncertain → BASE fallback (correctly) */}
-          <div className="bg-[#111827] border-l-4 border-yellow-600 rounded p-3">
-            <div className="text-[12px] font-bold text-yellow-300 mb-1">Case B — 불확실 → BASE 후퇴 ✓</div>
-            <div className="text-[10.5px] text-gray-400 mb-2 italic">"메타가 신뢰 낮음 판단 → 안전 후퇴 → 잘못된 베팅 회피"</div>
+          <div className="bg-[#FFFFFF] border-l-4 border-[#DCC9A0] rounded p-3">
+            <div className="text-[14px] font-bold text-[#B85C00] mb-1">Case B — 불확실 → BASE 후퇴 ✓</div>
+            <div className="text-[10.5px] text-[#66605C] mb-2 italic">"메타가 신뢰 낮음 판단 → 안전 후퇴 → 잘못된 베팅 회피"</div>
 
-            <div className="space-y-1.5 text-[10.5px] font-mono bg-[#0a0e17] rounded p-2">
-              <div><span className="text-gray-500">P_BEAR:</span> <span className="text-red-300">0.45</span> ← argmax</div>
-              <div><span className="text-gray-500">P_BASE:</span> <span className="text-yellow-300">0.32</span></div>
-              <div><span className="text-gray-500">P_BULL:</span> <span className="text-green-300">0.23</span></div>
-              <div><span className="text-gray-500">meta_conf:</span> <span className="text-yellow-300">0.41</span> ≤ 0.5</div>
-              <div className="border-t border-gray-700 my-1"></div>
-              <div className="text-yellow-300">→ ALLOCATION[BASE] = 75/10/15</div>
-              <div><span className="text-gray-500">true regime:</span> <span className="text-yellow-300">BASE</span></div>
-              <div><span className="text-gray-500">fwd_ret:</span> <span className="text-gray-300">+1.2%</span></div>
+            <div className="space-y-1.5 text-[10.5px] font-mono bg-[#FFF1E5] rounded p-2">
+              <div><span className="text-[#857F7A]">P_BEAR:</span> <span className="text-[#CC0000]">0.45</span> ← argmax</div>
+              <div><span className="text-[#857F7A]">P_BASE:</span> <span className="text-[#B85C00]">0.32</span></div>
+              <div><span className="text-[#857F7A]">P_BULL:</span> <span className="text-[#0A7D3F]">0.23</span></div>
+              <div><span className="text-[#857F7A]">meta_conf:</span> <span className="text-[#B85C00]">0.41</span> ≤ 0.5</div>
+              <div className="border-t border-[#E6D9CE] my-1"></div>
+              <div className="text-[#B85C00]">→ ALLOCATION[BASE] = 75/10/15</div>
+              <div><span className="text-[#857F7A]">true regime:</span> <span className="text-[#B85C00]">BASE</span></div>
+              <div><span className="text-[#857F7A]">fwd_ret:</span> <span className="text-[#33302E]">+1.2%</span></div>
             </div>
-            <div className="text-[10.5px] text-gray-300 mt-2 leading-snug">
+            <div className="text-[10.5px] text-[#33302E] mt-2 leading-snug">
               Primary는 BEAR 예측했지만 모든 확률이 비슷(entropy 높음) → 메타가 신뢰 낮다 판단.
-              실제 BASE였으므로 60/15/25 적용했다면 큰 underperform 발생. <b className="text-green-300">메타 후퇴가 옳았음</b>.
+              실제 BASE였으므로 60/15/25 적용했다면 큰 underperform 발생. <b className="text-[#0A7D3F]">메타 후퇴가 옳았음</b>.
             </div>
           </div>
 
           {/* Case C: Confident but wrong */}
-          <div className="bg-[#111827] border-l-4 border-red-600 rounded p-3">
-            <div className="text-[12px] font-bold text-red-300 mb-1">Case C — 확신 but 빗나감 ✗</div>
-            <div className="text-[10.5px] text-gray-400 mb-2 italic">"메타가 통과시킨 신호도 가끔 틀림 (불가피한 noise)"</div>
+          <div className="bg-[#FFFFFF] border-l-4 border-[#E0AAAA] rounded p-3">
+            <div className="text-[14px] font-bold text-[#CC0000] mb-1">Case C — 확신 but 빗나감 ✗</div>
+            <div className="text-[10.5px] text-[#66605C] mb-2 italic">"메타가 통과시킨 신호도 가끔 틀림 (불가피한 noise)"</div>
 
-            <div className="space-y-1.5 text-[10.5px] font-mono bg-[#0a0e17] rounded p-2">
-              <div><span className="text-gray-500">P_BEAR:</span> <span className="text-red-300">0.62</span> ← argmax</div>
-              <div><span className="text-gray-500">P_BASE:</span> <span className="text-yellow-300">0.25</span></div>
-              <div><span className="text-gray-500">P_BULL:</span> <span className="text-green-300">0.13</span></div>
-              <div><span className="text-gray-500">meta_conf:</span> <span className="text-green-300">0.68</span> &gt; 0.5</div>
-              <div className="border-t border-gray-700 my-1"></div>
-              <div className="text-red-300">→ ALLOCATION[BEAR] = 60/15/25</div>
-              <div><span className="text-gray-500">true regime:</span> <span className="text-green-300">BULL</span></div>
-              <div><span className="text-gray-500">fwd_ret:</span> <span className="text-green-300">+4.1%</span></div>
+            <div className="space-y-1.5 text-[10.5px] font-mono bg-[#FFF1E5] rounded p-2">
+              <div><span className="text-[#857F7A]">P_BEAR:</span> <span className="text-[#CC0000]">0.62</span> ← argmax</div>
+              <div><span className="text-[#857F7A]">P_BASE:</span> <span className="text-[#B85C00]">0.25</span></div>
+              <div><span className="text-[#857F7A]">P_BULL:</span> <span className="text-[#0A7D3F]">0.13</span></div>
+              <div><span className="text-[#857F7A]">meta_conf:</span> <span className="text-[#0A7D3F]">0.68</span> &gt; 0.5</div>
+              <div className="border-t border-[#E6D9CE] my-1"></div>
+              <div className="text-[#CC0000]">→ ALLOCATION[BEAR] = 60/15/25</div>
+              <div><span className="text-[#857F7A]">true regime:</span> <span className="text-[#0A7D3F]">BULL</span></div>
+              <div><span className="text-[#857F7A]">fwd_ret:</span> <span className="text-[#0A7D3F]">+4.1%</span></div>
             </div>
-            <div className="text-[10.5px] text-gray-300 mt-2 leading-snug">
+            <div className="text-[10.5px] text-[#33302E] mt-2 leading-snug">
               모두가 BEAR 동의 + 메타도 통과시켰지만 시장이 V자 반등. 60% equity로 4.1% 상승 → 90% 가졌으면 더 벌었을 텐데 일부 놓침.
-              <b className="text-red-300"> 메타-라벨링도 100% 만능 아님</b> — 이런 case가 BULL Up Capture를 5pp 깎음.
+              <b className="text-[#CC0000]"> 메타-라벨링도 100% 만능 아님</b> — 이런 case가 BULL Up Capture를 5pp 깎음.
             </div>
           </div>
         </div>
       </div>
 
       {/* Summary box */}
-      <div className="bg-gradient-to-br from-cyan-900/20 to-[#0a0e17] border-2 border-cyan-700/50 rounded-lg p-4">
-        <div className="text-sm font-bold text-cyan-100 mb-2">📌 핵심 정리</div>
-        <ul className="list-disc pl-5 space-y-1 text-[12px] text-gray-300 leading-relaxed">
+      <div className="bg-gradient-to-br from-cyan-900/20 to-[#FFF1E5] border-2 border-[#9CC3D5]/50 rounded-lg p-4">
+        <div className="text-[16px] font-bold text-[#0D7680] mb-2">📌 핵심 정리</div>
+        <ul className="list-disc pl-5 space-y-1 text-[14px] text-[#33302E] leading-relaxed">
           <li><b>Primary</b>(방향 결정) + <b>Meta</b>(신뢰도 판단)의 <b>2-stage 분리</b>로 단일 모델의 multitask burden 해소</li>
           <li>Meta 학습은 primary의 <b>OOS 예측에 대한 binary 라벨</b>(맞췄나/틀렸나)로 진행 — 자체 ground truth 가짐</li>
           <li>운용 시 <code>meta_conf &gt; 0.5</code>면 primary regime 채택, 아니면 <b>BASE로 안전 후퇴</b> (no-bet 결정)</li>
