@@ -20,130 +20,10 @@ from price_discovery import (
     STOCK_THEMES, STOCK_THEMES_CONSOLIDATED, ETF_SUBTHEMES,
     STOCK_UNIVERSE, GLOBAL_ETF_UNIVERSE,
     CATEGORY_BENCHMARK, STOCK_BENCHMARK, CATEGORY_BENCHMARK_ALT,
+    SUBTHEME_TO_SECTOR,   # 2026-07 B6: 정의를 price_discovery.py로 이동 (RSS within-sector가 사용)
 )
 
 CACHE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".scan_cache.pkl")
-
-# ── SubTheme → Sector (Option B unified taxonomy) ──
-# 17 sectors × ~105 subthemes; ETFs and stocks share the same SubTheme namespace.
-SUBTHEME_TO_SECTOR = {
-    # ── Technology ──
-    "Semiconductor Design": "Technology", "Semiconductor Foundry": "Technology",
-    "Semiconductor Memory": "Technology", "Semiconductor Analog": "Technology",
-    "Semiconductor Equipment & EDA": "Technology", "Enterprise Software": "Technology",
-    "Cybersecurity": "Technology", "Cloud & Platform": "Technology",
-    "Data Center & Networking": "Technology", "Industrial Technology": "Technology",
-    "Consumer Hardware": "Technology", "Robotics & AI": "Technology",
-    "Sector Broad - Tech": "Technology",
-    # ── Communication Services ──
-    "Digital Advertising & Media": "Communication Services",
-    "Digital Media & Entertainment": "Communication Services",
-    "Telecom & IT Services": "Communication Services",
-    "Sector Broad - CommServices": "Communication Services",
-    # ── Healthcare ──
-    "Big Pharma": "Healthcare", "Biotech": "Healthcare",
-    "Healthcare Services": "Healthcare",
-    "Medical Devices & Diagnostics": "Healthcare", "Life Science Tools": "Healthcare",
-    "Sector Broad - Healthcare": "Healthcare",
-    # ── Financials ──
-    "Banks": "Financials", "Insurance": "Financials",
-    "Investment Banking & Asset Mgmt": "Financials",
-    "Payments & Exchanges": "Financials", "Financial Data & Analytics": "Financials",
-    "Fintech & Digital Finance": "Financials", "Consumer Finance": "Financials",
-    "Conglomerate & Holding": "Financials",
-    "Sector Broad - Financials": "Financials",
-    # ── Consumer Discretionary ──
-    "Auto & EV": "Consumer Discretionary", "Consumer Brands": "Consumer Discretionary",
-    "E-commerce & Delivery": "Consumer Discretionary",
-    "Restaurants & Leisure": "Consumer Discretionary", "Retail": "Consumer Discretionary",
-    "Sector Broad - ConsDisc": "Consumer Discretionary",
-    # ── Consumer Staples ──
-    "Consumer Staples": "Consumer Staples",
-    "Sector Broad - ConsStaples": "Consumer Staples",
-    # ── Industrials ──
-    "Aerospace & Defense": "Industrials", "Industrial Equipment": "Industrials",
-    "Building & Construction": "Industrials", "Transport & Logistics": "Industrials",
-    "Environmental & Water": "Industrials",
-    "Sector Broad - Industrials": "Industrials",
-    # ── Energy ──
-    "Oil & Gas": "Energy", "Uranium & Nuclear Fuel": "Energy",
-    "Energy Commodities": "Energy", "Sector Broad - Energy": "Energy",
-    # ── Utilities ──
-    "Utilities": "Utilities", "Power & Energy Infra": "Utilities",
-    "Sector Broad - Utilities": "Utilities",
-    # ── Materials ──
-    "Chemicals": "Materials", "Steel & Metals": "Materials",
-    "Base Metals & Mining": "Materials", "Precious Metals": "Materials",
-    "Agriculture & Food": "Materials", "Battery & EV Materials": "Materials",
-    "Natural Resources": "Materials", "Broad Commodity": "Materials",
-    "Sector Broad - Materials": "Materials",
-    # ── Real Estate ──
-    "Real Estate": "Real Estate", "Sector Broad - RealEstate": "Real Estate",
-    # ── Equity Broad (broad / factor / disruptive) ──
-    "Broad Market": "Equity Broad", "Factor - Momentum": "Equity Broad",
-    "Factor - Quality": "Equity Broad", "Factor - Min Vol": "Equity Broad",
-    "Factor - Value": "Equity Broad", "Factor - Size": "Equity Broad",
-    "Factor - Dividend": "Equity Broad", "Factor - Multi": "Equity Broad",
-    "Disruptive Innovation": "Equity Broad",
-    # ── International — Broad multi-country (sector-diversified, 그대로 International) ──
-    "Developed Markets": "International", "EM Broad": "International",
-    "Europe Broad": "International",
-    # ── International — Country-level → GICS dominant sector ──
-    # 단일국가 ETF를 dominant sector로 매핑하여 Cyclical/Defensive 회전 매트릭스 참여 가능.
-    # (theme 필드는 국가명 그대로 유지 — granularity 보존)
-    #
-    # Europe (Developed)
-    "Europe - Germany": "Industrials",          # Siemens / BMW / VW / BASF
-    "Europe - UK": "Energy",                    # Shell / BP dominant
-    "Europe - France": "Consumer Discretionary",# LVMH / Hermes / L'Oreal (luxury)
-    "Europe - Switzerland": "Healthcare",       # Roche / Novartis / Nestle
-    "Europe - Spain": "Financials",             # Santander / BBVA / Telefonica
-    "Europe - Italy": "Financials",             # Banks + Enel
-    # Europe (EM)
-    "Europe - Poland": "Financials",            # banks dominant
-    "Europe - Greece": "Financials",            # Eurobank / NBG
-    # Asia / Pacific
-    "Japan": "Industrials",                     # Toyota / Sony / Honda heavy industrial mix
-    "Korea (Index)": "Technology",              # Samsung / SK Hynix tech dominance
-    "China": "Communication Services",          # Tencent / Alibaba / Meituan
-    "India": "Financials",                      # HDFC / Reliance financials
-    "Asia Pacific - Australia": "Materials",    # BHP / Rio Tinto
-    "Asia Pacific - Taiwan": "Technology",      # TSMC dominance
-    "Asia Pacific - Hong Kong": "Financials",   # HSBC / AIA
-    "Asia Pacific - Singapore": "Financials",   # DBS / OCBC / UOB
-    "Asia Pacific - Thailand": "Financials",    # bank-heavy
-    "Asia Pacific - Vietnam": "Financials",
-    "Asia Pacific - Indonesia": "Financials",
-    # Latin America
-    "Latin America - Brazil": "Materials",      # Vale + Petrobras
-    "Latin America - Mexico": "Consumer Staples",  # FEMSA + Walmex
-    "Latin America - Colombia": "Financials",
-    "Latin America - Chile": "Materials",       # copper
-    # EMEA
-    "EMEA - Turkey": "Financials",
-    "EMEA - South Africa": "Materials",         # mining heavy
-    "EMEA - Egypt": "Financials",
-    # Other
-    "Middle East - Israel": "Technology",       # Check Point / NICE / CyberArk
-    "North America - Canada": "Financials",     # RBC / TD / Scotia (banks dominant)
-    # ── Backward-compat fallbacks (이전 theme명 호환, 사용 안 되지만 안전망) ──
-    "Europe": "International", "Asia Pacific": "International",
-    "North America": "International", "Middle East": "International",
-    "Latin America": "International", "Other EM": "International",
-    # ── Fixed Income ──
-    "Treasury - Short": "Fixed Income", "Treasury - Intermediate": "Fixed Income",
-    "Treasury - Long": "Fixed Income",
-    "IG Corporate - Short": "Fixed Income", "IG Corporate - Intermediate": "Fixed Income",
-    "IG Corporate - Long": "Fixed Income", "Aggregate Bond": "Fixed Income",
-    "MBS": "Fixed Income", "CLO": "Fixed Income", "Floating Rate": "Fixed Income",
-    "High Yield": "Fixed Income", "Senior Loans": "Fixed Income",
-    "Preferred": "Fixed Income", "Inflation-Linked": "Fixed Income",
-    "International Bonds": "Fixed Income", "EM Bonds": "Fixed Income",
-    # ── Macro / Multi-Asset / Alt ──
-    "Currency": "Macro", "Volatility": "Macro",
-    "Asset Allocation": "Multi-Asset",
-    "Crypto": "Alternatives",
-}
 
 # Backwards-compat alias (older code may still reference THEME_TO_SECTOR)
 THEME_TO_SECTOR = SUBTHEME_TO_SECTOR
@@ -449,8 +329,83 @@ def _load_cache():
     _compute_rotation_scores(STATE["df"], REGIME)
     _phase3b_regime_classify_override(STATE["df"], REGIME)
 
+    # ── Re-evaluate eligibility AFTER Phase-3B classification override ──
+    # 순서 버그 수정: eligibility gate(line ~329)는 Phase-3B override보다 먼저 실행됨.
+    # Phase-3B가 분류를 CYCLE_PEAK 등 non-bullish로 승격하면 eligible 플래그가 stale 되어
+    # "eligible=True인데 CYCLE_PEAK" 모순 발생 (eligibility_tier 라벨 누출 + 향후 override
+    # 발화 시 천장종목이 eligible pool로 누출). bullish가 아니게 된 종목은 eligible=False로 재평가.
+    try:
+        _df = STATE["df"]
+        if "eligible" in _df.columns and "classification" in _df.columns:
+            _BULL_KW = ("CONTINUATION", "FORMATION", "RECOVERY", "OVEREXTENDED", "LAGGING_CATCHUP")
+            _bullish = _df["classification"].astype(str).apply(
+                lambda c: any(k in c for k in _BULL_KW))
+            _stale = _df["eligible"].fillna(False) & ~_bullish
+            _n = int(_stale.sum())
+            if _n:
+                _df.loc[_stale, "eligible"] = False
+                _rej = _df.loc[_stale, "rejection"].fillna("").astype(str)
+                _df.loc[_stale, "rejection"] = (_rej + " CyclePeak").str.strip()
+                print(f"[phase3b-eligibility] re-evaluated {_n} eligible→False "
+                      f"(non-bullish after CYCLE_PEAK override)")
+    except Exception as _e:
+        print(f"[phase3b-eligibility] re-eval failed: {_e}")
+
     # ── Hybrid Phase A + B: ETF bottom-up sidecar metrics + divergence flags ──
     _compute_etf_hybrid_sidecar(STATE["df"])
+
+    # ── ETF constituent-QVR rollup ──
+    # Phase toggle: _ETF_QVR_APPLY controls whether the rollup OVERWRITES qvr_score
+    # (Phase 2+) or only emits shadow diagnostic columns (Phase 1). Runs AFTER the QVR
+    # loop (needs df['qvr_score']/q/v/r populated) and AFTER the sidecar (reuses holdings).
+    _compute_etf_qvr_rollup(STATE["df"], apply_to_qvr_score=_ETF_QVR_APPLY)
+
+    # Propagate rollup fields into STATE["results"] so downstream BuyScore (reads
+    # results rows, not df) can apply the Phase-4 Q-anchored soft penalty. qvr_q_roll
+    # is the constituent-weighted Quality (not the blended rollup) — Q-anchored so the
+    # penalty never fires on a merely-cheap (low-V) but high-quality sector ETF.
+    try:
+        _df = STATE["df"]
+        if _df is not None and "qvr_etf_source" in _df.columns:
+            _rmap = {}
+            for _, _r in _df.iterrows():
+                if _r.get("qvr_etf_source") == "constituent_rollup_QC":
+                    _rmap[_r.get("ticker")] = {
+                        "qvr_etf_source": "constituent_rollup_QC",
+                        "qvr_etf_cov": _r.get("qvr_etf_cov"),
+                        "qvr_etf_rollup": _r.get("qvr_etf_rollup"),
+                        "qvr_q_roll": _r.get("qvr_q"),   # rolled Quality (Phase-2 overwrote qvr_q)
+                    }
+            for _res in (STATE.get("results") or []):
+                _m = _rmap.get(_res.get("ticker"))
+                if _m:
+                    _res.update(_m)
+    except Exception as _e:
+        print(f"[etf-qvr] results propagation failed: {_e}")
+
+    # ── Entry Timing Score (진입 적시성) — orthogonal "얼마나 늦지 않았는가" 축 ──
+    # Composite/OER는 강도, ETS는 타이밍(추격/가속/신선도). 매수 리스트가 이미
+    # 스트레치된 종목으로 쏠리는 것을 재정렬/BuyScore로 완화. df + results 양쪽 주입.
+    try:
+        from agents.entry_timing import compute_entry_timing
+        _df = STATE["df"]
+        _et_cols = ("entry_timing_score", "entry_timing_status",
+                    "et_chase", "et_accel", "et_fresh")
+        _et_map = {}
+        for _, _r in _df.iterrows():
+            _et = compute_entry_timing(_r.to_dict())
+            _et_map[_r.get("ticker")] = _et
+        for _c in _et_cols:
+            _df[_c] = _df["ticker"].apply(lambda t: (_et_map.get(t) or {}).get(_c))
+        for _res in (STATE.get("results") or []):
+            _et = _et_map.get(_res.get("ticker"))
+            if _et:
+                _res.update(_et)
+        _n_fresh = sum(1 for v in _et_map.values() if v.get("entry_timing_status") == "FRESH")
+        _n_ext = sum(1 for v in _et_map.values() if v.get("entry_timing_status") == "EXTENDED")
+        print(f"[entry-timing] computed {len(_et_map)} · FRESH={_n_fresh} EXTENDED={_n_ext}")
+    except Exception as _e:
+        print(f"[entry-timing] failed (non-fatal): {_e}")
 
     # ── Hybrid Phase D (Pre-Mom integration): per-ticker parent_etf_signal ──
     # 각 stock에 대해 "어떤 ETF의 top holding인가" 역색인 후
@@ -468,6 +423,19 @@ def _load_cache():
     # 섹터별로 독립적으로 top-N 종목 선별. universe-wide ranking과 별개로
     # 각 섹터 내 best-in-sector를 강제로 surface. Lag보단 diversification 효과.
     _compute_sector_segmented_picks(STATE["df"], top_per_sector=5, min_composite=40.0)
+
+    # ── Pre-Breakout Base 티어 (①②): 상승추세 속 VCP 베이스 → 돌파 대기/승격 ──
+    # classify()가 CONSOLIDATION으로 정확히 라벨링하지만 Gate가 탈락시키는 '건강한
+    # 베이스'를 관찰 티어로 회수 + 거래량 동반 돌파 시 매수 후보 승격 표시.
+    try:
+        _compute_pre_breakout_base(STATE["df"], STATE.get("results", []))
+    except Exception as _pbe:
+        print(f"[pre-breakout-base] failed (non-fatal): {_pbe}")
+
+    # ── Herding-Reversal (과열 후 반전 감지, paper 2607.27063) ──
+    # 과밀(run-up 상위+RSI과매수) + herding 약화(단기 모멘텀 균열) conjunction을
+    # give-back 증폭 + 매수 tie-breaker로 사용. 표시선행·검증게이트. 비치명적.
+    _compute_herding_reversal_layer(STATE["df"], STATE.get("results", []))
 
     # ── YTD return enrichment ──
     # Cache may not have ret_ytd (legacy scans). Load .ytd_returns.json
@@ -692,6 +660,7 @@ def _inject_tags_into_results(df, results) -> None:
         return
     try:
         tag_map: Dict[str, Dict[str, str]] = {}
+        has_qvr = "qvr_score" in df.columns
         for _, row in df.iterrows():
             tk = row.get("ticker", "")
             if tk:
@@ -701,6 +670,12 @@ def _inject_tags_into_results(df, results) -> None:
                     "region": row.get("region", "US"),
                     "industry_group": row.get("industry_group", "Unknown"),
                 }
+                # L1 telemetry: position_state의 진입 스냅샷(entered_qvr)이 swarm의
+                # scan_lookup(STATE['results'])에서 읽으므로 qvr_score도 함께 주입
+                if has_qvr:
+                    _q = row.get("qvr_score")
+                    if _q is not None and _q == _q:   # NaN 제외
+                        tag_map[tk]["qvr_score"] = float(_q)
         for r in results:
             if not isinstance(r, dict):
                 continue
@@ -960,6 +935,9 @@ def _compute_etf_hybrid_sidecar(df) -> None:
 
     # Per-ETF metrics
     metrics: Dict[str, Dict] = {}
+    # Off-universe 구성종목 누적 (2026-07-28) — 우리 유니버스 밖이라 현재 버려지는
+    # ETF top-10 구성종목(신흥 테마: 네오클라우드 등)을 모아 유니버스 확장 후보로 랭킹.
+    off_univ: Dict[str, dict] = {}
     n_etfs_processed = 0
     for etf_ticker, holdings_info in holdings_map.items():
         holdings = holdings_info.get("holdings", []) or []
@@ -989,6 +967,10 @@ def _compute_etf_hybrid_sidecar(df) -> None:
                     n_mom += 1
                 if comp > max_comp:
                     max_comp = comp
+            elif tk:
+                # off-universe 구성종목 — 유니버스 밖 신흥 후보로 누적 (parent ETF, weight)
+                rec = off_univ.setdefault(tk, {"name": h.get("name") or "", "parents": []})
+                rec["parents"].append((etf_ticker, w))
         if n_in_universe == 0:
             continue
         weighted_comp = weighted_comp_num / sum_weight_in_universe if sum_weight_in_universe > 0 else 0.0
@@ -1033,6 +1015,42 @@ def _compute_etf_hybrid_sidecar(df) -> None:
             flag = "NEUTRAL"
         m["divergence_flag"] = flag
 
+    # ─── Off-universe expansion candidates (2026-07-28) — 유니버스 밖 구성종목 랭킹 ───
+    # 신흥 테마(네오클라우드 등) 편입 지연의 근본 원인 해소: 우리가 추적하는 ETF의
+    # top-10에 들어온 유니버스 밖 종목을 Σ(weight × max(0, parent_comp−50))로 랭킹.
+    # 캐시만 사용(추가 페치 0, LLM 0). 자동 편입은 하지 않음 — 확장 후보 리포트 전용.
+    try:
+        from datetime import datetime as _dt_now
+        exp = []
+        for tk, info in off_univ.items():
+            parents, score = [], 0.0
+            for (petf, w) in info["parents"]:
+                pr = ticker_to_row.get(petf)
+                pc = pr.get("composite") if pr else None
+                pc = float(pc) if (pc is not None and pc == pc) else 50.0
+                score += w * max(0.0, pc - 50.0)
+                parents.append({"etf": petf, "weight_pct": round(w * 100, 2), "parent_comp": round(pc, 1)})
+            exp.append({
+                "ticker": tk, "name": info["name"],
+                "score": round(score * 100, 2), "n_parents": len(parents),
+                "sum_weight_pct": round(sum(w for _, w in info["parents"]) * 100, 2),
+                "parents": sorted(parents, key=lambda x: -x["weight_pct"])[:5],
+            })
+        exp.sort(key=lambda x: -x["score"])
+        STATE["universe_expansion_candidates"] = {
+            "generated_at": _dt_now.now().strftime("%Y-%m-%d %H:%M"),
+            "n_off_universe": len(off_univ),
+            "candidates": exp[:60],
+            # 전체 off-universe 티커 집합 — 뉴스 emerging_tickers 교차검증용(top-60 밖 신흥주 포함).
+            # 상세는 ticker→parents 맵으로 뉴스 히트 시 근거 제공.
+            "off_universe_tickers": {e["ticker"]: {"n_parents": e["n_parents"],
+                                                   "parents": e["parents"]} for e in exp},
+        }
+        print(f"[universe-gap] off-universe 구성종목 {len(off_univ)}개 · top score "
+              f"{exp[0]['ticker'] if exp else '—'}")
+    except Exception as _ge:
+        print(f"[universe-gap] rollup failed (non-fatal): {_ge}")
+
     # Inject into df
     def _get(t, key):
         m = metrics.get(t)
@@ -1053,6 +1071,244 @@ def _compute_etf_hybrid_sidecar(df) -> None:
         print(f"[etf-hybrid] {n_etfs_processed} ETFs processed · flags: {flag_str}")
     except Exception:
         pass
+
+
+# ── ETF constituent-QVR rollup (2026-07 addition) ────────────────────────────
+# ETFs otherwise get a FLAT qvr_score=50.0 (no direct fundamentals). But the ETF's
+# underlying constituent STOCKS *do* have real QVR — so roll their QVR up by in-ETF
+# weight to give the ETF a meaningful, honest fundamentals read. Structurally cloned
+# from _compute_etf_hybrid_sidecar (same holdings map, same ticker_to_row pattern,
+# same coverage machinery) — the only change is Composite → qvr_q/v/r.
+#
+# Design (per the evaluated proposal):
+#   • Q-tilt reweight: QVR_raw = 0.60·Q_roll + 0.15·V_roll + 0.25·R_roll
+#     (Quality aggregates cleanly to a fund; Value down-weighted to avoid the
+#      value-cheapness trap that would unfairly mark down quality-but-expensive
+#      sector ETFs like XLV/DIA; Revision down-weighted — sparsest + momentum-bleed).
+#   • Coverage over REAL-QVR constituents only (stocks whose QVR is not the flat-50
+#     placeholder) — the STRICTER denominator (risk #7 in the eval).
+#   • Continuous coverage shrinkage toward neutral 50 (NO hard cutoff):
+#       conf = clip((cov − 0.15) / (0.85 − 0.15), 0, 1)
+#       QVR_etf = conf·QVR_raw + (1 − conf)·50
+#     Generalizes qvr_agent._dim_score's MIN_DIM_COVERAGE 50/50 blend.
+#   • 216 no-holdings ETFs + thin-coverage ETFs → source='flat_neutral', rollup=None.
+_ETF_QVR_Q_W, _ETF_QVR_V_W, _ETF_QVR_R_W = 0.60, 0.15, 0.25   # Q-tilt weights (sum=1)
+_ETF_QVR_COV_LO, _ETF_QVR_COV_HI = 0.15, 0.85                 # shrinkage dead-zone / full-trust
+_ETF_QVR_HOLDINGS_STALE_DAYS = 14
+# Phase rollout toggle: Phase 1 = shadow (False), Phase 2+ = overwrite qvr_score (True).
+_ETF_QVR_APPLY = True
+# Phase 3 toggle: feed the rollup into Pre-Momentum's QVR agent (agreement_ratio).
+# 2026-07: DISABLED for ETF SELECTION. ETF constituent-QVR is bottom-up aggregation — the
+# same signal class that backtested as counterproductive for ETF return-selection (the
+# etf_flag_bonus / divergence-flag decision). Feeding it into Pre-Mom nudged ~71 ETFs'
+# forming-candidate scores with an unvalidated, value-trap-prone signal. Now False → the ETF
+# Pre-Mom QVR agent falls back to neutral 50 (no selection influence). The rollup is still
+# COMPUTED + DISPLAYED (qvr_score via _ETF_QVR_APPLY, and qvr_etf_* columns) for context/risk.
+_ETF_QVR_FEED_PREMOM = False
+
+
+# ETF QVR 롤업 신뢰 최소 커버리지 (%) — 이하면 '펀더멘털 검증 불가'로 표기
+_QVR_ETF_COV_MIN = 40.0
+# 비주식 섹터 — 구조적으로 주식 펀더 없음 (Pre-Breakout 티어와 동일 집합)
+_NON_EQUITY_SECTORS = {"Fixed Income", "Macro", "Multi-Asset", "Alternatives"}
+
+
+def _qvr_unverified(row):
+    """ETF의 QVR이 신뢰 불가(플랫/저커버리지)면 (True, 사유). 개별주·검증ETF는 (False, '').
+
+    - 개별주: 자체 펀더(yfinance/Finnhub) 있음 → 검증됨.
+    - ETF + constituent_rollup_QC + cov≥40%: 검증됨.
+    - ETF + 롤업했으나 cov<40%(예: XBI 10.6%): 검증 불가(구성종목 대부분 미분석).
+    - ETF + 롤업 안 됨: 채권/커모디티/통화형(해당없음) 또는 홀딩스 미보유(데이터 없음).
+    """
+    if str((row or {}).get("asset_type") or "").upper() != "ETF":
+        return False, ""
+    src = row.get("qvr_etf_source")
+    sec = str(row.get("sector") or "")
+    if src == "constituent_rollup_QC":
+        try:
+            c = float(row.get("qvr_etf_cov"))
+        except (TypeError, ValueError):
+            c = 0.0
+        if c >= _QVR_ETF_COV_MIN:
+            return False, ""
+        return True, f"구성종목 커버리지 {c:.0f}% — top10 중 대부분 우리 유니버스 미분석 (QVR 신뢰 불가)"
+    if sec in _NON_EQUITY_SECTORS:
+        return True, "채권/커모디티/통화형 — 주식 펀더멘털 해당 없음 (QVR=50 중립 placeholder)"
+    return True, "구성종목 QVR 데이터 없음 (홀딩스 캐시 미보유)"
+
+
+def _build_etf_qvr_override() -> dict:
+    """{ticker: rollup_qvr} for covered ETFs — the Pre-Momentum QVR-agent override.
+
+    Single source of truth so EVERY run_pre_momentum caller (provisional tiering AND
+    the /api/pre-momentum tab AND the ML pre-mom path) uses the SAME override — otherwise
+    the tab would display pre-override PM scores while the tier is gated on post-override
+    scores (same metric, two values). Returns {} when the phase-3 flag is off or the
+    rollup columns aren't present, so callers are always safe to inject the result."""
+    if not _ETF_QVR_FEED_PREMOM:
+        return {}
+    try:
+        _df = STATE.get("df")
+        if _df is None or "qvr_etf_source" not in _df.columns:
+            return {}
+        ovr = {}
+        for _, _r in _df.iterrows():
+            if (_r.get("qvr_etf_source") == "constituent_rollup_QC"
+                    and _r.get("qvr_etf_rollup") is not None):
+                ovr[_r.get("ticker")] = float(_r.get("qvr_etf_rollup"))
+        return ovr
+    except Exception as _e:
+        print(f"[etf-qvr] override build failed: {_e}")
+        return {}
+
+
+def _constituent_has_real_qvr(row: dict) -> bool:
+    """A constituent contributes to the rollup only if it's a Stock with a REAL
+    (non-flat-placeholder) QVR. The flat placeholder is qvr_score==50 AND n_analysts==0
+    (Korean/failed-fetch names); a stock with real margin/PE-based Q/V but no analyst
+    coverage still counts (n_analysts may be 0 but qvr_score deviates from 50)."""
+    if (row.get("asset_type") or "") != "Stock":
+        return False
+    q = row.get("qvr_score")
+    if q is None:
+        return False
+    try:
+        q = float(q)
+    except (TypeError, ValueError):
+        return False
+    na = int(row.get("qvr_n_analysts") or 0)
+    return (na > 0) or (abs(q - 50.0) > 1e-9)
+
+
+def _compute_etf_qvr_rollup(df, apply_to_qvr_score: bool = False) -> None:
+    """Compute a constituent-weighted QVR for each ETF with cached holdings.
+
+    Always emits diagnostic columns:
+      qvr_etf_rollup (float|None) · qvr_etf_raw (pre-shrinkage) · qvr_etf_cov (pct of
+      top-10 weight with real-QVR constituents) · qvr_etf_conf (0-1) ·
+      qvr_etf_source ('constituent_rollup_QC' | 'flat_neutral' | None for non-ETF) ·
+      qvr_etf_n (covered constituent count).
+
+    When apply_to_qvr_score=True (Phase 2+), the covered-ETF rollup OVERWRITES
+    df['qvr_score']/qvr_q/qvr_v/qvr_r; Phase 1 leaves qvr_score untouched (shadow).
+    Never raises — best-effort, mirrors the sidecar's failure posture.
+    """
+    NEW_COLS = ("qvr_etf_rollup", "qvr_etf_raw", "qvr_etf_cov",
+                "qvr_etf_conf", "qvr_etf_source", "qvr_etf_n")
+    if df is None or df.empty:
+        return
+    try:
+        # freshness check (Phase 0 deliverable) — soft warn only, never hard-fail
+        try:
+            import datetime as _dt
+            if os.path.exists(_ETF_HOLDINGS_CACHE_PATH):
+                with open(_ETF_HOLDINGS_CACHE_PATH) as _f:
+                    _fa = (json.load(_f) or {}).get("fetched_at", "")
+                if _fa:
+                    age_days = (_dt.datetime.now(_dt.timezone.utc)
+                                - _dt.datetime.fromisoformat(_fa)).days
+                    if age_days > _ETF_QVR_HOLDINGS_STALE_DAYS:
+                        print(f"[etf-qvr] ⚠ holdings cache {age_days}d old "
+                              f"(> {_ETF_QVR_HOLDINGS_STALE_DAYS}d) — rollup may be stale")
+        except Exception:
+            pass
+
+        holdings_map = _load_etf_holdings()
+        if not holdings_map:
+            for c in NEW_COLS:
+                df[c] = None
+            print("[etf-qvr] holdings cache empty — skipping rollup")
+            return
+
+        # constituent lookup: ticker → its QVR sub-scores (only what the rollup needs)
+        lut = {}
+        for _, row in df.iterrows():
+            tk = row.get("ticker", "")
+            if tk:
+                lut[tk] = {
+                    "asset_type": row.get("asset_type"),
+                    "qvr_score": row.get("qvr_score"),
+                    "qvr_q": row.get("qvr_q"),
+                    "qvr_v": row.get("qvr_v"),
+                    "qvr_r": row.get("qvr_r"),
+                    "qvr_n_analysts": row.get("qvr_n_analysts"),
+                }
+
+        def _num(v, default=50.0):
+            try:
+                f = float(v)
+                return f if f == f else default
+            except (TypeError, ValueError):
+                return default
+
+        rollup: Dict[str, Dict] = {}
+        n_rolled = 0
+        for etf_tk, info in holdings_map.items():
+            holds = info.get("holdings", []) or []
+            if not holds:
+                continue
+            T = sum(_num(h.get("weight", 0), 0.0) for h in holds)   # total top-10 weight
+            if T <= 0:
+                continue
+            W = 0.0; qn = vn = rn = 0.0; n_cov = 0
+            for h in holds:
+                tk = h.get("ticker", "")
+                w = _num(h.get("weight", 0), 0.0)
+                crow = lut.get(tk)
+                if crow and _constituent_has_real_qvr(crow):
+                    W += w
+                    qn += w * _num(crow.get("qvr_q"))
+                    vn += w * _num(crow.get("qvr_v"))
+                    rn += w * _num(crow.get("qvr_r"))
+                    n_cov += 1
+            if W <= 0 or n_cov == 0:
+                rollup[etf_tk] = {"qvr_etf_source": "flat_neutral", "qvr_etf_n": 0,
+                                  "qvr_etf_cov": round(0.0, 1), "qvr_etf_conf": 0.0,
+                                  "qvr_etf_rollup": None, "qvr_etf_raw": None}
+                continue
+            Q_roll, V_roll, R_roll = qn / W, vn / W, rn / W
+            qvr_raw = _ETF_QVR_Q_W * Q_roll + _ETF_QVR_V_W * V_roll + _ETF_QVR_R_W * R_roll
+            cov = W / T
+            conf = max(0.0, min(1.0, (cov - _ETF_QVR_COV_LO) / (_ETF_QVR_COV_HI - _ETF_QVR_COV_LO)))
+            qvr_etf = conf * qvr_raw + (1.0 - conf) * 50.0
+            rollup[etf_tk] = {
+                "qvr_etf_rollup": round(qvr_etf, 1),
+                "qvr_etf_raw": round(qvr_raw, 1),
+                "qvr_etf_cov": round(cov * 100, 1),
+                "qvr_etf_conf": round(conf, 2),
+                "qvr_etf_source": "constituent_rollup_QC",
+                "qvr_etf_n": n_cov,
+                "_q": round(Q_roll, 1), "_v": round(V_roll, 1), "_r": round(R_roll, 1),
+            }
+            n_rolled += 1
+
+        # inject diagnostic columns (None for non-ETF / no-holdings rows)
+        for c in NEW_COLS:
+            df[c] = df["ticker"].apply(lambda t: (rollup.get(t) or {}).get(c))
+
+        # Phase 2+: overwrite qvr_score/q/v/r for covered ETFs (source==rollup).
+        if apply_to_qvr_score:
+            n_applied = 0
+            for tk, m in rollup.items():
+                if m.get("qvr_etf_source") != "constituent_rollup_QC":
+                    continue
+                mask = df["ticker"] == tk
+                if not mask.any():
+                    continue
+                df.loc[mask, "qvr_score"] = m["qvr_etf_rollup"]
+                df.loc[mask, "qvr_q"] = m.get("_q")
+                df.loc[mask, "qvr_v"] = m.get("_v")
+                df.loc[mask, "qvr_r"] = m.get("_r")
+                n_applied += 1
+            print(f"[etf-qvr] rolled up {n_rolled} ETFs · APPLIED to qvr_score for {n_applied}")
+        else:
+            print(f"[etf-qvr] rolled up {n_rolled} ETFs · SHADOW (qvr_score unchanged)")
+    except Exception as e:
+        for c in NEW_COLS:
+            if c not in df.columns:
+                df[c] = None
+        print(f"[etf-qvr] rollup failed (non-fatal): {e}")
 
 
 def _compute_provisional_eligibility(df, results, graph, history, ve_obs) -> None:
@@ -1097,6 +1353,14 @@ def _compute_provisional_eligibility(df, results, graph, history, ve_obs) -> Non
             "ve_observations": ve_obs,
             "fundamentals": fund_cache,
         }
+        # Phase 3: feed the constituent-QVR rollup into Pre-Momentum's QVR agent so
+        # strong-constituent ETFs can clear the >50 agreement vote (fixes the ETF
+        # agreement_ratio cap). Only covered ETFs (source==constituent_rollup_QC) are
+        # injected; thin/no-holdings ETFs keep the neutral-50 agent behaviour.
+        _ovr = _build_etf_qvr_override()
+        if _ovr:
+            pm_cache["qvr_etf_override"] = _ovr
+            print(f"[etf-qvr] Pre-Mom override active · {len(_ovr)} ETFs")
         pm_output = run_pre_momentum(pm_cache)
         candidates = pm_output.get("candidates", []) or []
 
@@ -1164,6 +1428,105 @@ def _compute_provisional_eligibility(df, results, graph, history, ve_obs) -> Non
             return "Excluded"
         df["eligibility_tier"] = df.apply(_tier, axis=1)
 
+        # ── Mean Reversion (Oversold Reversion) tier — OER 거울상, Composite와 분리 ──
+        # mr_score는 scan(Pass 4)에서 계산. 여기선 regime gating + falling-knife guard +
+        # quality floor를 적용해 별도 tier로만 노출 (모멘텀 게이트가 탈락시킨 종목만).
+        import json as _json
+        from pathlib import Path as _Path
+        _regime = STATE.get("regime", {}) or {}
+        _cd = abs(float(_regime.get("cd_gap", 0.0) or 0.0))
+        _gv = abs(float(_regime.get("gv_gap", 0.0) or 0.0))
+        _onesided = max(_cd, _gv)                       # 큰 gap = 강한 일방 주도 → MR suppress
+        try:
+            _r21 = df["ret_21d"].astype(float)
+            _disp = float(_r21.quantile(0.9) - _r21.quantile(0.1))   # 고분산 = MR 작동
+        except Exception:
+            _disp = 30.0
+        _disp_factor = max(0.0, min(1.0, _disp / 40.0))
+        _taper = max(0.0, min(1.0, 1.0 - (_onesided - 3.0) / 12.0))  # gap 3→1.0, 15→0.0
+        _mr_mult = round(max(0.3, min(1.0, 0.4 + 0.6 * _disp_factor * _taper)), 2)
+        # 지속성 sidecar — STATE['regime']은 단일일 스냅샷. 부호 안정성 <3 이면 중립 0.7.
+        _rh_path = _Path(".regime_history.json")
+        try:
+            _rh = _json.loads(_rh_path.read_text(encoding="utf-8")) if _rh_path.exists() else []
+        except Exception:
+            _rh = []
+        _today = {"cd": 1 if _regime.get("cd_gap", 0) > 0 else -1,
+                  "gv": 1 if _regime.get("gv_gap", 0) > 0 else -1,
+                  "top": _regime.get("top_region", "")}
+        if not _rh or _rh[-1] != _today:               # 동일 캐시 재로딩 dedup
+            _rh.append(_today)
+            _rh = _rh[-5:]
+            try: _rh_path.write_text(_json.dumps(_rh), encoding="utf-8")
+            except Exception: pass
+        if len(_rh) < 3:
+            _mr_mult = 0.7                              # 히스토리 부족 → 중립
+        STATE["mr_regime_multiplier"] = _mr_mult
+
+        _BASING = ("PULLBACK", "NEUTRAL", "CONSOLIDATION", "RECOVERY")
+        _BEAR = ("DOWNTREND", "WEAKENING", "FADING", "EXHAUSTING", "CYCLE_PEAK", "COUNTER_RALLY")
+        try:
+            _ret5_p10 = float(df["ret_5d"].astype(float).quantile(0.10))
+        except Exception:
+            _ret5_p10 = -1e9
+
+        def _mr_eligible(row):
+            mr = row.get("mr_score")
+            try:
+                mr_v = float(mr)
+            except (TypeError, ValueError):
+                return False
+            if mr_v != mr_v:                            # NaN
+                return False
+            # 기준 60 (raw). 강추세 regime(mult<0.7)에서만 임계 상향 — tier를 줄이되 전멸 방지.
+            # mult 0.7+→60 · 0.3→76 (multiplier를 분모로 쓰면 과도하게 엄격해지는 문제 회피)
+            _eff_thr = 60.0 if _mr_mult >= 0.7 else 60.0 + (0.7 - _mr_mult) * 40.0
+            if mr_v < _eff_thr:                          # regime-tightened score floor
+                return False
+            cls = str(row.get("classification", ""))
+            if any(b in cls for b in _BEAR):            # structural-bear veto (substring, emoji-safe)
+                return False
+            if not any(b in cls for b in _BASING):      # target = basing cells only
+                return False
+            try:
+                if float(row.get("mr_stab")) < 50.0:    # stabilization floor (anti-knife)
+                    return False
+            except (TypeError, ValueError):
+                return False
+            # fresh-break 하드게이트: 오늘 급락(ret_5d 하위 10%) + 하락 drift 지속
+            try:
+                r5 = float(row.get("ret_5d")); gd = float(row.get("gap_drift_30d"))
+                if r5 <= _ret5_p10 and gd > 3.0:
+                    return False
+            except (TypeError, ValueError):
+                pass
+            # quality floor (Stock만; ETF는 분산되어 single-name 붕괴 없음 → 통과)
+            if str(row.get("asset_type")) != "ETF":
+                try:
+                    if float(row.get("qvr_score")) < 45.0:
+                        return False
+                except (TypeError, ValueError):
+                    return False
+            if bool(row.get("eligible")):               # 모멘텀 게이트와 상호배타
+                return False
+            return True
+
+        df["mean_reversion_eligible"] = df.apply(_mr_eligible, axis=1)
+
+        def _tier_v3(row):
+            if bool(row.get("eligible")):
+                return "EligibleMomentum"
+            if bool(row.get("mean_reversion_eligible")):
+                return "OversoldReversion"
+            return "Neither"
+        df["eligibility_tier_v3"] = df.apply(_tier_v3, axis=1)
+        try:
+            _n_mr = int(df["mean_reversion_eligible"].sum())
+            print(f"[mean-reversion] tier · OversoldReversion={_n_mr} · regime_mult={_mr_mult} "
+                  f"(disp={_disp:.1f} onesided={_onesided:.1f})")
+        except Exception:
+            pass
+
         # Also inject into STATE["results"] for downstream consumers (Pre-Mom agent etc.)
         score_map: Dict[str, Dict] = {}
         for _, row in df.iterrows():
@@ -1175,6 +1538,11 @@ def _compute_provisional_eligibility(df, results, graph, history, ve_obs) -> Non
                     "pm_conviction": row.get("pm_conviction"),
                     "provisional_eligible": bool(row.get("provisional_eligible")),
                     "eligibility_tier": row.get("eligibility_tier"),
+                    # Mean Reversion tier
+                    "mr_score": row.get("mr_score"),
+                    "mr_half_life_days": row.get("mr_half_life_days"),
+                    "mean_reversion_eligible": bool(row.get("mean_reversion_eligible")),
+                    "eligibility_tier_v3": row.get("eligibility_tier_v3"),
                 }
         for r in results:
             if isinstance(r, dict):
@@ -1287,6 +1655,174 @@ def _compute_sector_segmented_picks(df, top_per_sector: int = 3, min_composite: 
               f"Neither={tier_counts.get('Neither', 0)}")
     except Exception:
         pass
+
+
+# ══════════════════════════════════════════════════════════════════════════
+#  Pre-Breakout Base 티어 (①②) — '상승추세 속 VCP 베이스 → 돌파 대기' 관찰 티어
+#
+#  근거: classify()는 MGV류를 CONSOLIDATION으로 *정확히* 라벨링하지만(단기 FLAT +
+#  장기 UP), Eligibility Gate가 CONSOLIDATION을 통째로 탈락시켜 '상승추세 속 건강한
+#  베이스(고가치 pre-breakout)'와 '무추세 횡보(노이즈)'를 구분하지 못한다. 이 둘을
+#  가르는 정보(장기 MA 상승 + SEPA Stage2 강도 + VCP 수축)는 이미 계산돼 있으므로,
+#  매수 확정과 별개의 '관찰(watch) 티어'로 회수한다. 어느 모듈도 override하지 않으며,
+#  돌파 시 다음 스캔에서 classify()가 스스로 CONTINUATION/FORMATION으로 승격시킨다.
+# ══════════════════════════════════════════════════════════════════════════
+_PBB_ENABLE = True
+_PBB_MINERVINI_MIN = 60.0        # SEPA(minervini_long) Stage-2 강도 하한
+_PBB_VCR_MAX = 0.85              # VCP 수축 판정 (vcr < this = 수축 중)
+_PBB_NEAR_HIGH_MAX = -20.0       # 52주 고점 20% 이내 (pct_from_high ≥ this)
+_PBB_BREAKOUT_VOL = 1.4          # ② 돌파 확인 거래량 배수(vol_ratio ≥)
+_PBB_MIN_ADV = 5_000_000.0       # 유동성 플로어 $5M (Eligibility Gate와 동일)
+_PBB_BASE_CLS = ("CONSOLIDATION", "NEUTRAL", "PULLBACK")  # 단기 FLAT/눌림(상승추세 소화)
+# VCP/SEPA 베이스는 주식(성장주) 개념 — 저변동 채권·통화·크립토·멀티에셋은 타이트니스
+# 게이트를 trivially 통과해 리스트를 오염시키므로 비주식 섹터 제외.
+_PBB_EXCLUDE_SECTORS = {"Fixed Income", "Macro", "Multi-Asset", "Alternatives"}
+
+
+def _compute_pre_breakout_base(df, results) -> None:
+    """상승추세 속에서 VCP로 수축하며 돌파를 기다리는 종목을, 매수 확정과 별개의
+    관찰 티어로 surface + 돌파 시 매수 후보로 승격 표시.
+
+    부착 컬럼:
+      pre_breakout_base  : bool
+      pre_breakout_state : 'BASE_WATCH'(돌파 대기·관망) / 'BREAKOUT_CONFIRMED'(②거래량 동반 돌파→승격)
+      pre_breakout_score : 0-100 베이스 품질 (SEPA강도·VCP타이트·고점근접·RS)
+    """
+    if df is None or not _PBB_ENABLE:
+        return
+    import numpy as _np
+
+    def _f(v, d=None):
+        try:
+            x = float(v)
+            return x if _np.isfinite(x) else d
+        except (TypeError, ValueError):
+            return d
+
+    states, scores = {}, {}
+    for _, row in df.iterrows():
+        tk = row.get("ticker")
+        if not tk or bool(row.get("eligible")):
+            continue   # 이미 적격이면 베이스 관찰 대상 아님
+        if str(row.get("sector") or "") in _PBB_EXCLUDE_SECTORS:
+            continue   # 채권/통화/크립토/멀티에셋 — 주식 VCP 베이스 개념 아님
+        cls = str(row.get("classification") or "")
+        if not any(c in cls for c in _PBB_BASE_CLS):
+            continue
+        above200 = row.get("above_sma200")
+        s200 = _f(row.get("sma200_slope"))
+        mlong = _f(row.get("minervini_long"))
+        vcr = _f(row.get("vcr"))
+        adv = _f(row.get("adv_usd"), 0.0)
+        pfh = _f(row.get("pct_from_high"))
+        rss = _f(row.get("rss"), 50.0)
+        # ── 게이트: 상승추세(200일선 위+상승) + SEPA Stage2 강도 + 유동성 + 고점 근접 ──
+        if not (above200 == 1):
+            continue
+        if s200 is None or s200 <= 0:
+            continue
+        if mlong is None or mlong < _PBB_MINERVINI_MIN:
+            continue
+        if adv is not None and adv < _PBB_MIN_ADV:
+            continue
+        if pfh is not None and pfh < _PBB_NEAR_HIGH_MAX:
+            continue
+        # VCP 수축(값 있으면 요구; 구캐시로 없으면 통과)
+        if vcr is not None and vcr >= _PBB_VCR_MAX:
+            continue
+        # ── 베이스 품질 점수 ──
+        tightness = 0.0 if vcr is None else max(0.0, min(100.0, (0.90 - vcr) / 0.50 * 100))
+        proximity = 0.0 if pfh is None else max(0.0, min(100.0, 100.0 + pfh * 3.0))
+        pbb = 0.40 * min(mlong, 100.0) + 0.25 * tightness + 0.20 * proximity + 0.15 * min(rss, 100.0)
+        # ── ② 돌파 확인 (거래량 동반 피벗 돌파) ──
+        bo = (row.get("breakout_20d") == 1) or (row.get("breakout_10d") == 1)
+        vr = _f(row.get("vol_ratio"), 1.0)
+        confirmed = bool(bo and vr is not None and vr >= _PBB_BREAKOUT_VOL)
+        states[tk] = "BREAKOUT_CONFIRMED" if confirmed else "BASE_WATCH"
+        scores[tk] = round(pbb, 1)
+
+    df["pre_breakout_base"] = df["ticker"].apply(lambda t: t in states)
+    df["pre_breakout_state"] = df["ticker"].apply(lambda t: states.get(t))
+    df["pre_breakout_score"] = df["ticker"].apply(lambda t: scores.get(t))
+    for r in results or []:
+        t = r.get("ticker")
+        if t in states:
+            r["pre_breakout_base"] = True
+            r["pre_breakout_state"] = states[t]
+            r["pre_breakout_score"] = scores[t]
+    try:
+        from collections import Counter as _C
+        c = _C(states.values())
+        print(f"[pre-breakout-base] {len(states)} tickers · "
+              f"BASE_WATCH={c.get('BASE_WATCH', 0)} · BREAKOUT_CONFIRMED={c.get('BREAKOUT_CONFIRMED', 0)}")
+    except Exception:
+        pass
+
+
+def _compute_herding_reversal_layer(df, results) -> None:
+    """Momentum-overheating → Reversal (paper 2607.27063 operationalized).
+
+    Attaches per-ticker hrr_flag/hrr_score/hrr_reasons/hrr_cross_confirmed and stores
+    market CCK-herding + sector CSAD state in STATE['herding_regime']. Validated as a
+    RARE high-conviction conjunction (crowded+cracking underperforms crowded+holding by
+    −5..−7%p at 21-42d) → used as a give-back amplifier + buy-list TIE-BREAKER only.
+    Display-first; never a hard exclusion. Non-fatal on any failure.
+    """
+    try:
+        from herding_reversal import compute_herding_reversal
+    except Exception as e:
+        print(f"[herding-reversal] import failed (non-fatal): {e}")
+        return
+    # optional options put-crowding cross-confirm from the 6h options-greeks cache
+    of = None
+    try:
+        _op = ".options_greeks_cache.json"
+        if os.path.exists(_op):
+            with open(_op) as f:
+                of = json.load(f)
+    except Exception:
+        of = None
+    try:
+        out = compute_herding_reversal(results, options_flow=of)
+    except Exception as e:
+        print(f"[herding-reversal] compute failed (non-fatal): {e}")
+        return
+    per = out.get("per_ticker", {})
+    STATE["herding_regime"] = {"market": out.get("market", {}),
+                               "sectors": out.get("sectors", []),
+                               "meta": out.get("meta", {})}
+    cols = ("hrr_flag", "hrr_score", "hrr_runup", "hrr_runup_pct", "hrr_rsi",
+            "hrr_ret10", "hrr_ret10_pct", "hrr_reasons", "hrr_cross_confirmed")
+    for c in cols:
+        if c not in df.columns:
+            df[c] = None
+    tmap = {}
+    for t, d in per.items():
+        tmap[t] = d
+    for c in cols:
+        df[c] = df["ticker"].map(lambda t: (tmap.get(t) or {}).get(c))
+    for r in results:
+        d = per.get(r.get("ticker"))
+        if d:
+            for c in cols:
+                r[c] = d.get(c)
+    # Lightweight cache for final_list.py (reads .scan_cache.pkl directly, lacks post-load
+    # enrichments) → enriches its scan_lookup for the buy tie-breaker + labels without
+    # recomputing the price-cache herding per request. Atomic write.
+    try:
+        slim = {t: {k: d.get(k) for k in ("hrr_flag", "hrr_score", "hrr_reasons",
+                                          "hrr_cross_confirmed")}
+                for t, d in per.items() if d.get("hrr_flag")}
+        _tmp = ".herding_reversal_cache.json.tmp"
+        with open(_tmp, "w") as _f:
+            json.dump(slim, _f)
+        os.replace(_tmp, ".herding_reversal_cache.json")
+    except Exception:
+        pass
+    m = out.get("meta", {})
+    print(f"[herding-reversal] as_of={m.get('as_of')} n={m.get('n_tickers')} · "
+          f"REVERSAL={m.get('n_reversal')} WATCH={m.get('n_watch')} "
+          f"HOLDING={m.get('n_crowded_holding')} · market_herding={out.get('market',{}).get('market_herding')}")
 
 
 def _agreement_to_conviction(ratio) -> str:
@@ -1567,6 +2103,158 @@ def _filter_df(
 # ENDPOINTS
 # ═══════════════════════════════════════════════════════════════
 
+@app.get("/api/market-internals")
+def market_internals(force: bool = False):
+    """Market-internals lens: rotation ratio matrix + cross-asset confirmation + breadth +
+    composite regime label. Derived from headline index/ratio trends (yfinance, 1h TTL)."""
+    try:
+        from market_internals import compute_market_internals
+        return compute_market_internals(force=force)
+    except Exception as e:
+        return {"error": str(e)[:200], "as_of": None}
+
+
+@app.get("/api/options-regime")
+def options_regime(force: bool = False):
+    """Options-market positioning regime (Tier 1) — VIX term structure + SKEW + VVIX +
+    put/call. The positioning dimension market_internals(가격)·macro_regime(경제)는 못 보는 것:
+    극단 쏠림(백워데이션/과밀헤지) + unwind 셋업(되돌림 시 초기 모멘텀) 플래그. yfinance,
+    1h 캐시. 인덱스레벨(Tier1) — 종목별 딜러감마(GEX)는 Tier2/3."""
+    try:
+        from options_regime import compute_options_regime
+        return compute_options_regime(force=force)
+    except Exception as e:
+        return {"error": str(e)[:200], "as_of": None, "signals": [], "regime": None}
+
+
+@app.get("/api/options-flow")
+def options_flow(force: bool = False):
+    """Options dealer-gamma (Tier2) + unwind→momentum detector (Tier3). Per-ticker GEX/
+    zero-gamma/skew/풋콜 for a curated US-liquid subset(지수/섹터ETF+매수리스트) + unwind
+    후보 랭킹(숏감마×과밀헤지×트리거 = 되돌림 시 초기모멘텀 셋업). yfinance EOD, 6h 캐시.
+    ★모델 근사(딜러포지셔닝 가정) — 방향성 참고, 절대값 신뢰 주의. 표시전용(선정 미급전)."""
+    try:
+        from options_greeks import compute_options_flow
+        return compute_options_flow(force=force)
+    except Exception as e:
+        return {"error": str(e)[:200], "tickers": [], "unwind_candidates": []}
+
+
+def _hrr_san(o):
+    """Recursive NaN/Inf → None so the payload is JSON-compliant (avoids 500s)."""
+    import math as _m
+    if isinstance(o, float):
+        return None if (_m.isnan(o) or _m.isinf(o)) else o
+    if isinstance(o, dict):
+        return {k: _hrr_san(v) for k, v in o.items()}
+    if isinstance(o, (list, tuple)):
+        return [_hrr_san(v) for v in o]
+    return o
+
+
+@app.get("/api/herding-regime")
+def herding_regime():
+    """Momentum-overheating → Reversal (paper 2607.27063). Market CCK herding test
+    (CSAD = a+b1|Rm|+b2·Rm²; b2<0 유의[Newey-West HAC] = herding) + per-sector CSAD 쏠림
+    (분산 압축 게이트 — 기계적 factor 이동 배제) +
+    검증된 반전위험 종목(과밀 run-up+RSI + herding 약화=단기 균열). Computed at cache load
+    from .backtest_price_cache.pkl (일 EOD). 표시 + give-back 증폭 + 매수 tie-breaker."""
+    hr = STATE.get("herding_regime") or {}
+    per = []
+    for r in STATE.get("results", []):
+        f = r.get("hrr_flag")
+        if f in ("REVERSAL_RISK", "WATCH", "CROWDED_HOLDING"):
+            per.append({
+                "ticker": r.get("ticker"), "category": r.get("category"),
+                "composite": r.get("composite"), "eligible": bool(r.get("eligible")),
+                "flag": f, "score": r.get("hrr_score"),
+                "runup": r.get("hrr_runup"), "runup_pct": r.get("hrr_runup_pct"),
+                "rsi": r.get("hrr_rsi"), "ret10": r.get("hrr_ret10"),
+                "ret10_pct": r.get("hrr_ret10_pct"),
+                "cross_confirmed": bool(r.get("hrr_cross_confirmed")),
+                "reasons": r.get("hrr_reasons") or [],
+            })
+    order = {"REVERSAL_RISK": 0, "WATCH": 1, "CROWDED_HOLDING": 2}
+    per.sort(key=lambda d: (order.get(d["flag"], 9), -(d.get("score") or 0)))
+    return _hrr_san({
+        "as_of": (hr.get("meta") or {}).get("as_of"),
+        "market": hr.get("market", {}),
+        "sectors": hr.get("sectors", []),
+        "tickers": per,
+        "meta": hr.get("meta", {}),
+    })
+
+
+@app.get("/api/macro-regime")
+def macro_regime(force: bool = False):
+    """Economic-cycle regime (FRED, monthly overlay) — orthogonal to the price-derived
+    market regime. Tier1: Growth×Inflation 4-quadrant (z-score composite). Tier2:
+    Markov-switching recession probability. Includes a macro-vs-market divergence flag
+    (STATE['regime'] = the cross-sectional market regime). Cached 6h."""
+    try:
+        from macro_regime import compute_macro_regime
+        return compute_macro_regime(market_regime=STATE.get("regime"), force=force)
+    except Exception as e:
+        return {"error": str(e)[:200], "as_of": None, "tier1": None, "tier2": None}
+
+
+@app.get("/api/macro-regime/orbit")
+def macro_regime_orbit(months: int = 54, force: bool = False):
+    """Per-indicator monthly rolling-z TIME SERIES for the 3D orbit viz (each FRED
+    indicator = a planet; angle=time, radius=z over the trailing window). Cached 12h."""
+    try:
+        from macro_regime import compute_orbit_history
+        return compute_orbit_history(months=months, force=force)
+    except Exception as e:
+        return {"error": str(e)[:200], "planets": [], "dates": []}
+
+
+@app.get("/api/universe-candidates")
+def get_universe_candidates():
+    """유니버스 확장 후보 — 2소스 융합(신흥 테마 편입 지연 해소, 자동 편입 아님):
+      ① etf_holdings: 추적 ETF top-10 중 유니버스 밖 종목 Σ(weight×max(0,parent_comp−50)) 랭킹
+      ② news: 스웜 뉴스 에이전트가 헤드라인에서 추출한 emerging_tickers (off-universe만)
+    두 소스 동시 검출 종목은 교차검증 신호로 강조(온보딩 시 60거래일 데이터 요건 별도 확인)."""
+    _src = STATE.get("universe_expansion_candidates") or \
+        {"generated_at": None, "n_off_universe": 0, "candidates": []}
+    # 리뷰 수정: shallow copy는 candidates 리스트/dict를 STATE와 공유 → in_news 주입이
+    # STATE 캐시를 오염시킴. candidates를 fresh dict로 복제(deep copy 대체).
+    base = {"generated_at": _src.get("generated_at"), "n_off_universe": _src.get("n_off_universe"),
+            "candidates": [dict(c) for c in (_src.get("candidates") or [])],
+            "off_universe_tickers": _src.get("off_universe_tickers") or {}}
+    # 유니버스 티커 집합 (off-universe 판정용)
+    try:
+        df = STATE.get("df")
+        univ = set(df["ticker"].tolist()) if df is not None else set()
+    except Exception:
+        univ = set()
+    # ② 뉴스 emerging_tickers (스웜 캐시)
+    news_cands = []
+    try:
+        import json as _json
+        with open(".market_leaders_swarm_cache.json") as _f:
+            _sw = _json.load(_f)
+        _emg = ((_sw.get("phase1") or {}).get("news_narrative_analyst") or {}).get("emerging_tickers") or []
+        # 교차검증은 top-60이 아닌 전체 off-universe 집합으로 (신흥주는 저비중이라 top-60 밖)
+        _etf_full = base.get("off_universe_tickers") or {}
+        for _e in _emg:
+            _tk = _e.get("ticker")
+            if _tk and _tk not in univ:   # off-universe만
+                _hit = _etf_full.get(_tk)
+                news_cands.append({**_e, "in_etf_holdings": bool(_hit),
+                                   "etf_parents": (_hit or {}).get("parents", [])})
+    except Exception:
+        pass
+    base["news_emerging"] = news_cands
+    # 교차검증: ETF 롤업 top-60 후보에 news 동시검출 플래그
+    _news_set = {c.get("ticker") for c in news_cands}
+    for c in base.get("candidates", []):
+        c["in_news"] = c.get("ticker") in _news_set
+    # off_universe_tickers는 내부 교차검증용 — 응답 페이로드에선 제거(크기 축소)
+    base.pop("off_universe_tickers", None)
+    return base
+
+
 @app.get("/api/meta")
 def meta():
     df = STATE.get("df")
@@ -1648,9 +2336,96 @@ _SCAN_STATUS = {
     "started_at": "",
     "last_line": "",
     "phase": "",
+    "pipeline": {},   # per-step results of the post-scan chain (swarm / backtest / final_list)
 }
-_SCAN_TIMEOUT_SEC = 3600  # 60 min — 770 tickers × 5y can take 30-40 min
+_SCAN_TIMEOUT_SEC = 10800  # 180 min — 819 tickers × 5y + Korean retry fallback + scoring/backtest/GraphRAG pipeline
 _SCAN_LOG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".scan.log")
+
+
+def _count_swarm_picks(cache: dict) -> int:
+    """Total picks across all horizons/buckets in a swarm cache payload."""
+    pm = (cache or {}).get("phase5_pm", {}) or {}
+    horizons = pm.get("horizons", {}) or {}
+    n = 0
+    for h in horizons.values():
+        if isinstance(h, dict):
+            for b in ("long_stocks", "long_etfs", "short_stocks", "short_etfs"):
+                n += len(h.get(b, []) or [])
+    return n
+
+
+def _run_post_scan_pipeline():
+    """After a successful live scan, chain: Swarm → Backtest → Final List.
+
+    Mirrors scripts/daily_pipeline.py steps 2a/2b/3 (WITHOUT PDF/commit/telegram),
+    but runs server-side inside the /api/scan background thread so the pipeline
+    completes even if the dashboard browser tab is closed. Results are recorded in
+    _SCAN_STATUS['pipeline']; _SWARM_STATUS is wired so the swarm progress panel
+    reflects live phase updates.
+
+    On swarm failure the buy list is still (re)built from the existing cache — the
+    same graceful-degradation contract daily_pipeline uses.
+    """
+    import time as _t
+    import subprocess as _sp
+    steps = _SCAN_STATUS.setdefault("pipeline", {})
+
+    # ── Step 2a: Market Leaders Swarm (LLM; the long step) ──
+    _SCAN_STATUS["phase"] = "Swarm"
+
+    def _swarm_cb(phase, agent, status):
+        _SCAN_STATUS["phase"] = f"Swarm:{phase}"
+        _SCAN_STATUS["last_line"] = f"[swarm] {phase} {agent}:{status}"[:200]
+        _SWARM_STATUS["phase"] = phase
+        _SWARM_STATUS["current"] = f"{agent}:{status}"
+        _SWARM_STATUS["events"].append(
+            {"t": _t.strftime("%H:%M:%S"), "phase": phase, "agent": agent, "status": status})
+        if len(_SWARM_STATUS["events"]) > 50:
+            _SWARM_STATUS["events"] = _SWARM_STATUS["events"][-50:]
+
+    try:
+        from agents.market_leaders_swarm import run_swarm
+        _SWARM_STATUS.update({
+            "running": True, "started_at": _t.strftime("%Y-%m-%dT%H:%M:%S"),
+            "finished_at": "", "phase": "phase1", "current": "starting",
+            "events": [], "last_error": "",
+        })
+        payload = run_swarm(progress_cb=_swarm_cb)
+        steps["swarm"] = {"ok": True, "n_picks": _count_swarm_picks(payload)}
+    except Exception as e:
+        steps["swarm"] = {"ok": False, "error": f"{type(e).__name__}: {str(e)[:200]}"}
+        _SWARM_STATUS["last_error"] = str(e)[:200]
+    finally:
+        _SWARM_STATUS["running"] = False
+        _SWARM_STATUS["finished_at"] = _t.strftime("%Y-%m-%dT%H:%M:%S")
+
+    # ── Step 2b: PM proxy backtest (feeds final-list cross-checks) ──
+    # NOTE: distinct phase name ("PM_Backtest") so the frontend doesn't confuse it
+    # with the in-scan Phase 7 backtest (which also reports phase "Backtest").
+    _SCAN_STATUS["phase"] = "PM_Backtest"
+    try:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        bt = _sp.run([sys.executable, "backtest/run.py"], cwd=script_dir,
+                     capture_output=True, text=True, timeout=900)
+        steps["backtest"] = ({"ok": True} if bt.returncode == 0
+                             else {"ok": False, "error": (bt.stderr or "")[-200:]})
+    except Exception as e:
+        steps["backtest"] = {"ok": False, "error": f"{type(e).__name__}: {str(e)[:200]}"}
+
+    # ── Step 3: Build Final List (fast — commentary is cache-only, no LLM) ──
+    _SCAN_STATUS["phase"] = "FinalList"
+    try:
+        from agents.final_list import build_final_lists
+        data = build_final_lists()
+        md = data.get("metadata", {}) or {}
+        steps["final_list"] = {
+            "ok": True,
+            "n_buy": len(data.get("buy_list", [])),
+            "n_sell": len(data.get("sell_list", [])),
+            "swarm_generated_at": md.get("swarm_generated_at", ""),
+        }
+    except Exception as e:
+        steps["final_list"] = {"ok": False, "error": f"{type(e).__name__}: {str(e)[:200]}"}
 
 
 @app.post("/api/scan")
@@ -1658,8 +2433,22 @@ def run_scan_api(
     lookback_years: int = 5,
     use_realtime: bool = True,
     include_stocks: bool = True,
+    fast: bool = True,
+    with_swarm: bool = True,
 ):
-    """Trigger a full live scan. Streams stdout to .scan.log for progress tracking."""
+    """Trigger a live scan. Streams stdout to .scan.log for progress tracking.
+
+    fast=True (default): skip SVE 24-eval backtest + Phase 7 weekly backtest +
+    GraphRAG + Factor Efficacy — these feed Validation/Backtest/Analysis tabs but
+    NOT the buy list. Cuts scan ~11min → ~4min. Set fast=false for a full scan
+    that refreshes those tabs too.
+
+    with_swarm=True (default): after the scan succeeds, chain the full buy-list
+    pipeline SERVER-SIDE — Market Leaders Swarm → PM proxy backtest → Final List —
+    so the 매수 Final List is produced without depending on the dashboard browser
+    tab staying open. `running` stays True and `phase` advances through
+    Swarm/Backtest/FinalList for the entire chain; per-step results land in the
+    `pipeline` field of /api/scan/status. Set with_swarm=false for a scan-only run."""
     import threading, subprocess
     from datetime import datetime as _dt
 
@@ -1672,6 +2461,7 @@ def run_scan_api(
         _SCAN_STATUS["started_at"] = _dt.now().isoformat()
         _SCAN_STATUS["last_line"] = "Starting..."
         _SCAN_STATUS["phase"] = "Init"
+        _SCAN_STATUS["pipeline"] = {}
         try:
             script_dir = os.path.dirname(os.path.abspath(__file__))
             cmd = [
@@ -1679,13 +2469,18 @@ def run_scan_api(
                 f"import sys; sys.path.insert(0, {repr(script_dir)}); "
                 f"from price_discovery import run_scan; "
                 f"run_scan(lookback_days={365 * lookback_years}, "
-                f"use_realtime={use_realtime}, include_stocks={include_stocks})"
+                f"use_realtime={use_realtime}, include_stocks={include_stocks}, fast={fast})"
             ]
             with open(_SCAN_LOG_PATH, "w") as logf:
                 proc = subprocess.Popen(
                     cmd, cwd=script_dir, stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT, text=True, bufsize=1,
                 )
+                # Watchdog — stdout이 출력 없이 hang해도 _SCAN_TIMEOUT_SEC 후 강제 kill.
+                # (아래 for-loop의 timeout 체크는 새 line이 와야만 실행되므로 silent hang 미차단)
+                _wd = threading.Timer(_SCAN_TIMEOUT_SEC, lambda: proc.poll() is None and proc.kill())
+                _wd.daemon = True
+                _wd.start()
                 start = _dt.now()
                 last_lines: list = []
                 for line in proc.stdout:
@@ -1702,9 +2497,10 @@ def run_scan_api(
                         #   Phase 1 → 2 → 3 → 4 → MASTER SUMMARY → Phase 7 → Phase 6 →
                         #   KEY INSIGHTS → Phase 8 → Cache saved
                         for kw, ph in [
-                            ("Downloading", "Downloading"),
+                            ("Batch-download", "Downloading"),  # matches "📡 Batch-downloading N ETFs/stocks"
                             ("Phase 1", "Indicators"),
                             ("Phase 2", "Ranking"),
+                            ("Validity Engine", "Validity"),    # SignalValidityEngine — "eval N/24"
                             ("Phase 3", "Validity"),
                             ("Phase 4", "Scoring"),
                             ("MASTER SUMMARY", "Summary"),     # intermediate, NOT final
@@ -1723,11 +2519,16 @@ def run_scan_api(
                         _SCAN_STATUS["last_error"] = f"Scan timed out ({_SCAN_TIMEOUT_SEC // 60} min)"
                         return
                 rc = proc.wait()
+                _wd.cancel()   # 정상 종료 — watchdog 해제
                 if rc != 0:
                     tail = "\n".join(last_lines[-10:])
                     _SCAN_STATUS["last_error"] = f"Exit {rc}. Tail:\n{tail}"
                 else:
                     _load_cache()
+                    # Chain the buy-list pipeline server-side (Swarm → Backtest →
+                    # Final List) so it completes regardless of the browser tab.
+                    if with_swarm:
+                        _run_post_scan_pipeline()
                     _SCAN_STATUS["phase"] = "Done"
         except Exception as e:
             _SCAN_STATUS["last_error"] = f"{type(e).__name__}: {e}"
@@ -1747,6 +2548,7 @@ def scan_status():
         "started_at": _SCAN_STATUS.get("started_at", ""),
         "last_line": _SCAN_STATUS.get("last_line", ""),
         "phase": _SCAN_STATUS.get("phase", ""),
+        "pipeline": _SCAN_STATUS.get("pipeline", {}),
     }
 
 
@@ -2127,10 +2929,21 @@ def table(
             # Sector-Segmented Price Discovery (New2)
             "sector_segmented_eligible", "sector_rank", "sector_pct_rank",
             "sector_top_n", "eligibility_tier_v2",
+            "mr_score", "mr_ou", "mr_idio", "mr_stab", "mr_lt", "mr_stretch",
+            "mr_half_life_days", "mean_reversion_eligible", "eligibility_tier_v3",
+            "range_pct", "pct_from_high",
             "composite", "tcs", "tfs", "oer", "rss",
             "tcs_short", "tcs_long", "tfs_short", "tfs_long", "rss_short", "rss_long",
+            "tfs_resid", "rss_within_sector", "rss_universe",
             "qvr_score", "qvr_q", "qvr_v", "qvr_r",
             "qvr_n_analysts", "qvr_bullish_chg_3m", "qvr_eps_beat_rate", "qvr_eps_surprise_avg",
+            # ETF constituent-QVR rollup (diagnostic; qvr_score overwritten only Phase 2+)
+            "qvr_etf_rollup", "qvr_etf_raw", "qvr_etf_cov", "qvr_etf_conf",
+            "qvr_etf_source", "qvr_etf_n",
+            # Entry Timing Score (진입 적시성) — 강도(composite)와 직교하는 타이밍 축
+            "entry_timing_score", "entry_timing_status", "et_chase", "et_accel", "et_fresh",
+            # Pre-Breakout Base 티어 (상승추세 속 VCP 베이스 → 돌파 대기/승격)
+            "pre_breakout_base", "pre_breakout_state", "pre_breakout_score",
             "classification", "eligible", "rejection",
             "rsi", "trend_age", "sma50_dist", "adv_M", "mktcap_B",
             "oneil_long", "oneil_short",
@@ -2164,7 +2977,60 @@ def table(
         for r in records:
             r["mom_age"] = 0
 
+    # Honest null contract for the ETF-QVR rollup numerics: they are meaningful ONLY
+    # for rows with a real rollup (source==constituent_rollup_QC). For every other row
+    # (non-ETF, no-holdings, flat_neutral) the numeric columns were None → pandas NaN →
+    # _safe() would coerce to 0.0, which misreads as "worst-case QVR 0". Force them back
+    # to None so `qvr_etf_source` stays the sole discriminator and the JSON is honest.
+    _qvr_etf_nums = ("qvr_etf_rollup", "qvr_etf_raw", "qvr_etf_cov", "qvr_etf_conf", "qvr_etf_n")
+    for r in records:
+        # ETF '펀더멘털 검증 불가' 플래그 (QVR=50/저커버리지) — cov None化 전에 판정
+        _unv, _reason = _qvr_unverified(r)
+        r["qvr_unverified"] = _unv
+        r["qvr_unverified_reason"] = _reason if _unv else None
+        if r.get("qvr_etf_source") != "constituent_rollup_QC":
+            for k in _qvr_etf_nums:
+                if k in r:
+                    r[k] = None
+
     return _clean_dict({"data": records})
+
+
+@app.get("/api/mean-reversion")
+def mean_reversion():
+    """Oversold Reversion tier — names the momentum gate REJECTED that are
+    statistically oversold + stabilizing + quality-floored. OER의 거울상,
+    Composite와 완전 분리. Sorted by regime-adjusted mr_score desc."""
+    df = STATE.get("df")
+    if df is None or df.empty:
+        return {"candidates": [], "regime_multiplier": STATE.get("mr_regime_multiplier", 0.7),
+                "n": 0, "as_of": STATE.get("scan_time", "")}
+    if "mean_reversion_eligible" not in df.columns:
+        return {"candidates": [], "regime_multiplier": STATE.get("mr_regime_multiplier", 0.7),
+                "n": 0, "as_of": STATE.get("scan_time", ""),
+                "note": "다음 Run Live Scan 후 mr_score 계산됨"}
+    mult = STATE.get("mr_regime_multiplier", 0.7)
+    sub = df[df["mean_reversion_eligible"] == True].copy()  # noqa: E712
+    cols = ["ticker", "name", "category", "sector", "asset_type", "classification",
+            "mr_score", "mr_ou", "mr_idio", "mr_stab", "mr_lt", "mr_stretch",
+            "mr_half_life_days", "qvr_score", "composite", "oer", "rsi",
+            "range_pct", "pct_from_high", "sma20_dist", "sma50_dist",
+            "ret_5d", "ret_21d", "realized_vol",
+            "ret_1d", "ret_1w", "ret_1m", "ret_3m"]
+    cols = [c for c in cols if c in sub.columns]
+    recs = sub[cols].round(2).to_dict(orient="records")
+    for r in recs:
+        try:
+            r["mr_score_adj"] = round(float(r.get("mr_score", 0)) * mult, 1)
+        except Exception:
+            r["mr_score_adj"] = r.get("mr_score")
+    recs.sort(key=lambda x: -(x.get("mr_score_adj") or 0))
+    return _clean_dict({
+        "candidates": recs,
+        "n": len(recs),
+        "regime_multiplier": mult,
+        "as_of": STATE.get("scan_time", ""),
+    })
 
 
 @app.get("/api/universe")
@@ -3007,6 +3873,66 @@ def quant_strategies():
     return _clean_dict({"strategies": compute_all_strategies(results)})
 
 
+@app.get("/api/pre-breakout-base")
+def get_pre_breakout_base():
+    """Pre-Breakout Base 티어 (①②) — 상승추세 속 VCP로 수축하며 돌파를 기다리는 종목.
+
+    매수 확정 리스트와 별개의 '관찰(watch) 티어'. classify()가 CONSOLIDATION으로 정확히
+    라벨링하지만 Eligibility Gate가 탈락시키는 '건강한 베이스'를 회수한다.
+    state: BASE_WATCH(돌파 대기) / BREAKOUT_CONFIRMED(거래량 동반 돌파 → 매수 후보 승격).
+    pre_breakout_score(0-100, SEPA강도·VCP타이트·고점근접·RS) 내림차순 정렬.
+    """
+    df = STATE.get("df")
+    if df is None or "pre_breakout_base" not in getattr(df, "columns", []):
+        return {"candidates": [], "n_watch": 0, "n_confirmed": 0,
+                "as_of": STATE.get("scan_time", "")}
+
+    import math as _m
+    def _num(v):
+        try:
+            f = float(v)
+            return f if _m.isfinite(f) else None
+        except (TypeError, ValueError):
+            return None
+
+    _COLS = ["ticker", "name", "sector", "theme", "asset_type", "classification",
+             "composite", "minervini_long", "vcr", "rss", "rsi", "oer",
+             "pct_from_high", "range_pct", "sma200_slope", "above_sma200",
+             "breakout_20d", "breakout_10d", "vol_ratio", "adv_M",
+             "entry_timing_score", "entry_timing_status", "qvr_score",
+             "cyclical_tag", "style_tilt", "region",
+             "ret_1m", "ret_3m", "ret_21d", "ret_252d", "trend_age",
+             "pre_breakout_base", "pre_breakout_state", "pre_breakout_score"]
+    sub = df[df["pre_breakout_base"].fillna(False)]
+    out = []
+    for _, row in sub.iterrows():
+        d = {}
+        for c in _COLS:
+            if c in row:
+                v = row.get(c)
+                d[c] = _num(v) if isinstance(v, (int, float)) else v
+        out.append(d)
+    # BREAKOUT_CONFIRMED 우선 → pre_breakout_score 내림차순
+    out.sort(key=lambda r: (0 if r.get("pre_breakout_state") == "BREAKOUT_CONFIRMED" else 1,
+                            -(r.get("pre_breakout_score") or 0)))
+    n_conf = sum(1 for r in out if r.get("pre_breakout_state") == "BREAKOUT_CONFIRMED")
+    return _clean_dict({
+        "candidates": out,
+        "n_total": len(out),
+        "n_watch": len(out) - n_conf,
+        "n_confirmed": n_conf,
+        "as_of": STATE.get("scan_time", ""),
+        "methodology": {
+            "gate": f"NOT eligible · classification∈{{CONSOLIDATION,NEUTRAL,PULLBACK}} · "
+                    f"above SMA200 & SMA200 rising · minervini(SEPA)≥{int(_PBB_MINERVINI_MIN)} · "
+                    f"vcr<{_PBB_VCR_MAX}(VCP 수축) · 52주고점 {int(_PBB_NEAR_HIGH_MAX)}% 이내 · ADV≥$5M",
+            "promotion": f"BREAKOUT_CONFIRMED = breakout_20d/10d & vol_ratio≥{_PBB_BREAKOUT_VOL} "
+                         f"(거래량 동반 피벗 돌파) → 매수 후보 승격 (다음 스캔서 classify가 CONTINUATION 승격)",
+            "score": "0.40·SEPA강도 + 0.25·VCP타이트 + 0.20·고점근접 + 0.15·RS",
+        },
+    })
+
+
 @app.get("/api/pre-momentum")
 def pre_momentum():
     """Pre-Momentum Detection: multi-agent analysis of pre-breakout conditions."""
@@ -3026,6 +3952,9 @@ def pre_momentum():
         "history": STATE.get("history"),
         "ve_observations": STATE.get("ve_stats", {}).get("observations", []),
         "fundamentals": fund_cache,
+        # Same ETF-QVR override the provisional tier uses → the PM tab shows the SAME
+        # pre_momentum_score/agreement_ratio that gated the tier (no metric divergence).
+        "qvr_etf_override": _build_etf_qvr_override(),
     }
     output = run_pre_momentum(cache)
 
@@ -3244,8 +4173,12 @@ def ml_table(
             # Sector-Segmented Price Discovery (New2)
             "sector_segmented_eligible", "sector_rank", "sector_pct_rank",
             "sector_top_n", "eligibility_tier_v2",
+            "mr_score", "mr_ou", "mr_idio", "mr_stab", "mr_lt", "mr_stretch",
+            "mr_half_life_days", "mean_reversion_eligible", "eligibility_tier_v3",
+            "range_pct", "pct_from_high",
             "composite", "tcs", "tfs", "oer", "rss",
             "tcs_short", "tcs_long", "tfs_short", "tfs_long", "rss_short", "rss_long",
+            "tfs_resid", "rss_within_sector", "rss_universe",
             "qvr_score", "qvr_q", "qvr_v", "qvr_r",
             "classification", "eligible", "rejection",
             "rsi", "trend_age", "sma50_dist", "adv_M", "mktcap_B",
@@ -5196,7 +6129,12 @@ def post_market_leaders_swarm(force: bool = False):
     import time as _t
 
     if _SWARM_STATUS["running"]:
-        return {"status": "already_running", **_SWARM_STATUS}
+        if not force:
+            return {"status": "already_running", **_SWARM_STATUS}
+        # force=True: kill running claude subprocesses and reset state
+        import subprocess as _sp
+        _sp.run(["pkill", "-9", "-f", "claude -p"], capture_output=True)
+        _SWARM_STATUS.update({"running": False, "phase": "", "current": "", "events": [], "last_error": "", "finished_at": ""})
 
     try:
         from agents.market_leaders_swarm import (
@@ -5355,20 +6293,584 @@ def get_final_list():
                 r.setdefault("entry_primary", None)
                 r.setdefault("entry_conservative", None)
                 r.setdefault("entry_skip_reason", f"entry_price error: {str(ep_err)[:120]}")
-        # JSON-safe sanitization (drop NaN/Inf in stop_price/stop_pct across all rows)
+        # ─── Debate Commentary에 CAN SLIM + Elliott 기술 절 덧붙이기 ───
+        #     annotate_*가 붙인 entry_*/stop_* 구조화 필드만 읽는 결정론 함수 →
+        #     LLM 미사용(사실 창작 위험 0). 반드시 위 두 annotate 이후에 실행.
+        try:
+            from agents.final_list import enrich_debate_with_technicals
+            if all_annotatable:
+                enrich_debate_with_technicals(all_annotatable)
+        except Exception as _tc_err:
+            print(f"[final-list] technical commentary enrich failed (non-fatal): {_tc_err}")
+        # ─── ETF '펀더멘털 검증 불가' 플래그 (QVR 롤업 저커버리지/플랫) ───
+        #     buy row엔 qvr_etf_* 필드가 없으므로 STATE.df(스캔 로드본)에서 조회해 판정.
+        try:
+            _qdf = STATE.get("df")
+            if _qdf is not None:
+                _want = {r.get("ticker") for r in all_annotatable}
+                _qlu = {}
+                for _, _r in _qdf.iterrows():
+                    _t = _r.get("ticker")
+                    if _t in _want:
+                        _qlu[_t] = _r.to_dict()
+                for r in all_annotatable:
+                    _unv, _rsn = _qvr_unverified(_qlu.get(r.get("ticker")) or {})
+                    r["qvr_unverified"] = _unv
+                    r["qvr_unverified_reason"] = _rsn if _unv else None
+        except Exception as _qe:
+            print(f"[final-list] qvr_unverified flag failed (non-fatal): {_qe}")
+        # ─── Annotate with 목표매매횟수 (분할 매매 횟수) — DETERMINISTIC, inline, instant.
+        #     (Formula: volatility × conviction × urgency. No LLM → no hang.)
+        try:
+            from agents.trade_tranche_agent import refresh_all_tranches
+            refresh_all_tranches(result.get("buy_list") or [],
+                                 result.get("active_positions") or [],
+                                 result.get("exit_pending") or [])
+        except Exception as tr_err:
+            for r in all_annotatable:
+                r.setdefault("tranche_count", None)
+                r.setdefault("tranche_reasoning", f"tranche error: {str(tr_err)[:100]}")
+        # JSON-safe sanitization — NaN/Inf are not JSON-compliant and 500 the endpoint.
+        # 2026-07-29 fix: my pm_pre_score(=pre_momentum_score, NaN for confirmed picks)
+        # surfaced the crash. Sweep the ENTIRE result recursively, not just stop_*.
         import math as _math
-        for r in all_annotatable:
-            for k in ("stop_price", "stop_pct"):
-                v = r.get(k)
-                if v is not None:
-                    try:
-                        v = float(v)
-                        if not _math.isfinite(v): r[k] = None
-                    except (TypeError, ValueError):
-                        r[k] = None
-        return result
+
+        def _san(o):
+            if isinstance(o, float):
+                return o if _math.isfinite(o) else None
+            if isinstance(o, dict):
+                return {k: _san(v) for k, v in o.items()}
+            if isinstance(o, list):
+                return [_san(v) for v in o]
+            return o
+        return _san(result)
     except Exception as e:
         return {"error": str(e), "buy_list": [], "sell_list": [], "metadata": {}}
+
+
+# ── Shared CAN SLIM (William O'Neil) builders — used by BOTH the buy-Final-List ETF
+# panel (/api/final-list/elliott-waves) and the 25-ticker 시장 매매전략 panel
+# (/api/elliott-wave-indices). Single source of truth for the can_slim dict shape so
+# the shared frontend card renders both identically.
+def _cw_fnum(v):
+    """Finite-float coercion — None on missing/NaN/Inf/unparseable."""
+    if v is None:
+        return None
+    try:
+        f = float(v)
+        return f if math.isfinite(f) else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _can_slim_verdict(aggressive, primary, conservative):
+    """진입/보류 여부 — one unambiguous verdict, mirroring the Elliott phase_label read."""
+    if aggressive is not None:
+        return "ENTER_NOW", "즉시 진입 가능", "green"
+    if primary is not None:
+        status = primary.get("status")
+        if status in ("actionable", "buy_zone"):
+            return "ENTER_NOW", "즉시 진입 가능 (피벗 근접)", "green"
+        if status == "await_breakout":
+            return "WAIT_BREAKOUT", "관망 (돌파 대기)", "amber"
+        if status == "extended":
+            return "WAIT_EXTENDED", "관망 (과열 확장)", "red"
+        return "WAIT", "관망", "amber"
+    if conservative is not None:
+        return "CONSERVATIVE_ONLY", "보수적 진입만 유효 (SMA50)", "amber"
+    return "HOLD_NO_SIGNAL", "보류 (베이스 미탐지)", "gray"
+
+
+# ── 실행도구 관점 판정 (엘리엇·CAN SLIM·SEPA를 conviction 투표가 아니라 목적별 도구로) ─
+# ★ 재설계 근거: walk-forward 검증 결과 이 세 전략은 서로 중복(r≈0.85)이고, "동의=확신"
+#   가중은 성과를 오히려 깎았다. 따라서 '몇 개가 동의하나'로 확신을 매기지 않고, 각 도구를
+#   고유 목적으로만 쓴다 (매수 여부는 상류 Composite 랭커가 이미 결정):
+#     • CAN SLIM (O'Neil)      = 진입 실행 도구 (진입가 트리거 — 즉시/돌파대기/보수적)
+#     • Elliott Wave           = 손절·구조 도구 (스톱 레벨 + 보유 시 구조적 청산 리스크)
+#     • SEPA + Entry Timing    = 과열/스테이지 veto (추격 금지 · 명백한 실수 거르기)
+#   배지는 '실행 판정'이지 확신 점수가 아니다 → 사이징/랭킹에 쓰지 말 것.
+_ELL_PHASE_SHORT_KR = {
+    "IMPULSE_W1": "상승 1파", "IMPULSE_W2": "상승 2파 되돌림",
+    "IMPULSE_W3": "상승 3파", "IMPULSE_W4": "상승 4파 눌림목",
+    "IMPULSE_W5": "상승 5파 종반",
+    "CORRECTIVE_A": "조정 A파 하락", "CORRECTIVE_B": "조정 B파 반등",
+    "CORRECTIVE_C": "조정 C파 하락", "UNCLEAR": "파동 불명확",
+}
+_ELL_IMPULSE_ENTRY = {"IMPULSE_W1", "IMPULSE_W2", "IMPULSE_W3", "IMPULSE_W4"}
+_ELL_BEARISH = {"CORRECTIVE_A", "CORRECTIVE_B", "CORRECTIVE_C"}
+_ELL_LATE = {"IMPULSE_W5"}
+
+
+def _combined_action_verdict(idx):
+    """실행도구 관점 판정 — 각 전략을 목적별로만 사용(확신 투표 아님).
+
+    반환: {"action", "label", "color", "reason",
+           "roles": {"entry": CAN SLIM 진입판정, "stop": Elliott 손절, "caution": 과열체크}}
+    """
+    idx = idx or {}
+    category = idx.get("category") or "NEW"
+    is_held  = category in ("ENTERED", "HOLDING", "EXIT_PENDING")
+
+    # ── CAN SLIM = 진입 실행 도구 (1차 진입 트리거) ──
+    cs = idx.get("can_slim") or {}
+    cs_verdict = cs.get("verdict") or "HOLD_NO_SIGNAL"
+    entry_role = cs.get("verdict_label") or "베이스 미탐지"
+    # CAN SLIM이 유효 신호(베이스 탐지+판정)를 주는가 — 그러면 CAN SLIM이 진입 판단의 주인.
+    cs_has_signal = bool(cs.get("base_pattern")) or cs_verdict in (
+        "ENTER_NOW", "WAIT_BREAKOUT", "CONSERVATIVE_ONLY", "WAIT_EXTENDED")
+    # Elliott 임펄스 진입존은 CAN SLIM 베이스 미탐지 시에만 보조 진입 트리거로 사용.
+    ell_entry_dict = idx.get("entry") or {}
+    ell_fallback_entry = bool(ell_entry_dict.get("actionable")) and not cs_has_signal
+
+    # ── Elliott = 손절·구조 도구 ──
+    phase = idx.get("current_phase") or "UNCLEAR"
+    phase_kr = _ELL_PHASE_SHORT_KR.get(phase, "파동 불명확")
+    ell_bearish = phase in _ELL_BEARISH
+    ell_late    = phase in _ELL_LATE
+    stop = idx.get("stop") or {}
+    sp = _cw_fnum(stop.get("price")); spct = _cw_fnum(stop.get("pct"))
+    sym = stop.get("currency_symbol") or idx.get("currency_symbol") or "$"
+    if sp is not None and (stop.get("type") or "").upper() != "UNAVAILABLE":
+        stop_role = f"{phase_kr} 기준 {sym}{sp:,.2f}" + (f"({spct:+.1f}%)" if spct is not None else "")
+    else:
+        stop_role = None
+
+    # ── SEPA + Entry Timing = 과열/스테이지 veto ──
+    sepa = idx.get("sepa") or {}
+    sepa_stage  = sepa.get("stage") or ""
+    sepa_verdict = sepa.get("verdict")
+    sepa_stage4 = sepa_stage == "Stage 4"
+    et = idx.get("entry_timing_status")           # FRESH / NEUTRAL / EXTENDED
+    cs_extended = cs_verdict == "WAIT_EXTENDED"
+    veto_bits = []
+    if et == "EXTENDED":        veto_bits.append("Entry Timing EXTENDED(추격 주의)")
+    if cs_extended:             veto_bits.append("CAN SLIM 과열 확장")
+    if sepa_verdict == "AVOID": veto_bits.append(f"SEPA {sepa_stage or '부적합'}")
+    overheated = bool(veto_bits)
+    caution_role = (" · ".join(veto_bits) if overheated
+                    else ("추세 이탈(구조)" if (sepa_stage4 or ell_bearish) else f"SEPA {sepa_stage or '—'} 정상"))
+
+    roles = {"entry": entry_role, "stop": stop_role, "caution": caution_role}
+
+    # ── 전략별 시사점 (배지 산출과 무관하게, 각 전략이 이 종목에 대해 무엇을 뜻하는가) ──
+    if ell_bearish:
+        _ell_imp = "구조적 약세 국면 — 보유 시 손절·청산 신호"
+    elif ell_late:
+        _ell_imp = "상승 종반 — 신규 추격 부적합·이익실현 경계"
+    elif phase in _ELL_IMPULSE_ENTRY:
+        _ell_imp = "상승 추세 구조 유효 — 되돌림 진입존 참고"
+    else:
+        _ell_imp = "구조 근거 약함(카운트 불명확)"
+    elliott_note = f"엘리엇(손절·구조 도구): {phase_kr} — {_ell_imp}. 손절선 {stop_role or '미산출'}."
+
+    _cs_imp = {
+        "ENTER_NOW": "베이스 완성/피벗 근접 — 즉시 진입 트리거 발동",
+        "WAIT_BREAKOUT": "베이스 형성·피벗 돌파 대기 — 돌파 시 진입",
+        "CONSERVATIVE_ONLY": "공격적 진입가 소멸 — SMA50 되돌림만 보수적 진입",
+        "WAIT_EXTENDED": "베이스 대비 과열 확장 — 추격 금지",
+        "HOLD_NO_SIGNAL": "유효 베이스 미탐지 — 진입 근거 없음",
+    }.get(cs_verdict, "베이스 미탐지 — 진입 근거 없음")
+    canslim_note = f"CAN SLIM(진입 도구): {entry_role} — {_cs_imp}."
+
+    if sepa_stage4:
+        _sp_imp = "주요 이동평균 하회(하락 단계) — 추세 이탈 veto"
+    elif sepa_stage == "Stage 3":
+        _sp_imp = "천장권(분산 가능) — 신규 진입 주의"
+    elif sepa_stage == "Stage 2":
+        _tt = sepa.get("trend_template") or {}
+        _np, _nk = _tt.get("n_pass"), _tt.get("n_known")
+        _tt_txt = f" (Trend Template {_np}/{_nk})" if _np is not None else ""
+        _sp_imp = f"상승 추세{_tt_txt} — 과열 아님"
+    elif sepa_stage == "Stage 1":
+        _sp_imp = "베이스 단계 — 돌파 확인 필요"
+    else:
+        _sp_imp = "스테이지 판정 불가"
+    _et_txt = " · Entry Timing EXTENDED(추격 주의)" if et == "EXTENDED" else ""
+    sepa_note = (f"SEPA(스테이지·과열 veto): {sepa_stage or '—'}"
+                 f"{(' · ' + sepa_verdict) if sepa_verdict else ''} — {_sp_imp}{_et_txt}.")
+
+    def _out(action, label, color, reason, derivation):
+        return {"action": action, "label": label, "color": color, "reason": reason,
+                "roles": roles,
+                "commentary": {"elliott": elliott_note, "can_slim": canslim_note,
+                               "sepa": sepa_note, "derivation": derivation}}
+
+    # ═══ 실행 판정 (우선순위) ═══
+    # ① 청산·리스크 관리 (보유 종목만) — Elliott 손절 도구가 구조적 이탈을 알림
+    if category == "EXIT_PENDING":
+        return _out("EXIT", "청산·리스크 관리", "red",
+                    f"시스템 청산 후보 · 손절선 {stop_role or '—'} 기준 청산 점검",
+                    "배지 도출: 시스템이 청산 후보로 지정 → 엘리엇 손절 도구 기준 [청산·리스크 관리] (보유 종목 전용).")
+    if is_held and ell_bearish:
+        return _out("EXIT", "청산·리스크 관리", "red",
+                    f"보유 중 · 엘리엇 {phase_kr}(구조 이탈) — 손절선 {stop_role or '—'} 기준 리스크 관리",
+                    f"배지 도출: 보유 중 + 엘리엇 손절 도구가 {phase_kr}(구조 약세) 감지 → 최우선순위로 [청산·리스크 관리].")
+    if is_held and sepa_stage4:
+        return _out("EXIT", "청산·리스크 관리", "red",
+                    f"보유 중 · SEPA Stage 4(주요 이동평균 하회) — 손절선 {stop_role or '—'} 기준 청산 점검",
+                    "배지 도출: 보유 중 + SEPA Stage 4(추세 이탈) veto → [청산·리스크 관리].")
+
+    # ② 과열 veto — SEPA/Entry Timing이 명백한 실수(추격)를 거름 (보유 여부로 문구 분기)
+    if overheated:
+        if is_held and ell_late:
+            return _out("EXIT", "청산·리스크 관리", "amber",
+                        f"보유 중 · 엘리엇 {phase_kr} + 과열({' · '.join(veto_bits)}) — 이익실현/트림 점검, 손절 {stop_role or '—'}",
+                        f"배지 도출: 보유 중 + 엘리엇 {phase_kr}(종반) + 과열 veto({' · '.join(veto_bits)}) → 이익실현 관점 [청산·리스크 관리].")
+        if is_held:
+            return _out("HOLD", "보유 유지(추가 보류)", "amber",
+                        f"보유 중 · 과열({' · '.join(veto_bits)}) — 추가매수 보류, 손절선 {stop_role or '—'} 관리",
+                        f"배지 도출: 보유 중 + 과열 veto({' · '.join(veto_bits)}) → 신규 추가매수만 보류 [보유 유지].")
+        return _out("HOLD_OFF", "진입 보류(과열)", "amber",
+                    f"과열 veto: {' · '.join(veto_bits)} — 추격 금지, 눌림/재베이스 후 진입가 재확인",
+                    f"배지 도출: 과열 veto({' · '.join(veto_bits)})가 CAN SLIM 진입보다 우선 → 추격 금지 [진입 보류(과열)].")
+
+    # ③ 즉시 진입 실행 — CAN SLIM 진입 트리거 발동(또는 베이스 미탐지 시 Elliott 되돌림 진입존)
+    if cs_verdict == "ENTER_NOW" or ell_fallback_entry:
+        _e = (entry_role if cs_verdict == "ENTER_NOW"
+              else f"엘리엇 {phase_kr} 되돌림 진입존 (CAN SLIM 베이스 미탐지)")
+        _src = ("CAN SLIM 진입 트리거 발동" if cs_verdict == "ENTER_NOW"
+                else "CAN SLIM 베이스 미탐지 → 엘리엇 되돌림 진입존을 보조 트리거로 사용")
+        return _out("ENTER", "즉시 진입 실행", "green",
+                    f"진입: {_e} · 손절: {stop_role or '—'} · 과열: {caution_role}",
+                    f"배지 도출: {_src} + 엘리엇/SEPA 과열·이탈 veto 없음 → [즉시 진입 실행].")
+
+    # ④ 조건부 진입(트리거 대기) — 진입가는 정의됐으나 트리거 미발동
+    if cs_verdict in ("WAIT_BREAKOUT", "CONSERVATIVE_ONLY"):
+        trig = "피벗 돌파 시" if cs_verdict == "WAIT_BREAKOUT" else "SMA50 되돌림 시"
+        return _out("ARM", "조건부 진입(트리거 대기)", "blue",
+                    f"진입: {entry_role}({trig}) · 손절: {stop_role or '—'} · 과열: {caution_role}",
+                    f"배지 도출: CAN SLIM이 진입가는 정의했으나 트리거({trig}) 미발동 + veto 없음 → [조건부 진입(트리거 대기)].")
+
+    # ⑤ 관망(신호 대기) — 실행 가능한 진입 트리거 없음
+    return _out("WATCH", "관망(신호 대기)", "gray",
+                f"진입 트리거 미형성(CAN SLIM {entry_role}) · 손절 참고 {stop_role or '—'} · 과열: {caution_role}",
+                f"배지 도출: CAN SLIM 진입 트리거 미형성 + 과열·이탈 veto 없음 → 실행 가능한 트리거 부재로 [관망(신호 대기)].")
+
+
+_NO_DATA_CAN_SLIM = {
+    "tier": "NO_DATA",
+    "aggressive": None, "primary": None, "conservative": None,
+    "base_pattern": None, "base_quality": None,
+    "volume_confirmed": False, "volume_ratio": None,
+    "oneil_stop": None, "rr_ratio": None, "trigger": None,
+    "pyramid_layers": [],
+    "commentary": "CAN SLIM 데이터 없음",
+}
+
+
+def _build_can_slim_from_row(row):
+    """Build the full can_slim dict (incl. verdict + Korean commentary) from an annotated
+    row (entry_* keys from agents.entry_price.annotate_buy_list_with_entries). A missing
+    row / no-tier row → NO_DATA shape with HOLD_NO_SIGNAL verdict."""
+    from agents.entry_price import format_can_slim_commentary
+    if not row or not (row.get("entry_composite_tier") or row.get("entry_primary")
+                       or row.get("entry_conservative") or row.get("entry_base_pattern")):
+        cs = dict(_NO_DATA_CAN_SLIM)
+        v, vl, vc = _can_slim_verdict(None, None, None)
+        cs["verdict"], cs["verdict_label"], cs["verdict_color"] = v, vl, vc
+        return cs
+
+    aggressive = None
+    if _cw_fnum(row.get("entry_aggressive")) is not None:
+        aggressive = {"price": _cw_fnum(row.get("entry_aggressive")),
+                      "rationale": row.get("entry_aggressive_rationale")}
+    primary = None
+    if _cw_fnum(row.get("entry_primary")) is not None:
+        primary = {"price": _cw_fnum(row.get("entry_primary")),
+                   "rationale": row.get("entry_primary_rationale"),
+                   "status": row.get("entry_primary_status")}
+    conservative = None
+    if _cw_fnum(row.get("entry_conservative")) is not None:
+        conservative = {"price": _cw_fnum(row.get("entry_conservative")),
+                        "rationale": row.get("entry_conservative_rationale")}
+    try:
+        commentary = format_can_slim_commentary(row)
+    except Exception:
+        commentary = "CAN SLIM 데이터 없음"
+    verdict, verdict_label, verdict_color = _can_slim_verdict(aggressive, primary, conservative)
+    return {
+        "tier": row.get("entry_composite_tier") or "NO_DATA",
+        "verdict": verdict, "verdict_label": verdict_label, "verdict_color": verdict_color,
+        "aggressive": aggressive, "primary": primary, "conservative": conservative,
+        "base_pattern": row.get("entry_base_pattern"),
+        "base_quality": row.get("entry_base_quality"),
+        "volume_confirmed": bool(row.get("entry_volume_confirmed")),
+        "volume_ratio": _cw_fnum(row.get("entry_volume_ratio")),
+        "oneil_stop": _cw_fnum(row.get("entry_oneil_cut_loss")),
+        "rr_ratio": _cw_fnum(row.get("entry_rr_ratio")),
+        "trigger": row.get("entry_trigger"),
+        "pyramid_layers": row.get("entry_pyramid_layers") or [],
+        "commentary": commentary,
+    }
+
+
+@app.get("/api/elliott-wave-indices")
+def get_elliott_wave_indices(refresh: bool = False, period: str = "ytd"):
+    """Elliott-Wave count for 25 tickers in 3 groups: broad (ACWI/SPY/QQQ/IWM),
+    GICS 11 sectors (XLK..XLC), and curated long-leverage ETFs (TQQQ..KORU).
+
+    `period`: "ytd" (default, from Jan 1) or "1m" (trailing ~1 month) — see
+    agents/elliott_wave_indices.PERIOD_CONFIG. Invalid values fall back to "ytd".
+
+    Returns both a grouped "groups" list and a flat "indices" list (backward-compat).
+    Each index also gets a "can_slim" sub-object (William O'Neil CAN SLIM: base pattern,
+    3-tier entry, O'Neil stop, R/R, volume, commentary, verdict) computed with the
+    composite gate FLOORED to PRIMARY_AND_CONSERVATIVE so every index/sector/leveraged
+    ETF shows a technical read regardless of composite (the 즉시/aggressive tier stays
+    gated on the real composite ≥ 75). Same can_slim shape as /api/final-list/elliott-waves.
+    """
+    from agents.elliott_wave_indices import compute_index_waves
+    try:
+        out = compute_index_waves(refresh=refresh, period=period)
+    except Exception as e:
+        return {"error": str(e), "indices": []}
+
+    # ── Attach CAN SLIM per index (best-effort; never breaks the wave payload) ──
+    try:
+        from agents.entry_price import annotate_buy_list_with_entries
+        # scan_lookup (composite/classification) from the loaded DataFrame; ACWI etc.
+        # simply have no row → composite 0, which floor_tier lifts to compute a base read.
+        scan_lookup = {}
+        _df = STATE.get("df")
+        if _df is not None:
+            for _, r in _df.iterrows():
+                tk = r.get("ticker")
+                if tk:
+                    scan_lookup[tk] = {"composite": r.get("composite", 0),
+                                       "classification": r.get("classification", "")}
+        idxs = out.get("indices", []) or []
+        picks = [{"ticker": x.get("ticker"), "horizon": "core"} for x in idxs if x.get("ticker")]
+        annotate_buy_list_with_entries(
+            picks, scan_lookup=scan_lookup, use_cache=True,
+            rate_limit_delay=0, floor_tier="PRIMARY_AND_CONSERVATIVE")
+        by_ticker = {p.get("ticker"): p for p in picks}
+        for x in idxs:
+            x["can_slim"] = _build_can_slim_from_row(by_ticker.get(x.get("ticker")))
+        # groups[].indices may be the SAME dict objects (mutated above) or separate;
+        # sync by ticker to be safe so the frontend (reads groups) shows can_slim.
+        cs_by_ticker = {x.get("ticker"): x.get("can_slim") for x in idxs}
+        for g in out.get("groups", []) or []:
+            for gi in g.get("indices", []) or []:
+                if "can_slim" not in gi:
+                    gi["can_slim"] = cs_by_ticker.get(gi.get("ticker"))
+        # ── Minervini SEPA — full scan row 필요(minervini_long/sma slopes) → STATE.df에서 조회 ──
+        from agents.minervini_sepa import evaluate_sepa
+        _full_row_lu = {}
+        if _df is not None:
+            _want = {x.get("ticker") for x in idxs}
+            for _, _r in _df.iterrows():
+                _t = _r.get("ticker")
+                if _t in _want:
+                    _full_row_lu[_t] = _r.to_dict()
+        from agents.final_list import _trend_freshness as _tf_fn
+        for x in idxs:
+            _row = _full_row_lu.get(x.get("ticker")) or {}
+            x["sepa"] = evaluate_sepa(_row)
+            x["entry_timing_status"] = _row.get("entry_timing_status")
+            x["trend_age"] = _row.get("trend_age")
+            x["trend_freshness"] = _tf_fn(_row.get("trend_age"))
+        sepa_by_ticker = {x.get("ticker"): x.get("sepa") for x in idxs}
+        for g in out.get("groups", []) or []:
+            for gi in g.get("indices", []) or []:
+                if "sepa" not in gi:
+                    gi["sepa"] = sepa_by_ticker.get(gi.get("ticker"))
+        # 종합 액션 판정 — 시장 지수는 보유상태(category)가 없으니 진입/관망만 산출
+        for x in idxs:
+            x["action_verdict"] = _combined_action_verdict(x)
+        av_by_ticker = {x.get("ticker"): x.get("action_verdict") for x in idxs}
+        for g in out.get("groups", []) or []:
+            for gi in g.get("indices", []) or []:
+                if "action_verdict" not in gi:
+                    gi["action_verdict"] = av_by_ticker.get(gi.get("ticker"))
+    except Exception:
+        pass  # CAN SLIM augmentation is optional — wave payload stands on its own
+
+    return out
+
+
+@app.get("/api/final-list/elliott-waves")
+def get_final_list_etf_waves(refresh: bool = False, period: str = "ytd"):
+    """Elliott-Wave count for the CURRENT buy Final List — BOTH individual stocks AND
+    ETFs (all buy_list tickers, any bucket). Reads the final list LIVE each call (cache-only,
+    no LLM) so it always tracks the latest swarm / final-list refresh. Same per-index
+    contract shape as /api/elliott-wave-indices → the frontend IndexCard renders it
+    unchanged, PLUS a "can_slim" sub-object per index sourced from the buy_list row's
+    already-computed CAN SLIM entry/stop fields (agents/entry_price.py). Order == buy_list
+    order. Never 500 (returns indices:[] on any failure).
+
+    `period`: "ytd" (default) or "1m" (trailing ~1 month) — see
+    agents/elliott_wave_indices.PERIOD_CONFIG. Invalid values fall back to "ytd"."""
+    try:
+        from agents.final_list import build_final_lists, _trend_freshness
+        from agents.elliott_wave_indices import compute_waves_for_tickers
+        from agents.entry_price import format_can_slim_commentary, annotate_buy_list_with_entries
+        import math as _math
+
+        def _fnum(v):
+            if v is None:
+                return None
+            try:
+                f = float(v)
+                return f if _math.isfinite(f) else None
+            except (TypeError, ValueError):
+                return None
+
+        data = build_final_lists()   # cache-only, fast, no LLM
+        buy = data.get("buy_list", []) or []
+        # 매수 Final List 패널(FinalListPanel)과 동일 범위로 맞춘다: buy_list +
+        # active_positions(보유, non-short) + exit_pending(청산 후보) 병합. 이전엔 buy_list만
+        # 읽어 보유 ETF(예: FALN)가 매매전략 패널에서 누락돼 개수 불일치가 났다(9 vs 10).
+        # ticker 중복은 아래 dedupe에서 buy_list 우선으로 정리.
+        _active = [r for r in (data.get("active_positions") or [])
+                   if not str(r.get("bucket") or "").startswith("short")]
+        _exit = data.get("exit_pending") or []
+        all_rows = list(buy) + _active + _exit
+        # ALL Final-List tickers — stocks AND ETFs (bucket 기준 ETF 판정).
+        members_src = [(r.get("ticker"), r.get("name") or r.get("ticker"),
+                        "etf" in (str(r.get("bucket", "")).lower()))
+                       for r in all_rows]
+
+        # ── category — mirrors the frontend's buy_list/active_positions/exit_pending
+        # merge (FinalListPanel.tsx mergedItems): buy_list default NEW, active_positions
+        # (non-short bucket) overrides to ENTERED/HOLDING, exit_pending overrides to
+        # EXIT_PENDING (checked last, wins). Ticker→category built once, applied below.
+        category_by_ticker: dict = {}
+        for ap in (data.get("active_positions") or []):
+            t = ap.get("ticker")
+            if not t:
+                continue
+            bucket = str(ap.get("bucket") or "")
+            if bucket.startswith("short"):
+                continue
+            category_by_ticker[t] = "ENTERED" if ap.get("state") == "ENTERED" else "HOLDING"
+        for ep in (data.get("exit_pending") or []):
+            t = ep.get("ticker")
+            if t:
+                category_by_ticker[t] = "EXIT_PENDING"
+        # build_final_lists() does NOT itself run the CAN SLIM entry/stop annotation —
+        # that only happens inside the /api/scan handler, in-memory, per request. Re-run
+        # it here (cache-first via .entry_prices_cache.json — no network calls when the
+        # 24h TTL cache is fresh, so this is fast) for every buy_list row we need.
+        try:
+            member_tickers = {t for t, _, _ in members_src if t}
+            member_rows = [r for r in all_rows if r.get("ticker") in member_tickers]
+            if member_rows:
+                annotate_buy_list_with_entries(member_rows, use_cache=True)
+        except Exception:
+            pass
+        # de-dupe by ticker, preserve order; drop falsy tickers
+        seen = set(); members = []; n_etfs = 0; n_stocks = 0
+        asset_type_by_ticker: dict = {}
+        for t, n, is_etf in members_src:
+            if t and t not in seen:
+                seen.add(t); members.append((t, n))
+                asset_type_by_ticker[t] = "ETF" if is_etf else "Stock"
+                if is_etf:
+                    n_etfs += 1
+                else:
+                    n_stocks += 1
+        out = compute_waves_for_tickers(members, refresh=refresh, period=period)
+        out["n_etfs"] = n_etfs
+        out["n_stocks"] = n_stocks
+        out["n_tickers"] = len(members)
+
+        # ticker → first-occurrence row (buy_list 우선; 보유/청산 전용 종목은 그 행 사용)
+        buy_by_ticker = {}
+        for r in all_rows:
+            t = r.get("ticker")
+            if t and t not in buy_by_ticker:
+                buy_by_ticker[t] = r
+
+        # SEPA는 full scan row(minervini_long + sma slopes)가 필요 — buy_list row엔 없으므로
+        # STATE.df(스캔 로드본)에서 종목별 전체 행을 조회한다.
+        from agents.minervini_sepa import evaluate_sepa
+        _sepa_row_lu = {}
+        _dfx = STATE.get("df")
+        if _dfx is not None:
+            _want = {idx.get("ticker") for idx in (out.get("indices") or [])}
+            for _, _r in _dfx.iterrows():
+                _t = _r.get("ticker")
+                if _t in _want:
+                    _sepa_row_lu[_t] = _r.to_dict()
+        for idx in out.get("indices", []) or []:
+            _tk = idx.get("ticker")
+            idx["category"] = category_by_ticker.get(_tk, "NEW")
+            idx["can_slim"] = _build_can_slim_from_row(buy_by_ticker.get(_tk))
+            idx["sepa"] = evaluate_sepa(_sepa_row_lu.get(_tk))
+            # 과열 veto용 Entry Timing 상태 (scan row)
+            idx["entry_timing_status"] = (_sepa_row_lu.get(_tk) or {}).get("entry_timing_status")
+            # 추세 신선도 (trend_age → FRESH/MATURE) — 매수 리스트와 동일 로직
+            _ta = (_sepa_row_lu.get(_tk) or {}).get("trend_age")
+            idx["trend_age"] = _ta
+            idx["trend_freshness"] = _trend_freshness(_ta)
+            idx["asset_type"] = asset_type_by_ticker.get(_tk, "Stock")
+            # ETF '펀더멘털 검증 불가' 플래그 — asset_type을 위에서 넣은 idx로 판정하되
+            # qvr_etf_* 는 scan row에 있으므로 병합해서 넘긴다.
+            _qrow = dict(_sepa_row_lu.get(_tk) or {}); _qrow["asset_type"] = idx["asset_type"]
+            _unv, _rsn = _qvr_unverified(_qrow)
+            idx["qvr_unverified"] = _unv
+            idx["qvr_unverified_reason"] = _rsn if _unv else None
+            # 실행도구 관점 판정 (CAN SLIM=진입 · 엘리엇=손절 · SEPA/타이밍=과열 veto)
+            idx["action_verdict"] = _combined_action_verdict(idx)
+
+        return out
+    except Exception as e:
+        return {"error": str(e)[:200], "indices": [], "n_etfs": 0, "n_stocks": 0, "n_tickers": 0}
+
+
+@app.get("/api/portfolio")
+def get_portfolio():
+    """Portfolio Agent — 매수 Final List → 개별종목/ETF 포트폴리오 2개 (비중) +
+    YTD 누적성과 시계열 index (base=1). dual-handle 슬라이더는 프론트엔드에서
+    [start,end] 구간을 re-base 한다."""
+    try:
+        from agents.final_list import build_final_lists
+        from agents.portfolio_agent import build_portfolios, compute_cumulative
+        from pathlib import Path
+        import datetime as _dt
+
+        fl = build_final_lists()
+        # 매수 후보 = buy_list + active_positions(보유) (청산 후보 제외는 agent 내부 처리)
+        buy_items = list(fl.get("buy_list") or []) + list(fl.get("active_positions") or [])
+        # dedupe by ticker (buy 우선)
+        seen, dedup = set(), []
+        for it in buy_items:
+            tk = it.get("ticker")
+            if tk and tk not in seen:
+                seen.add(tk); dedup.append(it)
+
+        # QVR lookup (STATE['df'])
+        qvr_lookup = {}
+        df = STATE.get("df")
+        if df is not None and "qvr_score" in getattr(df, "columns", []):
+            for _, row in df.iterrows():
+                tk = row.get("ticker")
+                if tk:
+                    qvr_lookup[tk] = row.get("qvr_score")
+
+        pf = build_portfolios(dedup, qvr_lookup)
+
+        # 누적성과 = POINT-IN-TIME 주간 리밸런스 백테스트 (실제 캡처된 매수 Final List,
+        # look-ahead·프록시 없음). 이전의 정적-가중치 buy-and-hold YTD(look-ahead)를 대체.
+        # 실 캡처는 2026-07-03부터 → 데이터가 쌓이기 전엔 status="accumulating".
+        try:
+            from backtest.portfolio_pit import run_pit_backtest
+            perf = run_pit_backtest()
+        except Exception as _pe:
+            perf = {"dates": [], "stock_index": [], "etf_index": [], "benchmark_index": [],
+                    "rebalance_dates": [], "status": "error", "error": str(_pe)[:200]}
+
+        return _clean_dict({
+            "stocks": pf["stocks"],
+            "etfs": pf["etfs"],
+            "methodology": pf["methodology"],
+            "performance": perf,
+            "n_stocks": len(pf["stocks"]),
+            "n_etfs": len(pf["etfs"]),
+            "as_of": STATE.get("scan_time", ""),
+        })
+    except Exception as e:
+        return {"error": str(e), "stocks": [], "etfs": [], "performance": {"dates": []}}
 
 
 @app.post("/api/final-list/refresh-entries")
@@ -5424,6 +6926,21 @@ def refresh_elliott_stops():
         return {"ok": False, "error": str(e)[:300]}
 
 
+# ── 목표매매횟수 (분할 매매 횟수) — now DETERMINISTIC + inline in /api/final-list.
+#    These endpoints are kept as instant no-ops for frontend pipeline compatibility
+#    (tranche is computed every time the final-list is served — nothing to schedule).
+@app.post("/api/final-list/refresh-tranches")
+def refresh_tranches(background: bool = True):
+    """No-op: 목표매매횟수는 /api/final-list 응답 시 결정론적으로 즉시 계산됩니다."""
+    return {"ok": True, "status": "done", "note": "deterministic — computed inline on /api/final-list"}
+
+
+@app.get("/api/final-list/tranche-status")
+def get_tranche_status():
+    return {"running": False, "finished_at": None, "error": None,
+            "note": "deterministic — no background job"}
+
+
 @app.get("/api/validated-extra-timeline")
 def get_validated_extra_timeline():
     """Synthesize backtest-style records for ★★+ validated tickers MISSING from backtest data.
@@ -5444,9 +6961,7 @@ def get_validated_extra_timeline():
         # Load backtest results + price cache
         bt_path = Path("backtest/results.json")
         if not bt_path.exists():
-            return {"tactical": {"long_stocks": [], "long_etfs": []},
-                    "core":     {"long_stocks": [], "long_etfs": []},
-                    "strategic":{"long_stocks": [], "long_etfs": []}}
+            return {"core": {"long_stocks": [], "long_etfs": []}}
         bt = json.loads(bt_path.read_text(encoding="utf-8"))
         tlc = bt.get("trading_lifecycles_compact", {})
         core = tlc.get("core", {})
@@ -5473,9 +6988,7 @@ def get_validated_extra_timeline():
                 missing_etfs.append((t, name))
 
         if not missing_stocks and not missing_etfs:
-            return {"tactical": {"long_stocks": [], "long_etfs": []},
-                    "core":     {"long_stocks": [], "long_etfs": []},
-                    "strategic":{"long_stocks": [], "long_etfs": []}}
+            return {"core": {"long_stocks": [], "long_etfs": []}}
 
         # Load price cache
         cache_path = Path(".backtest_price_cache.pkl")
@@ -5484,7 +6997,7 @@ def get_validated_extra_timeline():
         cache = pickle.load(open(cache_path, "rb"))
         data = cache.get("data", {})
 
-        HORIZON_DAYS = {"tactical": 5, "core": 21, "strategic": 63}
+        HORIZON_DAYS = {"core": 21}
 
         def _compute(tickers_with_names: list[tuple[str,str]], horizon_days: int) -> list[dict]:
             recs = []
@@ -5532,13 +7045,11 @@ def get_validated_extra_timeline():
                 "long_stocks": _compute(missing_stocks, HORIZON_DAYS[h]),
                 "long_etfs":   _compute(missing_etfs,   HORIZON_DAYS[h]),
             }
-            for h in ("tactical", "core", "strategic")
+            for h in ("core",)
         }
     except Exception as e:
         return {"error": str(e),
-                "tactical": {"long_stocks": [], "long_etfs": []},
-                "core":     {"long_stocks": [], "long_etfs": []},
-                "strategic":{"long_stocks": [], "long_etfs": []}}
+                "core":     {"long_stocks": [], "long_etfs": []}}
 
 
 @app.get("/api/pm-history/list")
@@ -5620,10 +7131,24 @@ def get_swarm_result():
     try:
         from agents.market_leaders_swarm import load_cached, cache_fresh
         cached = load_cached() or {}
+        # JSON-safe: the raw swarm cache can carry NaN/Inf (e.g. pre_momentum_score of
+        # confirmed picks) which 500s FastAPI serialization → dashboard swarm panel blank.
+        # Recursively coerce NaN/Inf→None (2026-07-29 fix). Defense-in-depth even after
+        # the source fix in _stamp_pool_source.
+        import math as _math
+
+        def _san(o):
+            if isinstance(o, float):
+                return o if _math.isfinite(o) else None
+            if isinstance(o, dict):
+                return {k: _san(v) for k, v in o.items()}
+            if isinstance(o, list):
+                return [_san(v) for v in o]
+            return o
         return {
             "available": bool(cached),
             "fresh": cache_fresh(),
-            "result": cached,
+            "result": _san(cached),
         }
     except Exception as e:
         return {"available": False, "fresh": False, "error": str(e)}

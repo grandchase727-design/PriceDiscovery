@@ -1,26 +1,65 @@
 """
 qvr_agent.py — Quality-Value-Revision Agent (5th Pre-Momentum agent)
 
-Adds a fundamentals-based dimension to the existing 4-agent Pre-Momentum
-framework (Microstructure / Macro Regime / Graph Relational / Catalyst).
+Institutional-grade fundamental score. Adds a fundamentals dimension to the
+4-agent Pre-Momentum framework (Microstructure / Macro Regime / Graph / Catalyst),
+designed the way a drawdown-averse PM + credit committee weigh a company —
+a franchise-RISK / credit-quality overlay implemented with systematic
+multi-factor (AQR / MSCI-Barra) hygiene.
 
-Sub-signals (each 0-100, cross-sectional percentile rank within stock universe):
-  Q (Quality)   : gross_margin + operating_margin + ROE   → robustness/profitability
-  V (Value)     : 100 − pctile(forward_PE + PEG + P/B)   → cheapness (inverted)
-  R (Revision)  : net_30d EPS revision + ratio_30d        → leading earnings momentum
-                  + earnings_growth + bullish_ratio + price-target upside
+────────────────────────────────────────────────────────────────────────
+DESIGN (2026-06 institutional redesign — judge-panel synthesized)
 
-QVR combined  = 0.30·Q + 0.20·V + 0.50·R
-                (R weighted highest — revision is most leading per
-                 Chan-Jegadeesh-Lakonishok 1996)
+  QVR = 0.45·Q + 0.25·V + 0.30·R       (was 0.30/0.20/0.50)
 
-ETFs and stocks without fundamentals → returns neutral 50 (does not penalize).
+  Q — Quality (0.45, dominant: solvency + durable capital-efficient profit)
+    roic_capital_efficiency  0.22  ↑  roiTTM(≈ROIC, Greenblatt) → roa
+    gross_profitability       0.18  ↑  grossMarginTTM (Novy-Marx) → gross_margin
+    net_interest_coverage     0.16  ↑  netInterestCoverageTTM  (winsor[-5,50], US-only)
+    leverage_debt_to_equity   0.14  ↓  totalDebt/totalEquity → debt_to_equity/100
+    margin_persistence_5y     0.16  ↑  netProfitMargin5Y (FF RMW) → profit_margin
+    fcf_cash_conversion       0.14  ↑  DERIVED fcf/ocf (earnings quality)
 
-Source data: `.fundamentals_cache.pkl` (built by fundamentals_pipeline.py)
+  V — Value (0.25, EV-based to kill leverage-inflated value traps; ALL inverted ↓)
+    ev_ebitda                 0.34  ↓  evEbitdaTTM (Greenblatt) → DERIVED ev/fcf
+    ev_fcf                    0.26  ↓  currentEv/freeCashFlowTTM → DERIVED ev/fcf
+    ev_sales                  0.22  ↓  evRevenueTTM → price_to_sales
+    book_to_price             0.18  ↓  pbQuarterly → price_to_book
+
+  R — Revision (0.30, downside-asymmetric: cuts weighted 2× per CJL-1996)
+    revision_asymmetry        0.26  ↑  DERIVED (up_30d − 2·down_30d)/Σ → net_30d
+    net_eps_revisions_30d     0.18  ↑  net_30d → ratio_30d
+    analyst_rec_trend_3m      0.16  ↑  bullish_change_3m → bullish_ratio
+    downgrade_pressure        0.14  ↓  bearish_ratio
+    eps_beat_consistency      0.10  ↑  eps_beat_rate (US-only)
+    eps_surprise_magnitude    0.08  ↑  eps_surprise_avg (US-only)
+    target_upside             0.08  ↑  upside_pct (winsor[-150,150])
+
+MECHANICS
+  • Per-factor DIRECTION flag — lower_better → 100 − percentile (one code path).
+  • SECTOR-NEUTRAL percentile for Q+V (margins/leverage/multiples are
+    structurally sector-driven); n<8 sector → universe fallback. R stays universe-wide.
+  • KOREA (.KS) SEPARATE POOL — 0% Finnhub; ranked within a Korea pool so missing
+    Finnhub factors don't middle-bias against US (they DROP + renormalize).
+  • WINSORIZATION before sort (interest coverage [-5,50]; fcf conv [-0.5,1.5];
+    upside [-150,150]). Same clip applied at score time.
+  • SCALE normalization — yf debt_to_equity /100 (percent→ratio); Finnhub margins ×0.01.
+  • Missing sub-factor → drop + renormalize. Dimension <40% nominal weight present →
+    blend 50/50 with neutral 50. ETF / no-fundamentals → 50 neutral (no penalty).
+  • ORTHOGONALITY — every factor is balance-sheet / estimate / recommendation derived;
+    NO price-return inputs → preserves ~0 correlation to the price-momentum Composite.
+  • FINANCIALS SECTOR OVERRIDE — banks/insurers get a separate Q & V recipe
+    (ROE + ROA + 5Y book-value growth · P/B + P/E + dividend yield) because the
+    industrial factors (ROIC / FCF / interest-coverage / gross-margin / EV-multiples)
+    don't apply to deposit-funded balance sheets. R is shared. See FACTORS_FINANCIALS.
+
+Source data: `.fundamentals_cache.pkl` (fundamentals_pipeline.py + finnhub_fundamentals.py)
+Sector map:  `.unified_classification.json` (gics_sector per ticker)
 """
 
 from __future__ import annotations
 
+import json
 import os
 from typing import Dict, List, Optional, Tuple
 
@@ -31,6 +70,7 @@ except Exception:
     load_fundamentals_cache = None  # type: ignore
 
 CACHE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".fundamentals_cache.pkl")
+UNIFIED_CLASS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".unified_classification.json")
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -49,7 +89,6 @@ def _percentile_rank(value: Optional[float], sorted_values: List[float]) -> floa
     except (TypeError, ValueError):
         return 50.0
     n = len(sorted_values)
-    # Binary search position
     lo, hi = 0, n
     while lo < hi:
         mid = (lo + hi) // 2
@@ -67,12 +106,178 @@ def _avg(xs: List[float]) -> Optional[float]:
 
 
 # ──────────────────────────────────────────────────────────────────────
+# Factor specification (declarative)
+#   primary / fallback = (source, field, scale)
+#     source ∈ {fh, fhd, yf, rev, rec, pt, derived}
+#     scale  multiplies the raw value (e.g. 0.01 percent→decimal)
+#   dir    ∈ {higher, lower}      lower → score = 100 − percentile
+#   winsor = (lo, hi) clip applied at BOTH build & score time, or None
+#   pos    = True → non-positive values dropped (meaningless multiples / neg-equity)
+# ──────────────────────────────────────────────────────────────────────
+
+FACTORS: Dict[str, List[dict]] = {
+    "Q": [
+        {"name": "roic_capital_efficiency", "w": 0.22, "dir": "higher",
+         "primary": ("fh", "roiTTM", 0.01), "fallback": ("yf", "roa", 1.0)},
+        {"name": "gross_profitability", "w": 0.18, "dir": "higher",
+         "primary": ("fh", "grossMarginTTM", 0.01), "fallback": ("yf", "gross_margin", 1.0)},
+        {"name": "net_interest_coverage", "w": 0.16, "dir": "higher",
+         "primary": ("fh", "netInterestCoverageTTM", 1.0), "fallback": None,
+         "winsor": (-5.0, 50.0)},
+        {"name": "leverage_debt_to_equity", "w": 0.14, "dir": "lower", "pos": True,
+         "primary": ("fh", "totalDebt/totalEquityQuarterly", 1.0),
+         "fallback": ("yf", "debt_to_equity", 0.01)},
+        {"name": "margin_persistence_5y", "w": 0.16, "dir": "higher",
+         "primary": ("fh", "netProfitMargin5Y", 0.01), "fallback": ("yf", "profit_margin", 1.0)},
+        {"name": "fcf_cash_conversion", "w": 0.14, "dir": "higher",
+         "primary": ("derived", "fcf_conversion", 1.0), "fallback": None},
+    ],
+    "V": [
+        {"name": "ev_ebitda", "w": 0.34, "dir": "lower", "pos": True,
+         "primary": ("fh", "evEbitdaTTM", 1.0), "fallback": ("derived", "ev_fcf_yf", 1.0)},
+        {"name": "ev_fcf", "w": 0.26, "dir": "lower", "pos": True,
+         "primary": ("fh", "currentEv/freeCashFlowTTM", 1.0), "fallback": ("derived", "ev_fcf_yf", 1.0)},
+        {"name": "ev_sales", "w": 0.22, "dir": "lower", "pos": True,
+         "primary": ("fh", "evRevenueTTM", 1.0), "fallback": ("yf", "price_to_sales", 1.0)},
+        {"name": "book_to_price", "w": 0.18, "dir": "lower", "pos": True,
+         "primary": ("fh", "pbQuarterly", 1.0), "fallback": ("yf", "price_to_book", 1.0)},
+    ],
+    "R": [
+        {"name": "revision_asymmetry", "w": 0.26, "dir": "higher",
+         "primary": ("derived", "revision_asymmetry", 1.0), "fallback": ("rev", "net_30d", 1.0)},
+        {"name": "net_eps_revisions_30d", "w": 0.18, "dir": "higher",
+         "primary": ("rev", "net_30d", 1.0), "fallback": ("rev", "ratio_30d", 1.0)},
+        {"name": "analyst_rec_trend_3m", "w": 0.16, "dir": "higher",
+         "primary": ("fhd", "bullish_change_3m", 1.0), "fallback": ("rec", "bullish_ratio", 1.0)},
+        {"name": "downgrade_pressure", "w": 0.14, "dir": "lower",
+         "primary": ("rec", "bearish_ratio", 1.0), "fallback": None},
+        {"name": "eps_beat_consistency", "w": 0.10, "dir": "higher",
+         "primary": ("fhd", "eps_beat_rate", 1.0), "fallback": None},
+        {"name": "eps_surprise_magnitude", "w": 0.08, "dir": "higher",
+         "primary": ("fhd", "eps_surprise_avg", 1.0), "fallback": None},
+        {"name": "target_upside", "w": 0.08, "dir": "higher",
+         "primary": ("pt", "upside_pct", 1.0), "fallback": ("rec", "bullish_ratio", 1.0),
+         "winsor": (-150.0, 150.0)},
+    ],
+}
+
+# ── Financials sector override (Q & V only; R shared) ─────────────────
+# Industrial factors (ROIC / FCF / interest-coverage / gross-margin / EV-multiples)
+# misfire on banks/insurers: no clean COGS or FCF, leverage is the business model,
+# and EV doesn't apply to deposit-funded balance sheets. Bank/insurance analysts
+# score on ROE, ROA (DuPont leverage cross-check), book-value compounding, and
+# P/B + P/E + dividend — the metrics that actually exist in the cache.
+#
+# Lean & non-redundant by design (per adversarial review):
+#   • ROE only (NOT ROE+ROTE — rank-corr 0.90); P/B only (NOT P/B+P/TBV — corr 0.96
+#     + goodwill would double-count ROTE↑ vs P/TBV↓ from the same BVPS/TBVPS ratio).
+#   • margin_persistence dropped — it's a DuPont component of ROE (double-count).
+#   • No DERIVED fields → no engine change; avoids the P/TBV winsor-wrong-term bug.
+FACTORS_FINANCIALS: Dict[str, List[dict]] = {
+    "Q": [
+        {"name": "fin_roe", "w": 0.45, "dir": "higher",
+         "primary": ("fh", "roeTTM", 0.01), "fallback": ("yf", "roe", 1.0)},
+        {"name": "fin_roa", "w": 0.30, "dir": "higher",          # asset efficiency = leverage discipline
+         "primary": ("fh", "roaTTM", 0.01), "fallback": ("yf", "roa", 1.0)},
+        {"name": "fin_bv_growth_5y", "w": 0.25, "dir": "higher",  # franchise value compounding
+         "primary": ("fh", "bookValueShareGrowth5Y", 1.0), "fallback": None},
+    ],
+    "V": [
+        {"name": "fin_pb", "w": 0.45, "dir": "lower", "pos": True,   # P/B = PRIMARY bank multiple
+         "primary": ("fh", "pbQuarterly", 1.0), "fallback": ("yf", "price_to_book", 1.0),
+         "winsor": (0.2, 25.0)},                                     # clip corrupt near-zero/giant P/B
+        {"name": "fin_pe", "w": 0.35, "dir": "lower", "pos": True,   # earnings multiple (orthogonal lens)
+         "primary": ("fh", "peTTM", 1.0), "fallback": ("yf", "trailing_pe", 1.0),
+         "winsor": (2.0, 80.0)},
+        {"name": "fin_div_yield", "w": 0.20, "dir": "higher", "pos": True,  # capital return / yield
+         "primary": ("fh", "currentDividendYieldTTM", 1.0), "fallback": ("yf", "dividend_yield", 1.0)},
+    ],
+}
+
+FINANCIALS_SECTOR = "Financials"   # gics_sector value that triggers the override
+
+QVR_WEIGHTS = {"Q": 0.45, "V": 0.25, "R": 0.30}
+MIN_DIM_COVERAGE = 0.40   # <40% nominal weight present → blend 50/50 with neutral
+
+
+def _factors_for(sector: str, dim: str) -> List[dict]:
+    """Sector-conditional factor set. Financials get the bank/insurance Q & V
+    recipe; all other sectors use the industrial default. R is shared (sector-agnostic)."""
+    if dim in ("Q", "V") and sector == FINANCIALS_SECTOR:
+        return FACTORS_FINANCIALS[dim]
+    return FACTORS[dim]
+
+
+def _get_field(t: dict, source: str, field: str):
+    if source == "fh":  return (t.get("finnhub_metrics") or {}).get(field)
+    if source == "fhd": return (t.get("finnhub_derived") or {}).get(field)
+    if source == "yf":  return (t.get("info") or {}).get(field)
+    if source == "rev": return (t.get("revisions") or {}).get(field)
+    if source == "rec": return (t.get("recommendations") or {}).get(field)
+    if source == "pt":  return (t.get("price_targets") or {}).get(field)
+    return None
+
+
+def _derive(name: str, t: dict):
+    """Derived fundamental primitives (computed from cache fields)."""
+    info = t.get("info") or {}
+    rev = t.get("revisions") or {}
+    if name == "fcf_conversion":
+        fcf, ocf = info.get("free_cash_flow"), info.get("operating_cf")
+        if fcf is None or ocf in (None, 0):
+            return None
+        try:
+            v = float(fcf) / float(ocf)
+        except (TypeError, ValueError, ZeroDivisionError):
+            return None
+        return max(-0.5, min(1.5, v))               # clamp (earnings-quality bounds)
+    if name == "ev_fcf_yf":
+        ev, fcf = info.get("enterprise_value"), info.get("free_cash_flow")
+        try:
+            ev, fcf = float(ev), float(fcf)
+        except (TypeError, ValueError):
+            return None
+        if fcf <= 0:
+            return None                              # negative FCF → not a meaningful multiple
+        return ev / fcf
+    if name == "revision_asymmetry":
+        up, dn = rev.get("up_30d"), rev.get("down_30d")
+        if up is None and dn is None:
+            return None
+        up, dn = float(up or 0), float(dn or 0)
+        return (up - 2.0 * dn) / max(1.0, up + dn)  # LAMBDA=2.0 on cuts
+    return None
+
+
+def _factor_value(fac: dict, t: dict) -> Optional[float]:
+    """Resolve a factor's raw value (primary → fallback), with scale, winsor, pos-filter."""
+    for slot in ("primary", "fallback"):
+        spec = fac.get(slot)
+        if not spec:
+            continue
+        source, field, scale = spec
+        raw = _derive(field, t) if source == "derived" else _get_field(t, source, field)
+        if raw is None:
+            continue
+        try:
+            v = float(raw) * scale
+        except (TypeError, ValueError):
+            continue
+        if fac.get("pos") and v <= 0:
+            continue                                 # drop meaningless multiples / neg-equity
+        w = fac.get("winsor")
+        if w:
+            v = max(w[0], min(w[1], v))
+        return v
+    return None
+
+
+# ──────────────────────────────────────────────────────────────────────
 # QVR Agent
 # ──────────────────────────────────────────────────────────────────────
 
 class QVRAgent:
-    """
-    Quality-Value-Revision Agent.
+    """Quality-Value-Revision Agent (institutional multi-factor).
 
     Usage:
         cache = load_fundamentals_cache()
@@ -83,28 +288,12 @@ class QVRAgent:
     NAME = "qvr"
     LABEL = "QVR"
 
-    # Q/V/R sub-component weights (within each sub-signal)
-    Q_WEIGHTS = {"gross_margin": 0.40, "operating_margin": 0.30, "roe": 0.30}
-    V_WEIGHTS = {"forward_pe": 0.45, "peg": 0.30, "price_to_book": 0.25}
-    # R weights — Finnhub-derived signals (bullish_change_3m, eps_beat_rate,
-    # eps_surprise_avg) are added on top of yfinance signals when available.
-    # When Finnhub is missing, _weighted_avg falls back to whichever yfinance
-    # pieces exist.
-    R_WEIGHTS = {
-        # yfinance pieces
-        "net_30d": 0.20, "ratio_30d": 0.15, "earnings_growth": 0.10,
-        "bullish_ratio": 0.10, "upside_pct": 0.05,
-        # Finnhub-derived pieces (most leading signals)
-        "bullish_change_3m": 0.20, "eps_beat_rate": 0.10, "eps_surprise_avg": 0.10,
-    }
-
-    # Final QVR aggregation weights
-    QVR_WEIGHTS = {"Q": 0.30, "V": 0.20, "R": 0.50}
+    # Backward-compat: expose top-level weights (some callers read these)
+    QVR_WEIGHTS = QVR_WEIGHTS
 
     def __init__(self, indices: dict, fundamentals_cache: Optional[dict] = None):
         self.indices = indices
 
-        # Auto-load if not passed
         if fundamentals_cache is None and load_fundamentals_cache is not None:
             fundamentals_cache = load_fundamentals_cache(CACHE_PATH)
 
@@ -112,247 +301,215 @@ class QVRAgent:
         self.tickers: Dict[str, dict] = self.fund.get("tickers", {})
         self.has_cache: bool = bool(self.tickers)
 
-        # Pre-compute cross-sectional distributions (sorted ascending)
+        # Sector map (gics_sector per ticker) for sector-neutral ranking
+        self._sector: Dict[str, str] = self._load_sectors()
+
+        # Cross-sectional distributions: dist[factor_name][pool_key] = sorted ascending
         self._dist = self._build_distributions()
+
+    # ── Sector / region helpers ──
+
+    @staticmethod
+    def _load_sectors() -> Dict[str, str]:
+        try:
+            uc = json.load(open(UNIFIED_CLASS_PATH, encoding="utf-8"))
+            ut = uc.get("tickers", uc)
+            return {tk: (v.get("gics_sector") or "")
+                    for tk, v in ut.items() if isinstance(v, dict)}
+        except Exception:
+            return {}
+
+    @staticmethod
+    def _is_korea(ticker: str) -> bool:
+        t = (ticker or "").upper()
+        return t.endswith(".KS") or t.endswith(".KQ")
+
+    def _pool_of(self, ticker: str, dim: str) -> str:
+        """Percentile pool key. Korea → separate 'KS' pool (all dims).
+        Q/V → sector-neutral; R → universe-wide. US universe = 'US'."""
+        if self._is_korea(ticker):
+            return "KS"
+        if dim in ("Q", "V"):
+            sec = self._sector.get(ticker, "")
+            return f"S::{sec}" if sec else "US"
+        return "US"
 
     # ── Distribution builder ──
 
-    def _build_distributions(self) -> Dict[str, List[float]]:
-        """Sorted ascending distributions for each fundamental field over stocks.
+    def _build_distributions(self) -> Dict[str, Dict[str, List[float]]]:
+        """Per-(factor, pool) sorted distributions.
 
-        For Q (margin/ROE) we PREFER Finnhub when available since coverage and
-        accuracy are typically better; fall back to yfinance.
-        For Finnhub-only fields (bullish_change_3m, eps_beat_rate, eps_surprise_avg)
-        we build distributions only from tickers that have Finnhub data.
+        For each US stock a Q/V factor value lands in BOTH its sector pool
+        ('S::Sector') and the universe pool ('US') so n<8 sectors can fall back.
+        R factors land in 'US' only. Korea stocks land in 'KS' only.
+        Winsorization/scale/pos-filter applied by _factor_value before pooling.
         """
-        # Quality
-        gross, opm, roe = [], [], []
-        # Value
-        fpe, peg, pb = [], [], []
-        # Revision (yfinance)
-        net30, ratio30, egrowth, bullish, upside = [], [], [], [], []
-        # Revision (Finnhub-derived)
-        bull_change_3m: List[float] = []
-        eps_beat_rate: List[float] = []
-        eps_surprise_avg: List[float] = []
+        raw: Dict[str, Dict[str, List[float]]] = {}
+
+        def _push(fac_name: str, pool: str, val: float):
+            raw.setdefault(fac_name, {}).setdefault(pool, []).append(val)
 
         for tk, t in self.tickers.items():
             if t.get("asset_type") != "Stock" or not t.get("fetch_ok"):
                 continue
-            info = t.get("info") or {}
-            rev = t.get("revisions") or {}
-            rec = t.get("recommendations") or {}
-            pt = t.get("price_targets") or {}
-            # Finnhub blocks
-            fh_metrics = t.get("finnhub_metrics") or {}
-            fh_derived = t.get("finnhub_derived") or {}
+            is_kr = self._is_korea(tk)
+            sec = self._sector.get(tk, "")
+            for dim in ("Q", "V", "R"):
+                for fac in _factors_for(sec, dim):                 # sector-conditional set
+                    v = _factor_value(fac, t)
+                    if v is None:
+                        continue
+                    name = fac["name"]
+                    if is_kr:
+                        _push(name, "KS", v)
+                    else:
+                        _push(name, "US", v)                       # universe pool
+                        if dim in ("Q", "V") and sec:
+                            _push(name, f"S::{sec}", v)            # sector pool
 
-            def _maybe(lst, v, positive_only=False):
-                if v is None:
-                    return
-                try:
-                    fv = float(v)
-                except (TypeError, ValueError):
-                    return
-                if positive_only and fv <= 0:
-                    return
-                lst.append(fv)
-
-            # ── Quality: prefer Finnhub (returned as percent → convert to decimal) ──
-            fh_gross = fh_metrics.get("grossMarginTTM")
-            fh_opm = fh_metrics.get("operatingMarginTTM")
-            fh_roe = fh_metrics.get("roeTTM")
-            _maybe(gross, fh_gross / 100.0 if fh_gross is not None else info.get("gross_margin"))
-            _maybe(opm,   fh_opm   / 100.0 if fh_opm   is not None else info.get("operating_margin"))
-            _maybe(roe,   fh_roe   / 100.0 if fh_roe   is not None else info.get("roe"))
-
-            # ── Value: prefer Finnhub PE/PB (yfinance PEG fallback) ──
-            fh_pe = fh_metrics.get("peNormalizedAnnual") or fh_metrics.get("peTTM")
-            fh_pb = fh_metrics.get("pbAnnual") or fh_metrics.get("pbQuarterly")
-            _maybe(fpe, fh_pe if fh_pe is not None else info.get("forward_pe"), positive_only=True)
-            _maybe(peg, info.get("peg"), positive_only=True)
-            _maybe(pb,  fh_pb if fh_pb is not None else info.get("price_to_book"), positive_only=True)
-
-            # ── Revision (yfinance) ──
-            _maybe(net30, rev.get("net_30d"))
-            _maybe(ratio30, rev.get("ratio_30d"))
-            _maybe(egrowth, info.get("earnings_growth"))
-            _maybe(bullish, rec.get("bullish_ratio"))
-            _maybe(upside, pt.get("upside_pct"))
-
-            # ── Revision (Finnhub-derived) ──
-            _maybe(bull_change_3m, fh_derived.get("bullish_change_3m"))
-            _maybe(eps_beat_rate, fh_derived.get("eps_beat_rate"))
-            _maybe(eps_surprise_avg, fh_derived.get("eps_surprise_avg"))
-
-        return {
-            "gross_margin": sorted(gross),
-            "operating_margin": sorted(opm),
-            "roe": sorted(roe),
-            "forward_pe": sorted(fpe),
-            "peg": sorted(peg),
-            "price_to_book": sorted(pb),
-            "net_30d": sorted(net30),
-            "ratio_30d": sorted(ratio30),
-            "earnings_growth": sorted(egrowth),
-            "bullish_ratio": sorted(bullish),
-            "upside_pct": sorted(upside),
-            # Finnhub-derived
-            "bullish_change_3m": sorted(bull_change_3m),
-            "eps_beat_rate": sorted(eps_beat_rate),
-            "eps_surprise_avg": sorted(eps_surprise_avg),
-        }
+        # Sort every pool ascending
+        return {fn: {pk: sorted(vals) for pk, vals in pools.items()}
+                for fn, pools in raw.items()}
 
     # ── Scoring ──
+
+    def _factor_pct(self, fac: dict, dim: str, ticker: str, value: float) -> float:
+        """Percentile score (0-100) for a factor value, with sector→universe fallback
+        and direction inversion."""
+        pool = self._pool_of(ticker, dim)
+        dist_for = self._dist.get(fac["name"], {})
+        chosen = dist_for.get(pool)
+        if pool.startswith("S::") and (chosen is None or len(chosen) < 8):
+            chosen = dist_for.get("US")               # small-sector → universe fallback
+        pct = _percentile_rank(value, chosen or [])
+        if fac["dir"] == "lower":
+            pct = 100.0 - pct
+        return pct
+
+    def _dim_score(self, dim: str, ticker: str, t: dict,
+                   drill: Dict[str, float]) -> float:
+        """Weighted, renormalized, coverage-guarded dimension score."""
+        sector = self._sector.get(ticker, "")
+        facs = _factors_for(sector, dim)
+        present_w = 0.0
+        acc = 0.0
+        nominal_w = sum(f["w"] for f in facs)
+        for fac in facs:
+            v = _factor_value(fac, t)
+            if v is None:
+                continue
+            pct = self._factor_pct(fac, dim, ticker, v)
+            drill[fac["name"]] = round(pct, 1)
+            acc += pct * fac["w"]
+            present_w += fac["w"]
+        if present_w <= 0:
+            return 50.0                               # no data → neutral
+        score = acc / present_w                       # renormalize over present factors
+        if nominal_w > 0 and (present_w / nominal_w) < MIN_DIM_COVERAGE:
+            score = 0.5 * score + 0.5 * 50.0          # thin coverage → blend toward neutral
+        return score
 
     def score(self, r: dict) -> Tuple[float, Dict[str, float], str]:
         """Compute (qvr_score, signals_dict, summary_string) for a ticker."""
         tk = r.get("ticker", "")
         t = self.tickers.get(tk)
 
-        # No data → neutral signal (50). Won't penalize ETFs / missing fundamentals.
+        # No data → neutral (50). Won't penalize ETFs / missing fundamentals.
         if not t or not t.get("fetch_ok") or t.get("asset_type") != "Stock":
             return 50.0, {
                 "quality": 50.0, "value": 50.0, "revision": 50.0,
                 "net_30d": 0, "ratio_30d": 50, "n_analysts": 0,
             }, "No fundamentals (ETF or missing)"
 
+        drill: Dict[str, float] = {}
+        q_score = self._dim_score("Q", tk, t, drill)
+        v_score = self._dim_score("V", tk, t, drill)
+        r_score = self._dim_score("R", tk, t, drill)
+
+        qvr = (q_score * QVR_WEIGHTS["Q"]
+               + v_score * QVR_WEIGHTS["V"]
+               + r_score * QVR_WEIGHTS["R"])
+
+        # Raw drill-down values for display
         info = t.get("info") or {}
         rev = t.get("revisions") or {}
-        est = (t.get("estimates") or {}).get("0q", {}) or {}
         rec = t.get("recommendations") or {}
         pt = t.get("price_targets") or {}
-        # Finnhub blocks (may be empty)
-        fh_metrics = t.get("finnhub_metrics") or {}
         fh_derived = t.get("finnhub_derived") or {}
+        est = (t.get("estimates") or {}).get("0q", {}) or {}
 
-        # Helper: pick Finnhub value (converted from percent if needed) over yfinance
-        def _q_val(fh_field: str, yf_val, scale: float = 1.0):
-            fh = fh_metrics.get(fh_field)
-            if fh is not None:
-                return fh * scale
-            return yf_val
-
-        def _v_val(fh_field: str, yf_val):
-            fh = fh_metrics.get(fh_field)
-            if fh is not None:
-                return fh
-            return yf_val
-
-        # ── Q: Quality (Finnhub preferred — convert percent → decimal with /100) ──
-        q_pieces: List[Tuple[float, float]] = []
-        gm = _q_val("grossMarginTTM", info.get("gross_margin"), scale=0.01)
-        if gm is not None:
-            q_pieces.append((_percentile_rank(gm, self._dist["gross_margin"]),
-                             self.Q_WEIGHTS["gross_margin"]))
-        om = _q_val("operatingMarginTTM", info.get("operating_margin"), scale=0.01)
-        if om is not None:
-            q_pieces.append((_percentile_rank(om, self._dist["operating_margin"]),
-                             self.Q_WEIGHTS["operating_margin"]))
-        roe = _q_val("roeTTM", info.get("roe"), scale=0.01)
-        if roe is not None:
-            q_pieces.append((_percentile_rank(roe, self._dist["roe"]),
-                             self.Q_WEIGHTS["roe"]))
-        q_score = self._weighted_avg(q_pieces, default=50.0)
-
-        # ── V: Value (Finnhub preferred for PE/PB; yfinance for PEG) ──
-        v_pieces: List[Tuple[float, float]] = []
-        pe = _v_val("peNormalizedAnnual", info.get("forward_pe")) or fh_metrics.get("peTTM")
-        if pe is not None and pe > 0:
-            v_pieces.append((100.0 - _percentile_rank(pe, self._dist["forward_pe"]),
-                             self.V_WEIGHTS["forward_pe"]))
-        peg_v = info.get("peg")
-        if peg_v is not None and peg_v > 0:
-            v_pieces.append((100.0 - _percentile_rank(peg_v, self._dist["peg"]),
-                             self.V_WEIGHTS["peg"]))
-        pb = _v_val("pbAnnual", info.get("price_to_book")) or fh_metrics.get("pbQuarterly")
-        if pb is not None and pb > 0:
-            v_pieces.append((100.0 - _percentile_rank(pb, self._dist["price_to_book"]),
-                             self.V_WEIGHTS["price_to_book"]))
-        v_score = self._weighted_avg(v_pieces, default=50.0)
-
-        # ── R: Revision (most leading) ──
-        r_pieces: List[Tuple[float, float]] = []
-        # yfinance pieces
-        if rev.get("net_30d") is not None:
-            r_pieces.append((_percentile_rank(rev["net_30d"], self._dist["net_30d"]),
-                             self.R_WEIGHTS["net_30d"]))
-        if rev.get("ratio_30d") is not None:
-            r_pieces.append((_percentile_rank(rev["ratio_30d"], self._dist["ratio_30d"]),
-                             self.R_WEIGHTS["ratio_30d"]))
-        if info.get("earnings_growth") is not None:
-            r_pieces.append((_percentile_rank(info["earnings_growth"], self._dist["earnings_growth"]),
-                             self.R_WEIGHTS["earnings_growth"]))
-        if rec.get("bullish_ratio") is not None:
-            r_pieces.append((_percentile_rank(rec["bullish_ratio"], self._dist["bullish_ratio"]),
-                             self.R_WEIGHTS["bullish_ratio"]))
-        if pt.get("upside_pct") is not None:
-            r_pieces.append((_percentile_rank(pt["upside_pct"], self._dist["upside_pct"]),
-                             self.R_WEIGHTS["upside_pct"]))
-        # ── Finnhub-derived leading pieces ──
-        if fh_derived.get("bullish_change_3m") is not None:
-            r_pieces.append((_percentile_rank(fh_derived["bullish_change_3m"], self._dist["bullish_change_3m"]),
-                             self.R_WEIGHTS["bullish_change_3m"]))
-        if fh_derived.get("eps_beat_rate") is not None:
-            r_pieces.append((_percentile_rank(fh_derived["eps_beat_rate"], self._dist["eps_beat_rate"]),
-                             self.R_WEIGHTS["eps_beat_rate"]))
-        if fh_derived.get("eps_surprise_avg") is not None:
-            r_pieces.append((_percentile_rank(fh_derived["eps_surprise_avg"], self._dist["eps_surprise_avg"]),
-                             self.R_WEIGHTS["eps_surprise_avg"]))
-        r_score = self._weighted_avg(r_pieces, default=50.0)
-
-        # ── Combined QVR ──
-        qvr = (q_score * self.QVR_WEIGHTS["Q"]
-               + v_score * self.QVR_WEIGHTS["V"]
-               + r_score * self.QVR_WEIGHTS["R"])
-
-        # Signals dict (raw + percentile decomposition)
         net30 = int(rev.get("net_30d") or 0)
         ratio30_pct = round((rev.get("ratio_30d") or 0.5) * 100, 0)
-        # Prefer Finnhub analyst count when available (richer)
         n_analysts = int(fh_derived.get("rec_total_now") or est.get("n_analysts") or 0)
-        # Effective forward PE (Finnhub or yfinance)
-        eff_pe = pe if pe is not None else info.get("forward_pe")
+
+        sector = self._sector.get(tk, "")
+        is_fin = (sector == FINANCIALS_SECTOR)
+
+        def _rawval(fac_list, idx):
+            v = _factor_value(fac_list[idx], t)
+            return v
+
+        # Sector-aware raw drill-down (Financials show ROE/ROA/P/B; others ROIC/leverage/EV)
+        if is_fin:
+            _roe = _rawval(FACTORS_FINANCIALS["Q"], 0)
+            _roa = _rawval(FACTORS_FINANCIALS["Q"], 1)
+            _pb = _rawval(FACTORS_FINANCIALS["V"], 0)
+            raw_extra = {
+                "sector_model": "Financials",
+                "roe": round(_roe, 3) if _roe is not None else None,
+                "roa": round(_roa, 4) if _roa is not None else None,
+                "pb": round(_pb, 2) if _pb is not None else None,
+                "roic": None, "leverage_de": None, "ev_ebitda": None, "fcf_conversion": None,
+            }
+        else:
+            _roic = _rawval(FACTORS["Q"], 0)
+            _lev = _rawval(FACTORS["Q"], 3)
+            _evb = _rawval(FACTORS["V"], 0)
+            raw_extra = {
+                "sector_model": "Industrial",
+                "roic": round(_roic, 3) if _roic is not None else None,
+                "leverage_de": round(_lev, 2) if _lev is not None else None,
+                "ev_ebitda": round(_evb, 1) if _evb is not None else None,
+                "fcf_conversion": round(_derive("fcf_conversion", t), 2) if _derive("fcf_conversion", t) is not None else None,
+            }
+
         signals = {
+            # backward-compat keys
             "quality": round(q_score, 1),
             "value": round(v_score, 1),
             "revision": round(r_score, 1),
             "net_30d": net30,
             "ratio_30d": ratio30_pct,
             "n_analysts": n_analysts,
-            "fwd_pe": round(eff_pe, 1) if eff_pe else None,
-            "earn_growth": round(info.get("earnings_growth") * 100, 1) if info.get("earnings_growth") else None,
-            "upside_pct": round(pt.get("upside_pct"), 1) if pt.get("upside_pct") else None,
-            # Finnhub-derived
+            # raw fundamentals (sector-aware display)
+            **raw_extra,
+            "revision_asym": round(_derive("revision_asymmetry", t), 2) if _derive("revision_asymmetry", t) is not None else None,
+            "bearish_ratio": round(rec.get("bearish_ratio"), 2) if rec.get("bearish_ratio") is not None else None,
             "bullish_change_3m": (round(fh_derived.get("bullish_change_3m") * 100, 1)
                                   if fh_derived.get("bullish_change_3m") is not None else None),
             "eps_beat_rate": (round(fh_derived.get("eps_beat_rate") * 100, 0)
                               if fh_derived.get("eps_beat_rate") is not None else None),
             "eps_surprise_avg": (round(fh_derived.get("eps_surprise_avg"), 2)
                                  if fh_derived.get("eps_surprise_avg") is not None else None),
+            "upside_pct": round(pt.get("upside_pct"), 1) if pt.get("upside_pct") is not None else None,
+            # per-factor percentile decomposition
+            "factors": {k: v for k, v in drill.items()},
         }
 
         summary = self._summary(qvr, q_score, v_score, r_score, net30, n_analysts,
-                                fh_derived)
+                                fh_derived, rec)
         return qvr, signals, summary
 
     # ── Helpers ──
 
     @staticmethod
-    def _weighted_avg(pieces: List[Tuple[float, float]], default: float = 50.0) -> float:
-        if not pieces:
-            return default
-        total_w = sum(w for _, w in pieces)
-        if total_w == 0:
-            return default
-        return sum(v * w for v, w in pieces) / total_w
-
-    @staticmethod
-    def _summary(qvr: float, q: float, v: float, r: float,
-                 net30: int, n_analysts: int,
-                 fh_derived: Optional[dict] = None) -> str:
-        if n_analysts == 0:
-            return "Limited analyst coverage"
+    def _summary(qvr: float, q: float, v: float, r: float, net30: int,
+                 n_analysts: int, fh_derived: Optional[dict] = None,
+                 rec: Optional[dict] = None) -> str:
+        if n_analysts == 0 and not (fh_derived or {}).get("bullish_change_3m"):
+            base = ("Strong fundamentals" if qvr >= 65 else
+                    "Weak fundamentals" if qvr <= 35 else "Neutral fundamentals")
+            return base + " (limited analyst coverage)"
         parts = []
         if qvr >= 70:
             parts.append("Strong fundamentals (Q+V+R aligned)")
@@ -365,7 +522,13 @@ class QVRAgent:
         else:
             parts.append("Neutral fundamentals")
 
-        # Finnhub leading signal — analyst sentiment trend (3m change)
+        # Quality / solvency flag
+        if q >= 75:
+            parts.append("durable, well-capitalized franchise")
+        elif q <= 30:
+            parts.append("fragile balance-sheet / thin margins")
+
+        # Downside-asymmetric revision signal
         if fh_derived:
             chg3m = fh_derived.get("bullish_change_3m")
             if chg3m is not None:
@@ -378,21 +541,20 @@ class QVRAgent:
                 parts.append("consistently beats EPS estimates")
             elif beat is not None and beat <= 0.25:
                 parts.append("frequently misses EPS estimates")
-
-        # yfinance revision counts (fallback / supplemental)
-        if net30 >= 5:
-            parts.append(f"+{net30} net EPS revisions (30d)")
-        elif net30 <= -5:
+        if rec:
+            bear = rec.get("bearish_ratio")
+            if bear is not None and bear >= 0.20:
+                parts.append("notable downgrade pressure")
+        if net30 <= -5:
             parts.append(f"{net30} net EPS revisions (30d, downward)")
 
-        # Quality / Value flags
+        # Quality × Value interaction
         if q >= 75 and v >= 60:
-            parts.append("quality at reasonable price")
+            parts.append("quality at a reasonable EV multiple")
         elif q >= 75 and v <= 35:
-            parts.append("high quality but expensive")
+            parts.append("high quality but richly valued")
         elif v >= 75 and r >= 60:
-            parts.append("cheap with positive revisions")
-
+            parts.append("cheap (EV-based) with positive revisions")
         return " · ".join(parts)
 
 
@@ -401,23 +563,25 @@ class QVRAgent:
 # ──────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    # Quick sanity test
     cache = load_fundamentals_cache() if load_fundamentals_cache else None
     if cache is None:
         print("No fundamentals cache found — run fundamentals_pipeline.py first")
         exit(1)
 
     agent = QVRAgent(indices={}, fundamentals_cache=cache)
-    print(f"Loaded {len(agent.tickers)} tickers from cache")
-    print(f"Distribution sizes: " +
-          ", ".join(f"{k}={len(v)}" for k, v in agent._dist.items()))
+    print(f"Loaded {len(agent.tickers)} tickers · sector map {len(agent._sector)} entries")
+    print("Distribution pool sizes (US universe):")
+    for dim, facs in FACTORS.items():
+        for fac in facs:
+            pools = agent._dist.get(fac["name"], {})
+            us = len(pools.get("US", []))
+            ks = len(pools.get("KS", []))
+            print(f"  [{dim}] {fac['name']:26} US={us:3} KS={ks:2}")
 
-    # Test on a few sample tickers
-    test_tickers = ["NVDA", "AAPL", "LLY", "META", "JPM", "XOM", "BA", "TSLA"]
-    print(f"\n{'Ticker':<8} {'QVR':>6} {'Q':>6} {'V':>6} {'R':>6}  Summary")
-    print("-" * 100)
+    test_tickers = ["NVDA", "AAPL", "LLY", "META", "JPM", "XOM", "BA", "TSLA", "ROK", "005930.KS"]
+    print(f"\n{'Ticker':<11} {'QVR':>6} {'Q':>6} {'V':>6} {'R':>6}  Summary")
+    print("-" * 110)
     for tk in test_tickers:
-        r = {"ticker": tk}
-        qvr, sig, summary = agent.score(r)
-        print(f"{tk:<8} {qvr:>6.1f} "
-              f"{sig['quality']:>6.1f} {sig['value']:>6.1f} {sig['revision']:>6.1f}  {summary}")
+        qvr, sig, summary = agent.score({"ticker": tk})
+        print(f"{tk:<11} {qvr:>6.1f} {sig['quality']:>6.1f} {sig['value']:>6.1f} "
+              f"{sig['revision']:>6.1f}  {summary}")

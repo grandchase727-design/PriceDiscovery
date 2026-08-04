@@ -58,12 +58,70 @@ def step_live_scan() -> dict:
         return {"ok": False, "error": str(e)[:200]}
 
 
+def step_fundamentals_retry() -> dict:
+    """Step 1b: Non-destructive fundamentals repair.
+
+    Age-gated: only runs when the fundamentals cache is stale (> ~18h). Uses the
+    MERGE-ONLY retry_failed() path (NEVER the destructive full run_pipeline), so it can
+    only recover rate-limited / straggler failures — never null out good data. This is
+    what keeps Korean (.KS/.KQ) and other international fundamentals fresh every day so
+    QVR does not silently freeze at 50.0. Runs BEFORE the swarm, whose Pre-Momentum QVR
+    agent consumes .fundamentals_cache.pkl. Best-effort: any failure here is logged and
+    the pipeline continues (the swarm falls back to whatever the cache holds)."""
+    log("=" * 60)
+    log("[1b/5] Fundamentals 재수집 (non-destructive)")
+    log("=" * 60)
+    try:
+        from fundamentals_pipeline import cache_age_hours, retry_failed, load_fundamentals_cache
+        AGE_GATE_H = 18.0
+        age = cache_age_hours()
+        if age is not None and age < AGE_GATE_H:
+            log(f"⏭  캐시가 {age:.1f}h로 신선함 (< {AGE_GATE_H}h) — 건너뜀")
+            return {"ok": True, "skipped": True, "age_h": round(age, 1)}
+
+        before = load_fundamentals_cache() or {}
+        n_fail_before = (before.get("stats", {}) or {}).get("failed_count")
+        # cooldown short: a daily run's rate-limit budget has long since reset overnight.
+        retry_failed(cooldown_sec=60, max_workers=2, per_request_delay=0.3,
+                     max_attempts=3, include_all_failures=True)
+        after = load_fundamentals_cache() or {}
+        st = after.get("stats", {}) or {}
+        log(f"✓ Fundamentals merge 완료 — stock_ok={st.get('stock_ok')} "
+            f"etf_ok={st.get('etf_ok')} failed={st.get('failed_count')} (before failed={n_fail_before})")
+
+        # Best-effort: nudge a running API to reload so the dashboard/QVR reflect the merge.
+        try:
+            import urllib.request
+            req = urllib.request.Request("http://localhost:8000/api/reload", method="POST")
+            urllib.request.urlopen(req, timeout=30)
+            log("✓ API /api/reload 트리거 완료")
+        except Exception as e:
+            log(f"ℹ API reload 스킵 (running API 없음/무응답): {str(e)[:80]}")
+
+        return {"ok": True, "skipped": False, "stats": st}
+    except Exception as e:
+        log(f"✗ Fundamentals 재수집 실패 (계속 진행): {e}")
+        return {"ok": False, "error": str(e)[:200]}
+
+
 def step_swarm() -> dict:
     """Step 2a: Market Leaders Swarm."""
     log("=" * 60)
     log("[2a/5] Market Leaders Swarm 시작")
     log("=" * 60)
     try:
+        # The swarm's build_snapshot() reads picks from api.STATE (in-memory), which is only
+        # populated by api._load_cache() under uvicorn startup / the /api/reload endpoint. In
+        # this standalone pipeline process nothing loads it, so without this the swarm fails
+        # with "scan_cache empty" even though .scan_cache.pkl on disk is fresh (from step 1).
+        # Populate STATE here from that just-written scan cache.
+        import api
+        api._load_cache()
+        n_state = len(api.STATE.get("results") or [])
+        if n_state:
+            log(f"  ↳ api.STATE 로드 완료 — {n_state} tickers")
+        else:
+            log("  ⚠ api.STATE 비어있음 — swarm이 빈 스냅샷으로 실패할 수 있음")
         from agents.market_leaders_swarm import run_swarm
         payload = run_swarm()
         pm = (payload or {}).get("phase5_pm", {})
@@ -228,6 +286,10 @@ def main():
     summary["steps"]["live_scan"] = r
     if not r["ok"]:
         log("⚠ Live Scan 실패 — 계속 진행 (기존 cache 사용)")
+
+    # Step 1b: Fundamentals repair (non-destructive, age-gated) — BEFORE the swarm's QVR
+    r = step_fundamentals_retry()
+    summary["steps"]["fundamentals_retry"] = r
 
     # Step 2a: Swarm
     r = step_swarm()

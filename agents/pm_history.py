@@ -51,6 +51,8 @@ def _strip_pick(p: dict) -> dict:
         "sector": p.get("sector"),
         "rationale": (p.get("rationale") or "")[:200],
         "change_type": p.get("change_type"),     # only present in phase5_pm picks
+        "pool_source": p.get("pool_source"),      # momentum|pre_momentum (forming 생존률 추적, 2026-07-28)
+        "pre_momentum_score": p.get("pre_momentum_score"),
     }
 
 
@@ -69,7 +71,7 @@ def append_trading_snapshot(swarm_result: dict, source: str = "fresh") -> dict:
         return {"appended": False, "reason": "invalid_payload"}
     pm = swarm_result.get("phase5_pm") or {}
     tt = pm.get("trading_timing") or {}
-    if not tt or (not tt.get("tactical") and not tt.get("core") and not tt.get("strategic")):
+    if not tt or not tt.get("core"):
         return {"appended": False, "reason": "no_trading_timing"}
 
     from pathlib import Path as _P
@@ -98,7 +100,7 @@ def append_trading_snapshot(swarm_result: dict, source: str = "fresh") -> dict:
         "source": source,
         "horizons": {
             h: _strip_timing((tt.get(h) or {}).get("timings", {}))
-            for h in ("tactical", "core", "strategic")
+            for h in ("core",)
         },
     }
 
@@ -125,9 +127,13 @@ def append_snapshot(swarm_result: dict, source: str = "fresh") -> dict:
 
     p4 = swarm_result.get("phase4_action") or {}
     p5 = swarm_result.get("phase5_pm")     or {}
+    # FIX (2026-07): phase5 picks are nested under phase5_pm.horizons.core, NOT
+    # directly on phase5_pm. The old code read p5.get("long_stocks") (always None),
+    # so phase5_picks was EMPTY on every snapshot for ~1 month. Read the core bucket.
+    p5_core = (p5.get("horizons") or {}).get("core") or {}
 
     # Don't snapshot if both phases failed
-    if not p5.get("long_stocks") and not p4.get("long_stocks"):
+    if not p5_core.get("long_stocks") and not p4.get("long_stocks"):
         return {"appended": False, "reason": "no_picks_in_payload"}
 
     today = _today()
@@ -144,13 +150,49 @@ def append_snapshot(swarm_result: dict, source: str = "fresh") -> dict:
             "short_etfs":   _strip_bucket(p4.get("short_etfs")),
         },
         "phase5_picks": {
-            "long_stocks":  _strip_bucket(p5.get("long_stocks")),
-            "long_etfs":    _strip_bucket(p5.get("long_etfs")),
-            "short_stocks": _strip_bucket(p5.get("short_stocks")),
-            "short_etfs":   _strip_bucket(p5.get("short_etfs")),
+            "long_stocks":  _strip_bucket(p5_core.get("long_stocks")),
+            "long_etfs":    _strip_bucket(p5_core.get("long_etfs")),
+            "short_stocks": _strip_bucket(p5_core.get("short_stocks")),
+            "short_etfs":   _strip_bucket(p5_core.get("short_etfs")),
         },
         "pm_commentary": (p5.get("pm_commentary") or "")[:1500],
     }
+
+    # ── Faithful PIT record: capture the ACTUAL 매수 Final List + conviction weights ──
+    # append_snapshot runs AFTER CACHE_PATH is written (market_leaders_swarm.py), so
+    # build_final_lists() reads the fresh cache. This stores exactly what the Portfolio
+    # panel holds (ticker + weight + weighting fields), per day — the point-in-time
+    # foundation for the weekly-rebalanced backtest.
+    try:
+        from agents.final_list import build_final_lists
+        from agents.portfolio_agent import build_portfolios
+        _fl = build_final_lists()
+        _buy = list(_fl.get("buy_list") or []) + list(_fl.get("active_positions") or [])
+        _seen, _dedup = set(), []
+        for _it in _buy:
+            _tk = _it.get("ticker")
+            if _tk and _tk not in _seen:
+                _seen.add(_tk); _dedup.append(_it)
+        # QVR lookup — api /api/portfolio 경로와 동일 소스 (STATE['df']).
+        # 기존엔 미전달 → 전 종목 중립 50으로 PIT 가중치가 평탄화됐음.
+        _qvr_lookup: dict = {}
+        try:
+            from api import STATE as _ST_Q
+            _df_q = _ST_Q.get("df")
+            if _df_q is not None and "qvr_score" in getattr(_df_q, "columns", []):
+                _qvr_lookup = dict(zip(_df_q["ticker"], _df_q["qvr_score"]))
+        except Exception:
+            _qvr_lookup = {}
+        _pf = build_portfolios(_dedup, _qvr_lookup)
+        def _fb(rows):
+            return [{"ticker": r.get("ticker"), "weight": r.get("weight"),
+                     "composite": r.get("composite"), "tier": r.get("tier"),
+                     "sector": r.get("sector"), "classification": r.get("classification"),
+                     "risk_score": r.get("risk_score")} for r in (rows or [])]
+        snapshot["final_portfolio"] = {"stocks": _fb(_pf.get("stocks")),
+                                       "etfs":   _fb(_pf.get("etfs"))}
+    except Exception as _fe:
+        snapshot["final_portfolio_error"] = str(_fe)[:200]
 
     history = load_history()
     snaps = history.setdefault("snapshots", [])

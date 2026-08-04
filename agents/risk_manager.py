@@ -76,7 +76,12 @@ def _volatility_score(scan_row: dict) -> float:
 
 def _liquidity_score(scan_row: dict) -> float:
     """Liquidity risk 0-100. ADV (1일 거래대금) 기반."""
-    adv_M = scan_row.get("adv_M") or scan_row.get("adv_usd_M") or 10
+    adv_M = scan_row.get("adv_M") or scan_row.get("adv_usd_M")
+    # scan results 행에는 adv_M 키가 없고 adv_usd(달러 명목치)만 있음 —
+    # 기존 폴백 10은 전 종목을 '보통 유동성'으로 취급해 이 스코어를 무력화했음
+    if adv_M is None:
+        adv_usd = scan_row.get("adv_usd")
+        adv_M = float(adv_usd) / 1e6 if adv_usd else 10.0
     if adv_M < 1:    return 100
     if adv_M < 5:    return 70
     if adv_M < 20:   return 40

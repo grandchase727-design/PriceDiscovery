@@ -558,11 +558,9 @@ function TickerDrilldown({ ticker, data, loading, onClose }:
 // Trading Layer Analysis (Architecture C — 4 new metric families)
 // ─────────────────────────────────────────────────────────────────────
 
-type TradingHorizon = "tactical" | "core" | "strategic";
+type TradingHorizon = "core";
 const TH_META: Record<TradingHorizon, { label: string; emoji: string; days: string; color: string }> = {
-  tactical:  { label: "Tactical",  emoji: "🚀", days: "5d",  color: C.amber },
-  core:      { label: "Core",      emoji: "⚓", days: "21d", color: C.purple },
-  strategic: { label: "Strategic", emoji: "🌐", days: "63d", color: C.cyan },
+  core: { label: "Core", emoji: "⚓", days: "21d", color: C.purple },
 };
 
 function _pct(v: number | undefined | null, digits = 2): string {
@@ -576,7 +574,7 @@ function _pctColor(v: number | undefined | null, positiveColor = C.green, negati
 }
 
 function TradingLayerReport({ tm, lifecycles, endDate }: {
-  tm: { tactical: TradingMetricsBucket; core: TradingMetricsBucket; strategic: TradingMetricsBucket };
+  tm: { core: TradingMetricsBucket };
   lifecycles?: TradingLifecyclesCompact;
   endDate?: string;
 }) {
@@ -630,8 +628,8 @@ function TradingLayerReport({ tm, lifecycles, endDate }: {
   const mergedLifecycles = useMemo<TradingLifecyclesCompact | undefined>(() => {
     if (!lifecycles) return undefined;
     if (!extraLifecycles) return lifecycles;
-    const out: any = { tactical: {}, core: {}, strategic: {} };
-    for (const h of ["tactical", "core", "strategic"] as const) {
+    const out: any = { core: {} };
+    for (const h of ["core"] as const) {
       const base = (lifecycles as any)[h] || {};
       const extra = (extraLifecycles as any)[h] || {};
       out[h] = {
@@ -660,7 +658,7 @@ function TradingLayerReport({ tm, lifecycles, endDate }: {
           </span>
         </div>
         <div className="flex items-center gap-2">
-          {(["tactical","core","strategic"] as TradingHorizon[]).map((k) => {
+          {(["core"] as TradingHorizon[]).map((k) => {
             const m = TH_META[k];
             const active = horizon === k;
             return (
@@ -967,7 +965,7 @@ type TimelineView = "managed" | "buyhold" | "delta";
 
 // Trading days per horizon. Converted to calendar days for in-flight detection.
 const HORIZON_TRADING_DAYS: Record<TradingHorizon, number> = {
-  tactical: 5, core: 21, strategic: 63,
+  core: 21,
 };
 // ~5/7 trading days per calendar week → calendar = trading × 1.45 + 1 buffer
 function tradingToCalendarDays(td: number) { return Math.ceil(td * 1.45) + 1; }
@@ -986,7 +984,7 @@ function PositionTimelineHeatmap({ title, data, bucket, horizon, color, endDate,
 }) {
   const [view, setView] = useState<TimelineView>("buyhold");
 
-  const allRecords: LifecycleRecord[] = (data[horizon]?.[bucket] || []) as LifecycleRecord[];
+  const allRecords: LifecycleRecord[] = ((data as any)[horizon]?.[bucket] || []) as LifecycleRecord[];
   const records: LifecycleRecord[] = tickerFilter
     ? allRecords.filter((r) => tickerFilter.has(r.t))
     : allRecords;

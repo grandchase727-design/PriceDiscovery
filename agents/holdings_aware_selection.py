@@ -55,6 +55,41 @@ CORR_LOW_THRESHOLD = 0.30       # 이 이하면 진정한 분산 (no penalty)
 CORR_PENALTY_FLOOR = 0.50       # 최대 감점 (50%)
 DIVERSIFICATION_FLOOR = 0.30    # 섹터 과집중 시 최저 가중치
 
+# ── 노출(exposure) 버킷 오버라이드 ─────────────────────────────────────
+# ETF 랩퍼는 스웜의 free-text sector 라벨이 파편화되어 집중 캡을 우회한다:
+# VTV/VBR='Broad', DVY/NOBL='Factor', 360750.KS='Korea_Equity' — 전부 같은
+# US 밸류/배당 베타인데 서로 다른 "섹터"로 계산돼 캡이 전혀 안 걸렸음 (2026-07-03
+# 스냅샷에서 ETF 슬리브의 44.7%가 이 클러스터). 잘 알려진 랩퍼를 실제 노출
+# 버킷으로 정규화한다 (측정 상관: VTV-VBR 0.87, NOBL-DVY 0.78, VTV-DVY 0.67).
+ETF_EXPOSURE_BUCKET = {
+    # US 밸류 + 배당 팩터 클러스터 (배당 스크린은 밸류 틸트와 사실상 동일 노출)
+    "VTV": "US Value/Dividend", "MGV": "US Value/Dividend",
+    "IWD": "US Value/Dividend", "VLUE": "US Value/Dividend",
+    "VOE": "US Value/Dividend", "VBR": "US Value/Dividend",
+    "IJS": "US Value/Dividend",
+    "DVY": "US Value/Dividend", "NOBL": "US Value/Dividend",
+    "SCHD": "US Value/Dividend", "VIG": "US Value/Dividend",
+    "SDY": "US Value/Dividend", "HDV": "US Value/Dividend",
+    # US 대형 브로드 베타 (해외 상장 트래커 포함 — 360750.KS/143850.KS는
+    # Korea_Equity 라벨이지만 실체는 S&P500 트래커)
+    "SPY": "US Broad Beta", "VOO": "US Broad Beta", "IVV": "US Broad Beta",
+    "SPLG": "US Broad Beta", "RSP": "US Broad Beta", "DIA": "US Broad Beta",
+    "360750.KS": "US Broad Beta", "143850.KS": "US Broad Beta",
+    # US 나스닥/대형 성장
+    "QQQ": "US Growth/Nasdaq", "QQQM": "US Growth/Nasdaq",
+    "133690.KS": "US Growth/Nasdaq",
+    # US 소형 블렌드
+    "IWM": "US Small Blend", "IJR": "US Small Blend", "VB": "US Small Blend",
+}
+
+
+def _exposure_key(pick_or_pos: dict) -> str:
+    """집중도 계산용 노출 키: ETF 오버라이드 → 없으면 sector 라벨."""
+    t = (pick_or_pos.get("ticker") or "").upper()
+    # .KS 티커는 대문자화해도 그대로 매칭됨
+    return ETF_EXPOSURE_BUCKET.get(t) or ETF_EXPOSURE_BUCKET.get(pick_or_pos.get("ticker") or "") \
+        or (pick_or_pos.get("sector") or "?")
+
 
 def _daily_returns(price_df, lookback: int = CORR_LOOKBACK_DAYS):
     """Extract last-N-day daily returns series from a price DataFrame (Close col)."""
@@ -141,9 +176,9 @@ def rerank_new_picks(new_picks: list[dict], held_positions: list[dict],
     Returns:
         new_picks sorted by ha_adjusted_score desc, each augmented with ha_* fields.
     """
-    # Held sector distribution
+    # Held sector distribution — 노출 버킷 키 사용 (라벨 파편화 방지)
     held_sector_count: Counter = Counter(
-        (p.get("sector") or "?") for p in held_positions
+        _exposure_key(p) for p in held_positions
     )
     held_tickers = [p.get("ticker") for p in held_positions if p.get("ticker")]
 
@@ -156,47 +191,71 @@ def rerank_new_picks(new_picks: list[dict], held_positions: list[dict],
             if r is not None:
                 held_returns[t] = r
 
+    # Process in conviction order so the strongest pick per sector keeps full weight;
+    # subsequent same-sector NEW picks get progressively penalized (intra-batch crowding).
+    # 기존 버그: held_sector_count만 사용 → 같은 미보유 섹터 NEW 픽들이 모두 div_w=1.0
+    # (Healthcare 3개 무페널티). already_added_this_sector를 threading하여 배치 내 분산 강화.
+    new_picks.sort(key=lambda p: -_base_conviction(p))
+    added_sector_count: Counter = Counter()
+    # 배치 내 상관 비교 풀 — 수락 순서대로 편입. 기존 버그: 보유분만 비교해
+    # 같은 날 NEW 픽 5개(VTV/DVY/NOBL/VBR/360750.KS, ρ 0.67-0.87)가 서로
+    # 전혀 페널티를 받지 않았음.
+    accepted_returns: dict = {}
+
     # Score each new pick
     for pick in new_picks:
         t = pick.get("ticker")
-        sector = pick.get("sector") or "?"
+        sector = _exposure_key(pick)          # 노출 버킷 (라벨 파편화 방지)
         base = _base_conviction(pick)
 
-        # 방식 A: diversification weight
-        div_w = _diversification_weight(sector, held_sector_count)
+        # 방식 A: diversification weight (held + 배치 내 이미 추가된 same-sector 수)
+        div_w = _diversification_weight(sector, held_sector_count,
+                                        already_added_this_sector=added_sector_count.get(sector, 0))
 
-        # 방식 B: correlation penalty
+        # 방식 B: correlation penalty — 보유분 + 이미 수락된 배치 내 픽 모두 비교
         cand_df = price_data.get(t)
         cand_ret = _daily_returns(cand_df) if cand_df is not None else None
         max_corr = None
         max_corr_ticker = None
-        if cand_ret is not None and held_returns:
+        max_corr_src = "보유"
+        if cand_ret is not None:
             for ht, hr in held_returns.items():
                 c = _pairwise_corr(cand_ret, hr)
                 if c is not None and (max_corr is None or c > max_corr):
-                    max_corr = c
-                    max_corr_ticker = ht
+                    max_corr, max_corr_ticker, max_corr_src = c, ht, "보유"
+            for ht, hr in accepted_returns.items():
+                c = _pairwise_corr(cand_ret, hr)
+                if c is not None and (max_corr is None or c > max_corr):
+                    max_corr, max_corr_ticker, max_corr_src = c, ht, "동일배치"
         corr_pen = _correlation_penalty(max_corr)
 
         adjusted = base * div_w * corr_pen
 
-        # Rationale (Korean)
+        # Rationale (Korean) — held + 배치 내 이미 추가된 same-sector 반영
         parts = []
         held_n = held_sector_count.get(sector, 0)
-        if held_n >= sector_cap:
-            parts.append(f"⚠ {sector} 이미 {held_n}개 보유 (cap {sector_cap}) → 분산 감점 ×{div_w:.2f}")
-        elif held_n >= 1:
-            parts.append(f"{sector} {held_n}개 보유 → 분산 가중 ×{div_w:.2f}")
+        batch_n = added_sector_count.get(sector, 0)
+        occupied = held_n + batch_n
+        if occupied >= sector_cap:
+            parts.append(f"⚠ {sector} 점유 {occupied}개 (보유 {held_n}+배치 {batch_n}, cap {sector_cap}) → 분산 감점 ×{div_w:.2f}")
+        elif occupied >= 1:
+            _src = f"보유 {held_n}" + (f"+배치 {batch_n}" if batch_n else "")
+            parts.append(f"{sector} 점유 {occupied}개 ({_src}) → 분산 가중 ×{div_w:.2f}")
         else:
-            parts.append(f"✓ {sector} 미보유 섹터 → 분산 기여 (가중 ×{div_w:.2f})")
+            parts.append(f"✓ {sector} 미점유 섹터 → 분산 기여 (가중 ×{div_w:.2f})")
+        # 배치 내 누적 (다음 same-sector 픽에 crowding 페널티 적용)
+        added_sector_count[sector] += 1
+        if cand_ret is not None and t:
+            accepted_returns[t] = cand_ret   # 이후 픽들은 이 픽과도 상관 비교
         if max_corr is not None:
             if max_corr >= CORR_HIGH_THRESHOLD:
-                parts.append(f"⚠ 보유 {max_corr_ticker}와 ρ={max_corr:.2f} (중복 베팅) → ×{corr_pen:.2f}")
+                parts.append(f"⚠ {max_corr_src} {max_corr_ticker}와 ρ={max_corr:.2f} (중복 베팅) → ×{corr_pen:.2f}")
             elif max_corr <= CORR_LOW_THRESHOLD:
                 parts.append(f"✓ 최대 상관 {max_corr_ticker} ρ={max_corr:.2f} (저상관, 진정 분산)")
             else:
-                parts.append(f"보유 {max_corr_ticker}와 ρ={max_corr:.2f} → ×{corr_pen:.2f}")
+                parts.append(f"{max_corr_src} {max_corr_ticker}와 ρ={max_corr:.2f} → ×{corr_pen:.2f}")
 
+        pick["ha_exposure_bucket"] = sector
         pick["ha_diversification_weight"] = round(div_w, 3)
         pick["ha_correlation_penalty"] = round(corr_pen, 3)
         pick["ha_max_corr"] = round(max_corr, 3) if max_corr is not None else None

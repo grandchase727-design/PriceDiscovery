@@ -52,8 +52,10 @@ annotate_buy_list_with_entries(buy_list)
 """
 from __future__ import annotations
 
+import contextlib
 import json
 import math
+import threading
 import time
 import warnings
 from datetime import datetime
@@ -64,6 +66,16 @@ warnings.filterwarnings("ignore")
 
 CACHE_PATH = Path(".entry_prices_cache.json")
 CACHE_TTL_HOURS = 24
+
+# api.py's endpoints are all sync `def`, so FastAPI/Starlette dispatches concurrent
+# requests to real parallel threads. Multiple such requests can each load-mutate-save
+# this cache file around the same time; without serializing the whole cycle, the later
+# save can silently clobber the earlier one's freshly-computed entries (lost update —
+# not a data-corruption bug like the yf.download() one above, but the same "concurrent
+# sync endpoints share mutable state" root cause). One lock per process is sufficient
+# since the cache file itself is process-local (not shared across separate processes).
+_CACHE_IO_LOCK = threading.Lock()
+_NULL_CONTEXT = contextlib.nullcontext()
 
 # CAN SLIM constants
 ONEIL_PIVOT_BUFFER = 0.10          # Add $0.10 to base high
@@ -426,6 +438,17 @@ def compute_elliott_entry(highs: list, lows: list, closes: list,
         fib_382 = _fib_retracement(swing_low, swing_high, 0.382)
         fib_500 = _fib_retracement(swing_low, swing_high, 0.500)
         fib_618 = _fib_retracement(swing_low, swing_high, 0.618)
+        # INVALIDATION guard: classic Elliott rule treats a retracement beyond ~61.8%
+        # of the prior swing as the wave count having failed (fib_618 is already the
+        # "W2 typical / deepest acceptable" level per the field comment below). If
+        # current price has fallen past that — or past the swing's own low entirely —
+        # the swing_high/swing_low pair is stale (set before a subsequent large move)
+        # and the Fib zone no longer bears any relation to current price. Observed
+        # live: KORU swing computed pre-crash, fib zone 954-1078 vs current 557 (a
+        # >40% gap) — presented as an actionable "W4 pullback entry" despite the wave
+        # having clearly already failed. 2% tolerance for ordinary noise at the boundary.
+        if current_price < fib_618 * 0.98:
+            return None
         return {
             "swing_high": round(swing_high, 2),
             "swing_low": round(swing_low, 2),
@@ -502,8 +525,15 @@ def _composite_gate(composite: float, classification: str) -> str:
 def compute_entry_for_ticker(ticker: str, horizon: str,
                                 scan_row: Optional[dict] = None,
                                 cache_dict: Optional[dict] = None,
-                                use_cache: bool = True) -> Optional[dict]:
+                                use_cache: bool = True,
+                                floor_tier: Optional[str] = None) -> Optional[dict]:
     """Main entry-point computation for a single ticker.
+
+    floor_tier (optional): raise the composite gate to AT LEAST this tier so the CAN
+      SLIM base/primary/conservative levels are computed even for low-composite tickers
+      (e.g. the 시장 매매전략 index/sector panel). Never lowers the gate and never bumps
+      to "ALL" (the AGGRESSIVE/즉시 tier stays gated on the real composite ≥ 75). Cached
+      separately from the un-floored (buy-list) result so the two paths never collide.
 
     Returns:
         {
@@ -518,22 +548,56 @@ def compute_entry_for_ticker(ticker: str, horizon: str,
         }
     """
     cache = cache_dict if cache_dict is not None else (_load_cache() if use_cache else {})
-    cache_key = f"{ticker}::{horizon}"
+    cache_key = f"{ticker}::{horizon}" + (f"::floor={floor_tier}" if floor_tier else "")
     if use_cache and cache_key in cache and _is_cache_fresh(cache[cache_key]):
         return cache[cache_key]
 
     try:
         import yfinance as yf
-        df = yf.download(ticker, period="1y", interval="1d",
-                          progress=False, auto_adjust=True)
-        if df.empty or len(df) < 60:
-            return None
+        import time as _time
+        # THREAD SAFETY: yfinance's yf.download() (even for a single ticker) routes
+        # through a PROCESS-WIDE global dict (yfinance.shared._DFS) that is reset and
+        # repopulated on every call — under concurrent callers (every api.py endpoint is
+        # a sync `def`, so FastAPI/Starlette dispatches simultaneous requests to real
+        # parallel threads) this cross-contaminates different tickers' OHLC data.
+        # Empirically confirmed: 39/48 concurrent trials swapped current_price/base_pattern
+        # between tickers; 0/18 sequential trials did. yf.Ticker(ticker).history() is the
+        # per-object, thread-safe fetch path — same fix already applied in
+        # agents/elliott_wave_indices.py's _compute_one_fresh() for the same bug.
+        # Retry — transient failures during bulk annotation (rate-limiting on ~48
+        # tickers at API load) previously left entry cells blank.
+        df = None
+        for _attempt in range(3):
+            try:
+                df = yf.Ticker(ticker).history(period="1y", interval="1d",
+                                               auto_adjust=True)
+                if df is not None and not df.empty and len(df) >= 60:
+                    break
+            except Exception:
+                df = None
+            _time.sleep(0.4)
+        if df is None or df.empty or len(df) < 60:
+            # Graceful fallback — surface a reason instead of a fully blank cell
+            result = {
+                "ticker": ticker, "horizon": horizon,
+                "composite_tier": "NO_DATA",
+                "entry_aggressive": None, "entry_primary": None, "entry_conservative": None,
+                "skip_reason": "가격 데이터 조회 실패 (yfinance 3회 재시도)",
+                "computed_at": datetime.now().isoformat(timespec="seconds"),
+            }
+            return result
         if hasattr(df.columns, "get_level_values"):
             try: df.columns = df.columns.get_level_values(0)
             except Exception: pass
         df = df.dropna(subset=["High","Low","Close","Volume"])
         if len(df) < 60:
-            return None
+            return {
+                "ticker": ticker, "horizon": horizon,
+                "composite_tier": "NO_DATA",
+                "entry_aggressive": None, "entry_primary": None, "entry_conservative": None,
+                "skip_reason": "유효 가격 데이터 60일 미만",
+                "computed_at": datetime.now().isoformat(timespec="seconds"),
+            }
 
         highs   = df["High"].values.tolist()
         lows    = df["Low"].values.tolist()
@@ -549,6 +613,12 @@ def compute_entry_for_ticker(ticker: str, horizon: str,
         comp = float(scan_row.get("composite", 0) if scan_row else 0)
         cls  = (scan_row.get("classification", "") if scan_row else "") or ""
         tier_eligibility = _composite_gate(comp, cls)
+        # floor_tier: raise UP to at least the floor (never down, never to ALL) so the
+        # market-strategy panel gets base/primary/conservative on low-composite tickers.
+        if floor_tier:
+            _TIER_ORD = {"SKIP": 0, "CONSERVATIVE_ONLY": 1, "PRIMARY_AND_CONSERVATIVE": 2, "ALL": 3}
+            if _TIER_ORD.get(floor_tier, 0) > _TIER_ORD.get(tier_eligibility, 0):
+                tier_eligibility = floor_tier
         if tier_eligibility == "SKIP":
             result = {
                 "ticker": ticker, "horizon": horizon,
@@ -588,8 +658,29 @@ def compute_entry_for_ticker(ticker: str, horizon: str,
             # Detect stale/extended/actionable status to keep entries logically consistent.
             extended_pct = (current_price / raw_pivot - 1) * 100
             ONEIL_EXTENDED_THRESHOLD = 5.0   # %
+            # BROKEN-BASE guard (symmetric to the EXTENDED check above): a base is only
+            # a valid "await breakout" setup if current price is still resting somewhere
+            # inside/near the base — not below the base's OWN low. If price has fallen
+            # through the base's low (cup_low / base_low / min(low1,low2) depending on
+            # type), the pattern has been broken and the old pivot is stale — presenting
+            # it as "돌파 대기" is misleading (observed live: SOXL pivot $275 vs current
+            # $192, -30% — the double-bottom's own low2 was already undercut). A small
+            # tolerance (2%) allows for ordinary intrabase noise.
+            _base_low = base.get("cup_low") if ptype == "cup_with_handle" \
+                else base.get("base_low") if ptype == "flat_base" \
+                else min(base.get("low1", raw_pivot), base.get("low2", raw_pivot)) if ptype == "double_bottom" \
+                else None
+            base_broken = _base_low is not None and current_price < _base_low * 0.98
 
-            if extended_pct > ONEIL_EXTENDED_THRESHOLD:
+            if base_broken:
+                primary = None
+                primary_status = "stale"
+                primary_rationale = (
+                    f"CAN SLIM {pname} (Quality {quality}) — base 저점 ${_base_low:.2f} 이탈 "
+                    f"(현재 {(current_price / _base_low - 1) * 100:.1f}%) → base 붕괴, "
+                    f"과거 pivot ${raw_pivot:.2f}는 더 이상 유효하지 않음. 신규 base 형성 대기."
+                )
+            elif extended_pct > ONEIL_EXTENDED_THRESHOLD:
                 # Pivot already broken out + extended → no actionable PRIMARY entry.
                 # Setting primary=None forces the table to show only CONSERVATIVE
                 # (SMA50 pullback) as the safe re-entry path.
@@ -638,13 +729,28 @@ def compute_entry_for_ticker(ticker: str, horizon: str,
         conservative = None
         conservative_rationale = None
         sma_info = compute_sma_entry(closes, current_price)
-        if sma_info:
+        # Plausibility gate (symmetric, both directions): SMA50 is a 50-day TRAILING
+        # average — after a large recent move (crash OR rally) it lags far behind, so
+        # "SMA50+1%" stops being a meaningful near-term entry and becomes either a
+        # level price would need to crash further to reach (large positive gap) or one
+        # so far below current price a huge pullback would be needed to reach it (large
+        # negative gap). Observed live: KORU -31.2% (two ~40%/36% crashes) and LABU
+        # +40.5% (extended rally) both produced a "가장 보수적" entry that was in fact
+        # wildly implausible. 20% is a generous band — ordinary pullbacks/extensions
+        # from a 50-day average rarely exceed this without a regime-changing move.
+        SMA50_PLAUSIBLE_BAND = 20.0   # %
+        if sma_info and abs(sma_info["current_vs_sma50"]) <= SMA50_PLAUSIBLE_BAND:
             conservative = sma_info["sma50_entry"]
             sma50_dist = sma_info["current_vs_sma50"]
             conservative_rationale = (
                 f"SMA50 reclaim 진입 ${conservative:.2f} (SMA50 ${sma_info['sma50']:.2f} + 1%). "
                 f"현재가 SMA50 대비 {sma50_dist:+.1f}%. "
                 f"강세 trend continuation 진입 — 가장 보수적."
+            )
+        elif sma_info:
+            conservative_rationale = (
+                f"SMA50 대비 {sma_info['current_vs_sma50']:+.1f}% 괴리 — 최근 급등/급락으로 "
+                f"SMA50(50일 후행지표)이 현재가와 크게 어긋나 신뢰 불가. 보수적 진입가 미제공."
             )
 
         # O'Neil 7% cut-loss from primary entry
@@ -751,51 +857,155 @@ def compute_pyramid_levels(entry_price: float, num_layers: int = 3) -> list:
 
 def annotate_buy_list_with_entries(buy_list: list, scan_lookup: Optional[dict] = None,
                                        use_cache: bool = True,
-                                       rate_limit_delay: float = 0.3) -> list:
-    """Augment buy_list picks with entry_aggressive / entry_primary / entry_conservative."""
-    cache = _load_cache() if use_cache else {}
-    for pick in buy_list:
-        t = pick.get("ticker")
-        h = pick.get("horizon", "core")
-        if not t:
-            continue
-        scan_row = (scan_lookup or {}).get(t) or {
-            "composite": pick.get("composite", 0),
-            "classification": pick.get("classification") or pick.get("cls", ""),
-        }
-        # Cache-hit detection — skip rate-limit sleep when served from cache
-        cache_hit = use_cache and f"{t}::{h}" in cache and _is_cache_fresh(cache[f"{t}::{h}"])
-        info = compute_entry_for_ticker(t, h, scan_row=scan_row,
-                                          cache_dict=cache, use_cache=use_cache)
-        if info and not info.get("_error"):
-            pick["entry_aggressive"]      = info.get("entry_aggressive")
-            pick["entry_primary"]         = info.get("entry_primary")
-            pick["entry_conservative"]    = info.get("entry_conservative")
-            pick["entry_primary_status"]  = info.get("primary_status")
-            pick["entry_aggressive_rationale"]    = info.get("aggressive_rationale")
-            pick["entry_primary_rationale"]       = info.get("primary_rationale")
-            pick["entry_conservative_rationale"]  = info.get("conservative_rationale")
-            pick["entry_base_pattern"]    = (info.get("base_pattern") or {}).get("type")
-            pick["entry_base_quality"]    = (info.get("base_pattern") or {}).get("quality")
-            pick["entry_volume_confirmed"] = (info.get("volume_info") or {}).get("confirmed")
-            pick["entry_volume_ratio"]    = (info.get("volume_info") or {}).get("recent_vol_ratio")
-            pick["entry_oneil_cut_loss"]  = info.get("oneil_cut_loss")
-            pick["entry_rr_ratio"]        = info.get("risk_reward_ratio")
-            pick["entry_composite_tier"]  = info.get("composite_tier")
-            # Pyramid levels for primary entry
-            if info.get("entry_primary"):
-                pick["entry_pyramid_layers"] = compute_pyramid_levels(info["entry_primary"])
-            # Inherit currency from elliott (in case present)
-            if not pick.get("currency"):
-                pick["currency"] = info.get("currency")
-                pick["currency_symbol"] = info.get("currency_symbol")
-        else:
-            pick["entry_aggressive"] = None
-            pick["entry_primary"] = None
-            pick["entry_conservative"] = None
-            pick["entry_skip_reason"] = info.get("_error", "no_data") if info else "no_data"
-        if rate_limit_delay and not cache_hit:
-            time.sleep(rate_limit_delay)   # only throttle on actual yfinance calls
-    if use_cache:
-        _save_cache(cache)
+                                       rate_limit_delay: float = 0.3,
+                                       floor_tier: Optional[str] = None) -> list:
+    """Augment buy_list picks with entry_aggressive / entry_primary / entry_conservative.
+
+    floor_tier (optional): forwarded to compute_entry_for_ticker so a low-composite ticker
+    still gets CAN SLIM base/primary/conservative (used by the 시장 매매전략 index panel).
+    Default None preserves the existing composite-gated buy-list behavior.
+    """
+    # Serialize the whole load→mutate→save cycle when touching the shared cache file —
+    # api.py's endpoints are all sync `def` (real parallel threads under Starlette), so
+    # without this lock two concurrent callers can each load an earlier snapshot and the
+    # later _save_cache() silently drops the other's freshly-computed entries (lost
+    # update). use_cache=False callers skip the lock — no shared file touched.
+    with _CACHE_IO_LOCK if use_cache else _NULL_CONTEXT:
+        cache = _load_cache() if use_cache else {}
+        for pick in buy_list:
+            t = pick.get("ticker")
+            h = pick.get("horizon", "core")
+            if not t:
+                continue
+            scan_row = (scan_lookup or {}).get(t) or {
+                "composite": pick.get("composite", 0),
+                "classification": pick.get("classification") or pick.get("cls", ""),
+            }
+            # Cache-hit detection — skip rate-limit sleep when served from cache
+            _ck = f"{t}::{h}" + (f"::floor={floor_tier}" if floor_tier else "")
+            cache_hit = use_cache and _ck in cache and _is_cache_fresh(cache[_ck])
+            info = compute_entry_for_ticker(t, h, scan_row=scan_row,
+                                              cache_dict=cache, use_cache=use_cache,
+                                              floor_tier=floor_tier)
+            if info and not info.get("_error"):
+                pick["entry_aggressive"]      = info.get("entry_aggressive")
+                pick["entry_primary"]         = info.get("entry_primary")
+                pick["entry_conservative"]    = info.get("entry_conservative")
+                pick["entry_primary_status"]  = info.get("primary_status")
+                pick["entry_aggressive_rationale"]    = info.get("aggressive_rationale")
+                pick["entry_primary_rationale"]       = info.get("primary_rationale")
+                pick["entry_conservative_rationale"]  = info.get("conservative_rationale")
+                pick["entry_base_pattern"]    = (info.get("base_pattern") or {}).get("type")
+                pick["entry_base_quality"]    = (info.get("base_pattern") or {}).get("quality")
+                pick["entry_volume_confirmed"] = (info.get("volume_info") or {}).get("confirmed")
+                pick["entry_volume_ratio"]    = (info.get("volume_info") or {}).get("recent_vol_ratio")
+                pick["entry_oneil_cut_loss"]  = info.get("oneil_cut_loss")
+                pick["entry_rr_ratio"]        = info.get("risk_reward_ratio")
+                pick["entry_composite_tier"]  = info.get("composite_tier")
+                if info.get("skip_reason"):
+                    pick["entry_skip_reason"] = info.get("skip_reason")
+                # Pyramid levels for primary entry
+                if info.get("entry_primary"):
+                    pick["entry_pyramid_layers"] = compute_pyramid_levels(info["entry_primary"])
+                # Inherit currency from elliott (in case present)
+                if not pick.get("currency"):
+                    pick["currency"] = info.get("currency")
+                    pick["currency_symbol"] = info.get("currency_symbol")
+            else:
+                pick["entry_aggressive"] = None
+                pick["entry_primary"] = None
+                pick["entry_conservative"] = None
+                pick["entry_skip_reason"] = info.get("_error", "no_data") if info else "no_data"
+            if rate_limit_delay and not cache_hit:
+                time.sleep(rate_limit_delay)   # only throttle on actual yfinance calls
+        if use_cache:
+            _save_cache(cache)
     return buy_list
+
+
+# ─────────────────────────────────────────────────────────────────
+# Korean commentary synthesis (pure, no I/O)
+# ─────────────────────────────────────────────────────────────────
+
+_BASE_PATTERN_KR = {
+    "flat_base": "Flat Base",
+    "cup_with_handle": "Cup-with-Handle",
+    "double_bottom": "Double Bottom",
+}
+
+
+def _fnum(v) -> Optional[float]:
+    """None-safe float coercion — returns None on missing/NaN/Inf/unparseable."""
+    if v is None:
+        return None
+    try:
+        f = float(v)
+        return f if math.isfinite(f) else None
+    except (TypeError, ValueError):
+        return None
+
+
+def format_can_slim_commentary(row: dict) -> str:
+    """Synthesize a 2-4 sentence Korean commentary paragraph from an already-annotated
+    buy_list row (has entry_* keys from annotate_buy_list_with_entries + compute_entry_for_ticker).
+
+    Pure, deterministic, no I/O. Every field access is .get()-guarded — never raises.
+    """
+    row = row or {}
+
+    tier = row.get("entry_composite_tier")
+    base_pattern = row.get("entry_base_pattern")
+    base_quality = row.get("entry_base_quality")
+    primary_status = row.get("entry_primary_status")
+    primary_price = _fnum(row.get("entry_primary"))
+    conservative_price = _fnum(row.get("entry_conservative"))
+    vol_confirmed = bool(row.get("entry_volume_confirmed"))
+    vol_ratio = _fnum(row.get("entry_volume_ratio"))
+    oneil_stop = _fnum(row.get("entry_oneil_cut_loss"))
+    rr_ratio = _fnum(row.get("entry_rr_ratio"))
+
+    # Honest fallback — no usable CAN SLIM signal at all.
+    if tier in ("SKIP", "NO_DATA") or not base_pattern:
+        sentences = ["뚜렷한 CAN SLIM 베이스 미탐지 — SMA/모멘텀 시그널만 참고."]
+        if conservative_price is not None:
+            sentences.append(f"보수적 진입은 SMA50 되돌림 기준 ${conservative_price:.2f} 부근.")
+        return " ".join(sentences)
+
+    parts = []
+
+    # 1) Base pattern + quality
+    pname = _BASE_PATTERN_KR.get(base_pattern, base_pattern or "베이스 미탐지")
+    if base_quality:
+        parts.append(f"{pname} 베이스 (품질 {base_quality} 등급)가 탐지되었습니다.")
+    else:
+        parts.append(f"{pname} 베이스가 탐지되었습니다.")
+
+    # 2) Pivot / price status relative to PRIMARY
+    if primary_status == "await_breakout" and primary_price is not None:
+        parts.append(f"현재가는 PRIMARY 피벗 ${primary_price:.2f} 아래로, 아직 돌파 대기 중입니다.")
+    elif primary_status == "extended":
+        parts.append("현재가가 피벗 대비 5% 이상 확장되어 PRIMARY 매수는 실효를 상실했으며, CONSERVATIVE 진입만 유효합니다.")
+    elif primary_status in ("actionable", "buy_zone") and primary_price is not None:
+        parts.append(f"현재가는 PRIMARY 피벗 ${primary_price:.2f} 근접/돌파 상태로 즉시 진입이 유효합니다.")
+    elif primary_status == "elliott_fallback" and primary_price is not None:
+        parts.append(f"CAN SLIM 피벗 대신 Elliott 되돌림 진입가 ${primary_price:.2f}가 참고 대상입니다.")
+    else:
+        parts.append("피벗 대비 위치는 현재 데이터로 명확히 판단하기 어려워 보수적 접근을 권장합니다.")
+
+    # 3) Volume confirmation
+    if vol_ratio is not None:
+        conf_str = "확인됨" if vol_confirmed else "미확인 — 1.4x+ 기준 대기"
+        parts.append(f"거래량은 평균 대비 {vol_ratio:.1f}x로 확인 기준(1.4x+) {conf_str}.")
+    else:
+        parts.append("거래량 데이터는 확인되지 않았습니다.")
+
+    # 4) O'Neil 7% stop + risk/reward
+    risk_bits = []
+    if oneil_stop is not None:
+        risk_bits.append(f"O'Neil 7% 손절가는 ${oneil_stop:.2f}")
+    if rr_ratio is not None:
+        risk_bits.append(f"손익비는 약 {rr_ratio:.2f}:1")
+    if risk_bits:
+        parts.append(", ".join(risk_bits) + "로 리스크 관리 기준을 제시합니다.")
+
+    return " ".join(parts)

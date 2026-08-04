@@ -34,6 +34,7 @@ env/
 .pm_history.json
 .market_leaders_swarm_cache.json
 .elliott_stops_cache.json
+.elliott_indices_cache.json
 .entry_prices_cache.json
 .entry_backtest_cache.json
 .multi_agent_debate_cache.json
@@ -123,3 +124,21 @@ backtest/results.json
 backtest/results_biased.json
 backtest/ticker_details.json
 backtest/ticker_rankings.json
+
+# ─── Generated caches / data artifacts (regenerated at runtime) ──
+.herding_reversal_cache.json
+.regime_history.json
+.macro_regime_cache.json
+.options_greeks_cache.json
+.options_regime_cache.json
+.herding_reversal_cache.json
+.elliott_indices_cache.json
+.elliott_stops_cache.json
+.entry_prices_cache.json
+scratch_ew.json
+scratch_*.json
+# SEC filings RAG index (359MB — too large for the repo)
+.sec_rag/
+# Backup snapshots (.bak / .bak.<timestamp> / .pre_*.bak)
+*.bak
+*.bak.*

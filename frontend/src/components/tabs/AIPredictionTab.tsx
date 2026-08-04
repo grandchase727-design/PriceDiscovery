@@ -2185,7 +2185,12 @@ function SignalDefinitionContent() {
           <div className="grid grid-cols-12 gap-2 items-center">
             <div className="col-span-1 text-center bg-[#E3EEF5]/30 border border-[#9CC3D5] rounded-full w-8 h-8 flex items-center justify-center text-[#0D7680] font-bold">1</div>
             <div className="col-span-11 bg-[#FFF1E5] border border-[#E6D9CE] rounded-lg p-3">
-              <div className="text-[16px] font-semibold text-[#33302E] mb-1">데이터 수집 (월말)</div>
+              <div className="text-[16px] font-semibold text-[#33302E] mb-1">
+                데이터 수집 (월말)
+                <span className="ml-2 text-[11px] font-normal text-[#B85C00] bg-[#FFF3E6] border border-[#E6D9CE] rounded px-1.5 py-0.5">
+                  ⚠ 가상 예시(2024-12-31) · 라이브 데이터 아님
+                </span>
+              </div>
               <div className="text-[13px] text-[#66605C] grid grid-cols-3 gap-2 mt-2 font-mono">
                 <div>VIX = 19.5</div>
                 <div>10Y yield = 4.2%</div>

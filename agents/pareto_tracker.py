@@ -105,7 +105,7 @@ class ParetoFrontTracker:
 
     def add_round(self, round_num: int, pm_horizons: dict) -> None:
         """Process picks from one iteration round, updating Pareto front."""
-        for h in ("tactical", "core", "strategic"):
+        for h in ("core",):
             for bk in ("long_stocks", "long_etfs", "short_stocks", "short_etfs"):
                 picks = (pm_horizons.get(h, {}) or {}).get(bk, []) or []
                 for p in picks:
@@ -133,7 +133,7 @@ class ParetoFrontTracker:
     def get_pareto_optimal(self) -> dict:
         """Return Pareto-optimal picks as pm_horizons-shaped dict."""
         result = {h: {bk: [] for bk in ("long_stocks","long_etfs","short_stocks","short_etfs")}
-                  for h in ("tactical","core","strategic")}
+                  for h in ("core",)}
         for (h, bk, t), (round_seen, pick, dims) in self._best.items():
             pick["_pareto_best_round"] = round_seen
             pick["_pareto_dims"] = dims

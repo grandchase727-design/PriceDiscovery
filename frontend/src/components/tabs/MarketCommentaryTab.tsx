@@ -4,6 +4,14 @@ import { C } from "../../styles/theme";
 import { SwarmAnalysis } from "../shared/SwarmAnalysis";
 import { BacktestPanel } from "../shared/BacktestPanel";
 import FinalListPanel from "../shared/FinalListPanel";
+import ElliottWavePanel from "../shared/ElliottWavePanel";
+import FinalListEtfWavePanel from "../shared/FinalListEtfWavePanel";
+import MarketInternalsPanel from "../shared/MarketInternalsPanel";
+import MacroRegimePanel from "../shared/MacroRegimePanel";
+import OptionsRegimePanel from "../shared/OptionsRegimePanel";
+import OptionsFlowPanel from "../shared/OptionsFlowPanel";
+import HerdingReversalPanel from "../shared/HerdingReversalPanel";
+import PortfolioPanel from "../shared/PortfolioPanel";
 
 interface ClassHistoryData {
   dates: string[];
@@ -83,8 +91,32 @@ export function MarketCommentaryTab({ dataVersion = 0, scanning = false }: {
         <SwarmAnalysis />
       </div>
 
+      {/* ── Market Internals (시장 회전 진단 — 빠른 가격층) ── */}
+      <MarketInternalsPanel />
+
+      {/* ── Macro Regime (경기순환 레짐 — 느린 경제층, FRED) ── */}
+      <MacroRegimePanel />
+
+      {/* ── Options Regime (옵션 포지셔닝 — 쏠림/unwind 셋업, Tier1) ── */}
+      <OptionsRegimePanel />
+
+      {/* ── Options Flow (딜러 감마 GEX + Unwind 감지, Tier2/3) ── */}
+      <OptionsFlowPanel />
+
+      {/* ── Herding-Reversal (과열 후 반전 — 과밀+herding약화 conjunction, paper 2607.27063) ── */}
+      <HerdingReversalPanel />
+
+      {/* ── 엘리엇 파동 국면 (YTD) — 매수 Final List 바로 위 ── */}
+      <ElliottWavePanel />
+
       {/* ── 매수 Final List (통합) — placed right after Swarm Analysis (always visible) ── */}
       <FinalListPanel dataVersion={dataVersion} scanning={scanning} />
+
+      {/* ── 매수 ETF 엘리엇 파동 (YTD) — Portfolio 패널 바로 위 ── */}
+      <FinalListEtfWavePanel />
+
+      {/* ── 포트폴리오 — 매수 Final List 바로 아래 (개별종목 / ETF + 누적성과) ── */}
+      <PortfolioPanel dataVersion={dataVersion} scanning={scanning} />
 
       {/* ── Rest: collapsed by default, reveal on button click ── */}
       <CollapsibleSection

@@ -8,7 +8,7 @@ For deeper documentation, see [`docs/`](docs/) — architecture, scoring details
 
 ## What this project does
 
-Price Discovery is a **multi-asset momentum scanner + investment workflow dashboard**. It scores 770 tickers (~232 ETFs + ~538 stocks across US/Korea/Japan/Europe/China/India) every day on:
+Price Discovery is a **multi-asset momentum scanner + investment workflow dashboard**. It scores 827 tickers (~287 ETFs + ~540 stocks across US/Korea/Japan/Europe/China/India) every day on:
 
 1. **Momentum Composite (4-axis technical, OER-penalized)** — "where momentum IS now"
 2. **Pre-Momentum Score (5-agent forward-looking, rotation-aware)** — "where momentum WILL BE"
@@ -32,7 +32,7 @@ Output surfaces: PDF report (`reports/`), React dashboard (FastAPI backend + Vit
 # 1. Full scan — produces .scan_cache.pkl (technical signals)
 python3 price_discovery.py
 
-# 2. Fetch fundamentals (yfinance, ~5 min for 770 tickers)
+# 2. Fetch fundamentals (yfinance, ~5 min for 827 tickers)
 python3 fundamentals_pipeline.py
 python3 fundamentals_pipeline.py --retry-failed     # if rate-limited
 
@@ -43,6 +43,42 @@ python3 finnhub_fundamentals.py
 lsof -ti:8000 | xargs kill 2>/dev/null
 python3 -m uvicorn api:app --port 8000 &
 ```
+
+### Automated daily pipeline (`scripts/daily_pipeline.py`) — ops & known issues
+
+`scripts/daily_pipeline.py` is the launchd-scheduled (07:00 KST) full chain:
+**Live Scan → Fundamentals repair (age-gated, non-destructive) → Market Leaders Swarm → Backtest → Final List → PDF → Telegram → git commit/push**.
+Logs: `/tmp/daily_pipeline_<date>.log` (+ shared `/tmp/daily_pipeline_stdout.log` / `_stderr.log` — the stdout/stderr files are **append-only across runs**, so grep by the run's `07:00`/start marker, not the whole file).
+
+**Scan-only vs full pipeline** — run the smallest thing that answers the need:
+- **Scan only** (`python3 price_discovery.py`, or `run_scan(include_stocks=True, use_realtime=False)`): refreshes `.scan_cache.pkl` + every `_load_cache`-derived layer (scores, Momentum / Pre-Mom / Anti-Lag / Sector tiers, QVR, eligibility). Does **not** touch the swarm-based **Final List / Conviction Picks** (those live in `.market_leaders_swarm_cache.json`). ~15-20 min.
+- **Full pipeline**: adds the swarm (~20-30 min, spawns `claude -p` subprocesses) → fresh Final List. If the scan cache is already fresh, **skip Live Scan** and load STATE from it (call `api._load_cache()`) to save ~20 min.
+
+**After any scan, refresh the dashboard** so the running API on 8000 (and the Vite proxy on 5173) reflect it — the cache load only happens at uvicorn startup or on this call:
+```bash
+curl -X POST http://127.0.0.1:8000/api/reload
+```
+
+> ⚠️ **`/api/reload` reloads DATA, not CODE.** It re-runs `_load_cache()` (re-reads the pkl/json caches into `STATE`) but does **not** re-import Python modules. After editing `api.py`, `agents/*.py`, `pre_momentum.py`, etc., the running uvicorn still holds the **pre-edit** module in memory — an inline `python3 -c "build_final_lists()"` will pick up the fix while the live endpoint keeps erroring. **To load a code change you must fully restart uvicorn** (8000 runs without `--reload`, Xcode Python 3.9):
+> ```bash
+> lsof -ti:8000 | xargs kill 2>/dev/null
+> nohup python3 -m uvicorn api:app --host 127.0.0.1 --port 8000 &   # startup re-runs _load_cache (~90s)
+> ```
+> The separate service on 8001 (`backend.main:app`) is unrelated — leave it.
+
+**Known issues (all hit repeatedly, 2026-07):**
+
+| Symptom | Cause & fix |
+|---|---|
+| Swarm dies `scan_cache empty` in a standalone (non-uvicorn) process | `market_leaders_swarm.build_snapshot()` reads `api.STATE["results"]`, populated **only** by `api._load_cache()` (uvicorn startup / `/api/reload`) — never by the pkl directly. Call `api._load_cache()` before `run_swarm()`. Fixed in `step_swarm()`. |
+| Process won't exit after `🎯 Daily Pipeline 완료`; keeps spawning zombie `claude` every ~20-60 s (burns Max-plan quota) | Swarm leaves a **non-daemon background thread** stuck in a retry loop. Controlled runs: end with `os._exit(0)` + sweep orphan `claude` (ppid==1, young). launchd body still needs a real fix (join / daemonize the thread). |
+| Backtest fails `unable to open database file` | yfinance sqlite cache corruption/contention. `rm -rf ~/Library/Caches/py-yfinance` before the backtest (auto-regenerates). |
+| Backtest fails `Could not resolve host: guce.yahoo.com` (or similar DNS/`curl (6)`) | Transient network/DNS blip mid-run — **not** a code bug. Same fix: `rm -rf ~/Library/Caches/py-yfinance` and re-run just the backtest (`python3 backtest/run.py`, ~170s). Best-effort in the wrapper, so a failure here does not block Final List. |
+| Final List fails `'>=' not supported between instances of 'NoneType' and 'int'` | `agents/final_list.py:_eval_buy_pick_with_debate` read `debate.get("stars", 1)` — `.get(k, default)` only defaults on a **missing** key, so a failed/degenerate debate synthesis that emits `stars`/`tier`/`final_decision` = **None** slips through and breaks `stars >= 2`. Fixed with explicit None-coercion (`stars = 1 if stars is None else stars`; `stars == 0` stays a valid EXCLUDE, so no `or`). **Restart uvicorn to load the fix** (see the reload⚠️ note above). |
+| Live Scan logs `✓ Live Scan 완료 — 0개 ticker scored` | Cosmetic mislog (`run_scan()` return shape vs `result["results"]` read mismatch). The **cache is authoritative** — verify with the pkl, not the log line. |
+| Scored universe drops (e.g. 742 vs ~827) | Transient yahoo `HTTP 404 "Quote not found"`. Re-run the scan; usually recovers to full. |
+
+> Universe size drifts with data availability (currently **~827**: 287 ETF + 540 stock) and can transiently shrink on yahoo 404s — re-run the scan to recover the full set.
 
 ### Frontend dev
 
@@ -119,7 +155,7 @@ reports/                  — Daily PDF outputs + dependency graph
 ```
 
 Cache files (gitignored, all generated by the daily refresh / pipeline scripts):
-- `.scan_cache.pkl` — full scan results (770 tickers × ~80 fields)
+- `.scan_cache.pkl` — full scan results (827 tickers × ~80 fields)
 - `.fundamentals_cache.pkl` — yfinance + Finnhub merged fundamentals
 - `.finnhub_config.json` — Finnhub API key (free tier)
 - `.etf_holdings_cache.json` — ETF top holdings (Hybrid Bottom-up layer, refresh weekly)
@@ -139,7 +175,7 @@ Composite  = base − 0.10·max(0, OER − 40)         # OER penalty, max −6 p
 ```
 - **TCS** (Trend Continuation): SMA20/50/200 distance + slope + trend age (long-horizon weighted 60%)
 - **TFS_resid** (Trend Formation, **residualized vs TCS**): cross-sectional OLS removes TCS-TFS info overlap. `tfs_short/long` (used by `classify()`) keep raw values; only Composite uses TFS_resid.
-- **RSS_hybrid** (Relative Strength): `0.6·within_sector + 0.4·universe` percentile (sector beta correction; small categories n<8 fall back to universe-wide)
+- **RSS_hybrid** (Relative Strength): `0.6·within_sector + 0.4·universe` percentile (sector beta correction). Within-group = **17-Sector 기준** (2026-07 B6: legacy 43-category → SubTheme→Sector 그룹핑 전환; small sectors n<8 — Macro/Multi-Asset/Alternatives — fall back to universe-wide)
 - **URS** (Underreaction Score): LeadLag + AttnGap + post-event Drift + Dispersion (behavioral overlay)
 - **OER penalty**: 40 미만은 무패널티, 100 이면 −6점 (과열 종목과 건전 추세주의 비대칭 해소)
 
@@ -205,7 +241,7 @@ Overrides: 🟡 OVEREXTENDED (OER ≥ 60 on bullish), 🔵 FORMATION (rapid shor
 
 ## Universe & Taxonomy (Option B — unified)
 
-- **Total**: 770 tickers (~232 ETFs + ~538 stocks)
+- **Total**: 827 tickers (~287 ETFs + ~540 stocks)
 - **Sector** (Level 1, 17 buckets): GICS-aligned sectors + Fixed Income / International / Equity Broad / Macro / Multi-Asset / Alternatives
 - **SubTheme** (Level 2, 105 buckets): granular thematic groups (e.g. "Semiconductor Design" — both NVDA stock and SMH ETF map to the same SubTheme)
 - **Category** (legacy, ~43 buckets): retained internally for universe management + benchmark mapping; hidden from UI
@@ -217,7 +253,7 @@ Universe definitions live in:
 - `STOCK_UNIVERSE` (price_discovery.py:210) — Stock tickers grouped by Category
 - `STOCK_THEMES` + `STOCK_THEMES_CONSOLIDATED` (price_discovery.py:622-1106) — Stock SubTheme map
 - `ETF_SUBTHEMES` (price_discovery.py:1108+) — ETF SubTheme map (unified with stock themes)
-- `SUBTHEME_TO_SECTOR` (api.py:27+) — SubTheme → Sector lookup
+- `SUBTHEME_TO_SECTOR` (price_discovery.py, ETF_SUBTHEMES 직후) — SubTheme → Sector lookup + helper `get_ticker_sector()` (2026-07 B6에서 api.py→price_discovery.py로 이동, api.py는 import해서 사용)
 
 ### Adding tickers
 
@@ -229,8 +265,8 @@ Add to the appropriate dict in `GLOBAL_ETF_UNIVERSE` or `STOCK_UNIVERSE`. For ne
 
 | Source | What | Free tier limit | Coverage |
 |---|---|---|---|
-| **yfinance** | Prices (OHLCV) + basic fundamentals | sustained ~2k req/hr | All 770 tickers globally |
-| **Finnhub** | 70+ ratios, monthly recommendation history, EPS surprises, news | 60 req/min, US-listed only | ~620 of 770 tickers |
+| **yfinance** | Prices (OHLCV) + basic fundamentals | sustained ~2k req/hr | All 827 tickers globally |
+| **Finnhub** | 70+ ratios, monthly recommendation history, EPS surprises, news | 60 req/min, US-listed only | ~700 of 827 tickers |
 | **GraphRAG (internal)** | Knowledge graph of theme/community structure | unlimited | Computed from scan results |
 
 Korean tickers (.KS) bypass Finnhub (free tier blocks them) and rely on yfinance only — accept lower analyst coverage as a known limitation.
@@ -338,7 +374,7 @@ Two implementations live side-by-side. They share the same scoring math but answ
 
 `strategy_sector_rotation()` in [`quant_strategies.py`](quant_strategies.py:124) runs alongside the other 8 quant strategies on every scan:
 
-- Groups all 770 scored tickers by `category`, computes per-category mean Composite
+- Groups all 827 scored tickers by `category`, computes per-category mean Composite
 - Top 3 categories → OVERWEIGHT; bottom 3 (when ≥6 categories) → UNDERWEIGHT
 - Picks top 5 tickers within each overweight category by Composite
 - Surfaces in `/api/strategies` and the React dashboard's strategy cards

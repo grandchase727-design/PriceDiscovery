@@ -34,7 +34,7 @@ const ACTION_META: Record<string, { color: string; label: string }> = {
 };
 
 const HORIZON_EMOJI: Record<string, string> = {
-  tactical: "🚀", core: "⚓", strategic: "🌐",
+  core: "⚓",
 };
 
 function Stars({ n }: { n: number }) {
@@ -69,11 +69,25 @@ function Pill({ children, color, bg }: { children: React.ReactNode; color: strin
 // ─────────────────────────────────────────────────────────────────
 function interpretPosition(r: any): { emoji: string; color: string; headline: string; detail: string } {
   const state = (r.state || "").toUpperCase();
+  const category = (r.category || "").toUpperCase();
   const sigDays = r.signal_days ?? 0;
   const daysHeld = r.days_held ?? 0;
   const urgency = (r.urgency || "NORMAL").toUpperCase();
   const action = (r.action || "").toUpperCase();
   const promotedShort = !!r.promoted_from_short;
+
+  // 🔄 재출현 — NEW 후보인데 position state machine에 과거 청산/탈락(EXITED·DROPPED)
+  // 이력이 남아있는 경우. "신규후보 + 청산완료" 모순 표시를 명확한 재출현 배지로 대체.
+  // (오늘 voting 통과 = NEW, 과거 보유→청산 = terminal state — 서로 다른 두 축)
+  if (category === "NEW" && (state === "EXITED" || state === "DROPPED")) {
+    return {
+      emoji: "🔄",
+      color: C.purple,
+      headline: "재출현 (과거 청산)",
+      detail: "과거 보유 후 청산했던 종목이 오늘 다시 매수 신호 통과 — 신규 후보로 재등장. "
+            + "직전 청산 사유를 점검한 뒤 재진입 여부 판단 권장.",
+    };
+  }
 
   // Urgency 부가 설명
   const urgencyNote =
@@ -226,7 +240,7 @@ function FinalListTable({ items, mode, categoryCommentary, typeFilter = "ALL" }:
   const tierCounts: Record<number, number> = { 1: 0, 2: 0, 3: 0 };
   items.forEach((r) => { tierCounts[r.stars] = (tierCounts[r.stars] || 0) + 1; });
 
-  const NCOLS = 19;   // + 🎭 Debate Transcript
+  const NCOLS = 17;   // 메인 행 칼럼 수 (진입가/손절가 삭제, 보유이후 수익률 추가; Debate Commentary는 인라인 제거 → 종목 행 아래 colSpan 서브행)
 
   // Derive asset type from bucket name
   const assetType = (bucket: string): "Stock" | "ETF" | "—" => {
@@ -260,6 +274,7 @@ function FinalListTable({ items, mode, categoryCommentary, typeFilter = "ALL" }:
   return (
     <div className="overflow-auto rounded" style={{
       maxHeight: 600, backgroundColor: C.bgAlt, border: `1px solid ${C.border}`,
+      containerType: "inline-size",   // makes 100cqw below resolve to THIS box's visible width, not the wide table's
     }}>
       <table className="w-full text-[12px] border-collapse">
         <thead className="sticky top-0" style={{ backgroundColor: C.bgAlt, zIndex: 1 }}>
@@ -268,8 +283,6 @@ function FinalListTable({ items, mode, categoryCommentary, typeFilter = "ALL" }:
             <th className="text-left px-1.5 py-1.5" style={{ color: C.gray, minWidth: 90 }}>Ticker</th>
             <th className="text-left px-1.5 py-1.5" style={{ color: C.gray }}>Name</th>
             <th className="text-center px-1.5 py-1.5" style={{ color: C.gray, minWidth: 55 }}>Type</th>
-            <th className="text-left px-1.5 py-1.5" style={{ color: C.gray, minWidth: 80 }}>Horizon</th>
-            <th className="text-center px-1.5 py-1.5" style={{ color: C.gray, minWidth: 50 }}>Comp</th>
             <th className="text-center px-1.5 py-1.5" style={{ color: C.gray, minWidth: 110 }}>📂 분류</th>
             <th className="text-left px-1.5 py-1.5" style={{ color: C.gray, minWidth: 110 }}>📊 State</th>
             <th className="text-center px-1.5 py-1.5" style={{ color: C.gray, minWidth: 110 }}>Action</th>
@@ -277,19 +290,19 @@ function FinalListTable({ items, mode, categoryCommentary, typeFilter = "ALL" }:
                 title="포지션 상태 해석 — State machine 상태(PROSPECTING/HOLDING/EXIT_PENDING/EXITED 등)를 사용자 친화적 한국어 설명으로 변환">
               🧭 포지션
             </th>
-            <th className="text-center px-1.5 py-1.5" style={{ color: C.gray, minWidth: 130 }}
-                title="3-tier 진입가 (CAN SLIM + Elliott + SMA50): AGGRESSIVE 현재가 / PRIMARY CAN SLIM pivot / CONSERVATIVE SMA50 pullback. O'Neil 7% cut-loss 자동 적용.">
-              🎯 진입가
+            <th className="text-right px-1.5 py-1.5" style={{ color: C.gray, minWidth: 90 }}
+                title="보유이후 수익률 — 진입가(entered_price) 대비 현재가 수익률. 보유 중(HOLDING) 종목만 표시, entered_price 미기록 시 '—'.">
+              보유이후 수익률
             </th>
-            <th className="text-center px-1.5 py-1.5" style={{ color: C.gray, minWidth: 110 }}
-                title="Elliott Wave 기반 손절 가격 (horizon 별 — tactical: W4 저점, core: W1 상단, strategic: W2 저점/W1 상단). CAN SLIM 7% 절대 cap 적용.">
-              🌊 손절가
+            <th className="text-center px-1.5 py-1.5" style={{ color: C.gray, minWidth: 80 }}
+                title="현재가 (실시간 반영). 통화: .KS/.KQ=₩, .T=¥ 등 종목별 통화.">
+              💵 현재가
+            </th>
+            <th className="text-left px-1.5 py-1.5" style={{ color: C.gray, minWidth: 200 }}
+                title="목표매매횟수 — 분할 매매 횟수를 결정하는 swarm agent. 신규 매수=몇 번에 나누어 매수 / 보유=추가 매수가 타당하면 몇 번에(비권장 시 0회) / 청산=몇 번에 나누어 매도. 변동성·신뢰도·긴급도를 종합해 결정, 한국어 근거 포함.">
+              🔢 목표매매횟수
             </th>
             <th className="text-center px-1.5 py-1.5" style={{ color: C.gray, minWidth: 110 }}>🗳 3-Agent Votes</th>
-            <th className="text-left px-1.5 py-1.5" style={{ color: C.gray, minWidth: 320 }}>🎭 Debate Transcript</th>
-            <th className="text-left px-1.5 py-1.5" style={{ color: C.gray }}>💬 PM Agent Reason</th>
-            <th className="text-left px-1.5 py-1.5" style={{ color: C.gray }}>🎯 Trader Agent Reason</th>
-            <th className="text-left px-1.5 py-1.5" style={{ color: C.gray }}>🛡 Risk Agent Reason</th>
             <th className="text-right px-1 py-1.5" style={{ color: C.gray, minWidth: 50 }}>5d</th>
             <th className="text-right px-1 py-1.5" style={{ color: C.gray, minWidth: 55 }}>1mo</th>
             <th className="text-right px-1 py-1.5" style={{ color: C.gray, minWidth: 55 }}>3mo</th>
@@ -422,27 +435,6 @@ function FinalListTable({ items, mode, categoryCommentary, typeFilter = "ALL" }:
                       return <Pill color={color}>{emoji} {t}</Pill>;
                     })()}
                   </td>
-                  <td className="px-1.5 py-1">
-                    {(() => {
-                      const allH = (r as any).all_horizons as string[] | undefined;
-                      if (allH && allH.length > 1) {
-                        const letters = allH.map((h) => h[0].toUpperCase()).join("·");
-                        return (
-                          <span title={`복수 horizon에 동시 등장: ${allH.join(", ")} (대표 = ${r.horizon})`}>
-                            <Pill color={C.cyan}>⏱ {letters} ×{allH.length}</Pill>
-                          </span>
-                        );
-                      }
-                      return (
-                        <Pill color={r.horizon === "tactical" ? C.amber : r.horizon === "core" ? C.purple : C.cyan}>
-                          {HORIZON_EMOJI[r.horizon] || "?"} {r.horizon}
-                        </Pill>
-                      );
-                    })()}
-                  </td>
-                  <td className="text-center px-1.5 py-1 font-mono" style={{ color: C.text }}>
-                    {r.composite}
-                  </td>
                   {/* 📂 분류 — Active Holdings / Exit Pending / New */}
                   <td className="text-center px-1.5 py-1">
                     {(() => {
@@ -543,124 +535,97 @@ function FinalListTable({ items, mode, categoryCommentary, typeFilter = "ALL" }:
                       );
                     })()}
                   </td>
-                  {/* 🎯 3-Tier Entry Prices (CAN SLIM + Elliott + SMA50) */}
-                  <td className="text-center px-1.5 py-1"
-                      title={[
-                        r.entry_aggressive_rationale && `🟢 AGGRESSIVE: ${r.entry_aggressive_rationale}`,
-                        r.entry_primary_rationale && `🟠 PRIMARY: ${r.entry_primary_rationale}`,
-                        r.entry_conservative_rationale && `🔵 CONSERVATIVE: ${r.entry_conservative_rationale}`,
-                        r.entry_oneil_cut_loss && `\nO'Neil cut-loss: ${r.currency_symbol || "$"}${r.entry_oneil_cut_loss}`,
-                        r.entry_rr_ratio && `R/R: ${r.entry_rr_ratio}`,
-                      ].filter(Boolean).join("\n\n") || "진입가 데이터 없음"}>
-                    {(r.entry_aggressive || r.entry_primary || r.entry_conservative || r.entry_primary_status === "extended") ? (
-                      <div style={{ lineHeight: 1.2 }}>
-                        {(() => {
-                          const sym = r.currency_symbol || "$";
-                          const ccy = r.currency || "USD";
-                          const isWhole = ccy === "KRW" || ccy === "JPY";
-                          const fmt = (v?: number | null) =>
-                            v == null ? "—" :
-                            isWhole ? `${sym}${Math.round(v).toLocaleString()}` :
-                            `${sym}${v.toFixed(2)}`;
-                          // EXTENDED warning — Primary 자리에 표시
-                          const isExtended = r.entry_primary_status === "extended";
-                          return (
-                            <>
-                              {r.entry_aggressive != null && (
-                                <div style={{ fontSize: 12, color: C.green, fontWeight: "bold" }}>
-                                  🟢 {fmt(r.entry_aggressive)}
-                                </div>
-                              )}
-                              {isExtended ? (
-                                <div style={{ fontSize: 11, color: C.red, fontWeight: "bold",
-                                              backgroundColor: C.red + "15",
-                                              border: `1px solid ${C.red}50`,
-                                              padding: "1px 4px", borderRadius: 3, margin: "1px 0" }}
-                                     title={r.entry_primary_rationale || ""}>
-                                  ⚠ EXTENDED
-                                </div>
-                              ) : (
-                                r.entry_primary != null && (
-                                  <div style={{ fontSize: 12, color: C.amber, fontWeight: "bold" }}>
-                                    🟠 {fmt(r.entry_primary)}
-                                    {r.entry_primary_status === "buy_zone" && (
-                                      <span style={{ fontSize: 10, color: C.green, marginLeft: 2 }}>BZ</span>
-                                    )}
-                                    {r.entry_primary_status === "await_breakout" && (
-                                      <span style={{ fontSize: 10, color: C.gray, marginLeft: 2 }}>↑BO</span>
-                                    )}
-                                  </div>
-                                )
-                              )}
-                              {r.entry_conservative != null && (
-                                <div style={{ fontSize: 12, color: C.cyan }}>
-                                  🔵 {fmt(r.entry_conservative)}
-                                </div>
-                              )}
-                              {r.entry_base_pattern && (
-                                <div style={{ fontSize: 10, color: C.gray, marginTop: 2 }}>
-                                  {r.entry_base_pattern === "cup_with_handle" ? "Cup/Handle" :
-                                   r.entry_base_pattern === "flat_base" ? "Flat Base" :
-                                   r.entry_base_pattern === "double_bottom" ? "Dbl Btm" : "—"}
-                                  {r.entry_base_quality && ` ${r.entry_base_quality}`}
-                                  {r.entry_volume_confirmed ? " ✓vol" : r.entry_volume_ratio ? ` ${r.entry_volume_ratio}x` : ""}
-                                </div>
-                              )}
-                              {r.entry_rr_ratio != null && (
-                                <div style={{ fontSize: 10, color: r.entry_rr_ratio >= 2 ? C.green : C.gray }}>
-                                  R/R {r.entry_rr_ratio.toFixed(1)}
-                                </div>
-                              )}
-                            </>
-                          );
-                        })()}
-                      </div>
-                    ) : (
-                      <span className="text-[11px]" style={{ color: C.gray }}>
-                        {r.entry_composite_tier === "SKIP" ? "SKIP" : "—"}
-                      </span>
-                    )}
+                  {/* 보유이후 수익률 — entered_price 대비 현재가, HOLDING만 표시.
+                      L1: 고점대비(MFE) + 이익보존율 서브라인 (trade_mgmt 텔레메트리) */}
+                  <td className="text-right px-1.5 py-1">
+                    {(() => {
+                      const isHolding = (r as any).category === "HOLDING";
+                      const enteredPrice = (r as any).entered_price as (number | null | undefined);
+                      const cp = r.current_price as (number | null | undefined);
+                      if (!isHolding || enteredPrice == null || cp == null || enteredPrice === 0) {
+                        return <span className="text-[11px]" style={{ color: C.gray }}>—</span>;
+                      }
+                      const retSinceHolding = cp / enteredPrice - 1;
+                      const mfe = (r as any).mfe_pct as (number | null | undefined);
+                      // 이익보존율 = 현재손익/최대고점손익 (고점이 +일 때만 의미)
+                      const retained = (mfe != null && mfe > 0)
+                        ? Math.round((retSinceHolding * 100) / mfe * 100) : null;
+                      return (
+                        <div className="flex flex-col items-end">
+                          <span className="font-mono font-bold text-[12px]" style={{ color: pctColor(retSinceHolding) }}
+                                title={`진입가 대비 현재가 수익률 (진입가 ${r.currency_symbol || "$"}${enteredPrice})`}>
+                            {fmtPct(retSinceHolding)}
+                          </span>
+                          {mfe != null && mfe > 0 && (
+                            <span className="font-mono text-[10px]" style={{ color: retained != null && retained < 50 ? C.amber : C.gray }}
+                                  title={`고점대비: 보유 중 최고 수익률(MFE) +${mfe.toFixed(1)}% · 이익보존율 ${retained ?? "—"}% (현재손익/고점손익)`}>
+                              고점 +{mfe.toFixed(1)}%{retained != null ? ` · 보존 ${retained}%` : ""}
+                            </span>
+                          )}
+                          {(r as any).giveback_fired && (
+                            <span className="font-mono text-[10px]" style={{ color: C.purple, fontWeight: 700 }}
+                                  title={(r as any).giveback_reason || "이익반납 래치 발동"}>
+                              🔻 이익반납{(r as any).giveback_shadow ? " (관찰)" : ""}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </td>
-                  {/* 🌊 Elliott Wave Stop Loss */}
-                  <td className="text-center px-1.5 py-1"
-                      title={r.stop_rationale ? `${r.stop_rationale}\n\n파동: ${r.stop_wave_guess || "—"} · 유형: ${r.stop_type || "—"} · 통화: ${r.currency || "USD"}` : "데이터 없음"}>
-                    {r.stop_price != null ? (
-                      <div>
-                        <div className="font-mono font-bold" style={{
-                          fontSize: 13,
-                          color: (r.stop_pct ?? 0) >= -3 ? C.red
-                               : (r.stop_pct ?? 0) >= -8 ? C.amber
-                               : C.green,
-                        }}>
-                          {(() => {
-                            const sym = r.currency_symbol || "$";
-                            const ccy = r.currency || "USD";
-                            // For non-decimal currencies (KRW, JPY), no decimal places
-                            const isWhole = ccy === "KRW" || ccy === "JPY";
-                            return `${sym}${isWhole ? Math.round(r.stop_price).toLocaleString() : r.stop_price.toFixed(2)}`;
-                          })()}
+                  {/* 💵 현재가 (current price) */}
+                  <td className="text-center px-1.5 py-1">
+                    {(() => {
+                      const cp = r.current_price as (number | null | undefined);
+                      if (cp == null) return <span className="text-[11px]" style={{ color: C.gray }}>—</span>;
+                      const sym = r.currency_symbol || "$";
+                      const ccy = r.currency || "USD";
+                      const isWhole = ccy === "KRW" || ccy === "JPY";
+                      return (
+                        <span className="font-mono font-bold text-[13px]" style={{ color: C.text }}>
+                          {isWhole ? `${sym}${Math.round(cp).toLocaleString()}` : `${sym}${cp.toFixed(2)}`}
+                        </span>
+                      );
+                    })()}
+                  </td>
+                  {/* 🔢 목표매매횟수 (분할 매매 횟수) */}
+                  <td className="px-1.5 py-1 align-top" style={{ minWidth: 200 }}>
+                    {(() => {
+                      const mode = r.tranche_mode as ("BUY" | "ADD" | "SELL" | undefined);
+                      const cnt = r.tranche_count as (number | null | undefined);
+                      const reason = r.tranche_reasoning as (string | undefined);
+                      if (cnt == null && !reason) {
+                        return <span className="text-[11px]" style={{ color: C.gray }}
+                                     title="목표매매횟수 미계산 — Run Live Scan 또는 '매매횟수 계산' 실행 시 생성">계산 대기</span>;
+                      }
+                      const modeLabel = mode === "BUY" ? "분할 매수"
+                        : mode === "ADD" ? "추가 매수" : mode === "SELL" ? "분할 매도" : "";
+                      const modeColor = mode === "BUY" ? C.green
+                        : mode === "ADD" ? C.cyan : mode === "SELL" ? C.red : C.gray;
+                      const isNoAdd = mode === "ADD" && cnt === 0;
+                      return (
+                        <div style={{ lineHeight: 1.25 }} title={reason || ""}>
+                          <div className="flex items-center gap-1 flex-wrap">
+                            <span className="font-mono font-bold text-[13px]"
+                                  style={{ color: isNoAdd ? C.amber : modeColor }}>
+                              {isNoAdd ? "0회" : (cnt != null ? `${cnt}회` : "—")}
+                            </span>
+                            <span className="text-[9px] px-1 rounded"
+                                  style={{ color: modeColor, backgroundColor: modeColor + "18",
+                                           border: `1px solid ${modeColor}45` }}>
+                              {isNoAdd ? "추가 비권장" : modeLabel}
+                            </span>
+                          </div>
+                          {reason && (
+                            <div className="text-[10px] mt-0.5" style={{
+                              color: C.text, display: "-webkit-box", WebkitLineClamp: 3,
+                              WebkitBoxOrient: "vertical", overflow: "hidden",
+                            }}>
+                              {reason}
+                            </div>
+                          )}
                         </div>
-                        <div className="text-[11px] font-mono" style={{ color: C.gray }}>
-                          {r.stop_pct != null ? `${r.stop_pct > 0 ? "+" : ""}${r.stop_pct.toFixed(1)}%` : "—"}
-                        </div>
-                        <div className="text-[10px]" style={{
-                          color: r.stop_type === "W4_TIGHT" ? C.amber
-                               : r.stop_type === "W1_PRIMARY" ? C.cyan
-                               : r.stop_type === "W2_INVALID" ? C.red
-                               : r.stop_type === "MECHANICAL" ? C.gray
-                               : C.text,
-                        }}>
-                          {r.stop_type === "W4_TIGHT"   ? "W4 TIGHT"
-                          : r.stop_type === "W1_PRIMARY" ? "W1 PRIMARY"
-                          : r.stop_type === "W2_INVALID" ? "W2 INVALID"
-                          : r.stop_type === "SWING_LOW"  ? "SWING"
-                          : r.stop_type === "MECHANICAL" ? "MECH"
-                          : "—"}
-                        </div>
-                      </div>
-                    ) : (
-                      <span className="text-[11px]" style={{ color: C.gray }}>—</span>
-                    )}
+                      );
+                    })()}
                   </td>
                   {/* 3-Agent Votes */}
                   <td className="px-1.5 py-1 text-[11px]">
@@ -710,74 +675,31 @@ function FinalListTable({ items, mode, categoryCommentary, typeFilter = "ALL" }:
                       {r.in_proxy_latest && <Pill color={C.cyan}>📊</Pill>}
                       {r.in_top_alpha    && <Pill color={C.green}>🏆</Pill>}
                       {r.in_worst_alpha  && <Pill color={C.red}>📉</Pill>}
-                    </div>
-                  </td>
-                  {/* 🎭 Debate Synthesis Transcript */}
-                  <td className="px-1.5 py-1" style={{ color: C.text, lineHeight: 1.4, maxWidth: 360, minWidth: 280 }}>
-                    {(r as any).debate_transcript ? (
-                      <>
-                        <div style={{ color: C.text, fontSize: 12 }}>
-                          {(r as any).debate_transcript}
-                        </div>
-                        <div className="text-[11px] mt-1 pt-1 flex items-center gap-2"
-                             style={{ color: C.gray, borderTop: `1px dashed ${C.border}` }}>
-                          {(r as any).key_factor && (
-                            <span style={{ color: C.cyan }}>핵심: <span style={{color: C.text, fontWeight: "bold"}}>{(r as any).key_factor}</span></span>
-                          )}
-                          {(r as any).final_decision && (
-                            <span style={{
-                              color: (r as any).final_decision === "INCLUDE" ? C.green
-                                   : (r as any).final_decision === "INCLUDE_REDUCED_SIZE" ? C.amber
-                                   : C.gray,
-                              fontWeight: "bold",
-                            }}>
-                              → {(r as any).final_decision}
-                            </span>
-                          )}
-                        </div>
-                      </>
-                    ) : <span style={{ color: C.gray }}>—</span>}
-                  </td>
-                  {/* PM Agent reason commentary */}
-                  <td className="px-1.5 py-1" style={{ color: C.text, lineHeight: 1.4, maxWidth: 320, minWidth: 240 }}>
-                    {r.rationale || "—"}
-                  </td>
-                  {/* Trader Agent reason + entry trigger + exit trigger */}
-                  <td className="px-1.5 py-1" style={{ color: C.text, lineHeight: 1.4, maxWidth: 320, minWidth: 240 }}>
-                    {/* Primary: Trader Agent rationale (WHY this timing decision) */}
-                    <div style={{ color: C.text }}>
-                      {r.trading_rationale || "—"}
-                    </div>
-                    {/* Secondary: Trader Agent entry trigger (specific trigger condition) */}
-                    {r.entry_trigger && r.entry_trigger !== r.trading_rationale && (
-                      <div className="text-[11px] mt-1 pt-1"
-                           style={{ color: C.cyan, borderTop: `1px dashed ${C.border}` }}>
-                        ⏱ trigger: {r.entry_trigger}
-                      </div>
-                    )}
-                    {mode === "buy" && r.exit_triggers && r.exit_triggers.length > 0 && (
-                      <div className="text-[11px] mt-0.5" style={{ color: C.gray }}>
-                        🛑 exit: {r.exit_triggers[0].type} · {r.exit_triggers[0].action}
-                      </div>
-                    )}
-                  </td>
-                  {/* Risk Agent reason — deterministic risk evaluation */}
-                  <td className="px-1.5 py-1" style={{ color: C.text, lineHeight: 1.4, maxWidth: 280, minWidth: 220 }}>
-                    <div style={{ color: C.text, fontSize: 12 }}>
-                      {r.risk_reason || "—"}
-                    </div>
-                    {r.risk_score != null && (
-                      <div className="text-[11px] mt-1 pt-1 flex items-center gap-1.5"
-                           style={{ color: C.gray, borderTop: `1px dashed ${C.border}` }}>
-                        <span>Risk score:</span>
-                        <span style={{
-                          color: r.risk_score <= 35 ? C.green : r.risk_score >= 55 ? C.red : C.amber,
-                          fontWeight: "bold",
-                        }}>
-                          {r.risk_score.toFixed(0)}/100
+                      {/* Trend Freshness — 추세 나이(50일선 위 연속일). walk-forward: 풀 내
+                          신선(≤15d)이 성숙(>45d)보다 forward 우위(방향 일관). 표시 전용. */}
+                      {(r as any).trend_freshness === "FRESH" && (
+                        <span title={`신선 추세 — 강세 전환 후 ${(r as any).trend_age ?? "?"}일 (남은 여력 상대적 우위)`}>
+                          <Pill color={C.green}>🌱 {(r as any).trend_age}d</Pill>
                         </span>
-                      </div>
-                    )}
+                      )}
+                      {(r as any).trend_freshness === "MATURE" && (
+                        <span title={`성숙 추세 — 50일선 위 ${(r as any).trend_age ?? "?"}일 연속 (추세 노후 — 감쇠/되돌림 유의)`}>
+                          <Pill color={C.gray}>🧓 {(r as any).trend_age}d</Pill>
+                        </span>
+                      )}
+                      {/* Herding-Reversal (과열 후 반전, paper 2607.27063) — 과밀+herding약화
+                          conjunction. 검증상 희귀·고확신 → tie-breaker 후순위. 표시 라벨. */}
+                      {(r as any).hrr_flag === "REVERSAL_RISK" && (
+                        <span title={`과열 후 반전위험 — ${((r as any).hrr_reasons || []).join(" · ")}${(r as any).hrr_cross_confirmed ? " · 옵션 풋과밀 교차확인" : ""} (동점 시 후순위)`}>
+                          <Pill color={C.red}>🔥 반전위험</Pill>
+                        </span>
+                      )}
+                      {(r as any).hrr_flag === "WATCH" && (
+                        <span title={`과밀·단기둔화 관찰 — ${((r as any).hrr_reasons || []).join(" · ")}`}>
+                          <Pill color={C.amber}>🔥 관찰</Pill>
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <RetCell v={r.ret_5d} />
                   <RetCell v={r.ret_1mo} />
@@ -786,6 +708,65 @@ function FinalListTable({ items, mode, categoryCommentary, typeFilter = "ALL" }:
                   <RetCell v={r.ret_1y} />
                 </tr>
               );
+              // 🎭 Debate Commentary — 종목 행 바로 아래 전체 너비 서브행
+              if ((r as any).debate_transcript) {
+                rows.push(
+                  <tr key={`comm-${asset.key}-${r.ticker}-${r.horizon || "?"}-${i}`}
+                      style={{ backgroundColor: rowBg, borderBottom: `1px solid ${C.border}40` }}>
+                    <td colSpan={NCOLS} className="px-3 pb-2 pt-0.5">
+                      {/*
+                        Width fix: this <td colSpan={NCOLS}> lives inside the same wide
+                        18-column table, so its rendered box is ~1600px+ even though its
+                        content is just wrapping paragraph text. The outer scroll wrapper
+                        now has containerType:"inline-size", so 100cqw here resolves to
+                        THAT wrapper's own visible width, not the table's column-driven
+                        width. position:sticky + left pins this box to the visible left
+                        edge of the scroller so it's always fully on-screen regardless of
+                        the data columns' current horizontal scroll offset. Sticky goes on
+                        this inner div (not the <td> itself) to avoid Safari's known
+                        table-cell sticky-positioning quirks under border-collapse.
+                      */}
+                      <div className="rounded px-2.5 py-2"
+                           style={{
+                             backgroundColor: C.bg, border: `1px solid ${C.border}`,
+                             position: "sticky",
+                             left: 12,                              // matches td's px-3 left inset (12px)
+                             width: "calc(100cqw - 24px - 20px)",   // 100cqw − td px-3 (12+12) − div px-2.5 (10+10)
+                             maxWidth: "calc(100cqw - 24px - 20px)",
+                             boxSizing: "border-box",
+                           }}>
+                        <div className="text-[11px] uppercase font-bold mb-1 flex items-center gap-2"
+                             style={{ color: C.purple }}>
+                          🎭 Debate Commentary
+                          <span style={{ color: C.gray, fontWeight: "normal", textTransform: "none" }}>
+                            PM · Trading · Risk 통합
+                          </span>
+                          {(r as any).key_factor && (
+                            <span style={{ color: C.cyan, fontWeight: "normal", textTransform: "none" }}>
+                              · 핵심: <span style={{ color: C.text, fontWeight: "bold" }}>{(r as any).key_factor}</span>
+                            </span>
+                          )}
+                          {(r as any).final_decision && (
+                            <span style={{
+                              marginLeft: "auto",
+                              color: (r as any).final_decision === "INCLUDE" ? C.green
+                                   : (r as any).final_decision === "INCLUDE_REDUCED_SIZE" ? C.amber
+                                   : C.gray,
+                              fontWeight: "bold", textTransform: "none",
+                            }}>
+                              → {(r as any).final_decision}
+                            </span>
+                          )}
+                        </div>
+                        <div className="whitespace-pre-wrap text-[12px]"
+                             style={{ color: C.text, lineHeight: 1.5, overflowWrap: "anywhere" }}>
+                          {(r as any).debate_transcript}
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              }
               });  // close asset.items.forEach
             });  // close ASSET_GROUPS.forEach
             return rows;
@@ -885,6 +866,9 @@ export default function FinalListPanel({ dataVersion = 0, scanning = false }: Fi
         existing.days_held = ap.days_held;
         existing.persistence_days = ap.persistence_days;
         existing.in_today_picks = true;
+        existing.entered_price = ap.entered_price;
+        existing.mfe_pct = (ap as any).mfe_pct;   // L1 telemetry (고점대비 서브라인)
+        existing.mae_pct = (ap as any).mae_pct;
       } else {
         // Active position NOT in today's buy list → synthesize entry.
         // Spread ...ap FIRST so API-annotated entry_*/stop_*/currency fields carry through,
@@ -936,7 +920,7 @@ export default function FinalListPanel({ dataVersion = 0, scanning = false }: Fi
     }
 
     // ── Phase 2: collapse rows by ticker (same ticker across horizons → one row) ──
-    // Same ticker can appear in tactical/core/strategic — show as single row with
+    // Same ticker can appear across horizons — show as single row with
     // combined horizon badge; pick representative by category priority.
     const CAT_PRIORITY: Record<string, number> = {
       EXIT_PENDING: 0, ENTERED: 1, HOLDING: 2, NEW: 3,
@@ -969,7 +953,7 @@ export default function FinalListPanel({ dataVersion = 0, scanning = false }: Fi
     // Attach collapsed horizon list to each representative row
     for (const [t, row] of byTicker.entries()) {
       const hSet = horizonsByTicker.get(t) || new Set();
-      const H_ORDER: Record<string, number> = { tactical: 0, core: 1, strategic: 2 };
+      const H_ORDER: Record<string, number> = { core: 0 };
       (row as any).all_horizons = Array.from(hSet).sort(
         (a, b) => (H_ORDER[a] ?? 9) - (H_ORDER[b] ?? 9)
       );
@@ -1127,21 +1111,35 @@ export default function FinalListPanel({ dataVersion = 0, scanning = false }: Fi
         </div>
       </div>
 
+      {/* ── Debate health warning — degraded면 리스트가 순수 composite 랭킹으로 퇴화 ── */}
+      {(() => {
+        const dh = (meta as any)?.debate_health;
+        if (!dh || (dh.status !== "degraded" && dh.status !== "partial")) return null;
+        const isDeg = dh.status === "degraded";
+        const col = isDeg ? C.red : C.amber;
+        return (
+          <div className="rounded px-3 py-2 mb-3" style={{
+            backgroundColor: col + "15", border: `1px solid ${col}80` }}>
+            <span style={{ color: col, fontSize: 13, fontWeight: "bold" }}>
+              {isDeg ? "⚠ 검증층 무력화" : "⚠ 검증층 부분 실패"} — per-ticker debate {dh.n_failed}/{dh.n_total} 실패
+            </span>
+            <span style={{ color: C.text, fontSize: 12, marginLeft: 8 }}>{dh.note}</span>
+          </div>
+        );
+      })()}
+
       {/* Column descriptions toggle */}
       <ColDefToggle title="📖 컬럼 설명 (클릭하여 펼치기/숨기기)" defs={[
         { col: "★ Stars",         desc: "3-Agent Voting (PM + Trading + Risk) 합의 점수: ★★★ UNANIMOUS / MAJORITY_CLEAN · ★★ MAJORITY_DISSENT / SOLO_CLEAN · ★ SOLO_DISSENT / ALL_CAUTION" },
         { col: "Ticker",          desc: "종목 코드 + Sector 표시" },
         { col: "Name",            desc: "종목명" },
         { col: "Type",            desc: "📈 Stock / 📦 ETF — bucket에서 도출" },
-        { col: "Horizon",         desc: "🚀 Tactical (5d) / ⚓ Core (21d) / 🌐 Strategic (63d) — PM Agent가 picks한 투자 기간" },
-        { col: "Comp",            desc: "Composite Score (0-100). 0.30·TCS + 0.25·TFS_resid + 0.30·RSS_hybrid + 0.15·URS − 0.10·max(0, OER−40)" },
         { col: "📂 분류",          desc: "보유 상태 분류: ✓ 오늘 진입 (ENTERED, 즉시 매수) · 🔵 보유 중 (HOLDING, 진입한 지 N일 — '✓오늘picks' or '×미선정' 표시) · ⚠ 청산 후보 (EXIT_PENDING) · 🟢 신규 후보 (NEW, 오늘 처음 voting 통과)" },
         { col: "📊 State",        desc: "Phase 5.6 Position State Machine: PROSPECTING (관찰) → ENTERED (확정) → HOLDING (보유) → EXIT_PENDING (청산 대기) → EXITED (완료). Hysteresis로 2일 confirmation 필요" },
         { col: "Action",          desc: "오늘 실행 (EXECUTE_TODAY: 🆕 NEW BUY alert) / 내일 재확인 (WATCH_TOMORROW: 1일째) / 이미 보유 (ALREADY_HELD) / 관찰만 (OBSERVE)" },
+        { col: "🔢 목표매매횟수",   desc: "분할 매매 횟수를 결정하는 swarm agent (Claude Max). 신규 매수=몇 번에 나누어 매수(1~4회) · 보유=추가 매수가 타당하면 몇 번에(0~3회, 0=추가 비권장) · 청산=몇 번에 나누어 매도(1~4회). 변동성·신뢰도·타이밍·긴급도를 종합해 결정하며 한국어 근거 동반. 24h 캐시 + Run Live Scan 시 자동 재계산" },
         { col: "🗳 3-Agent Votes", desc: "PM Agent (composite + classification 기반) · Trading Agent (entry_signal: BUY_NOW=APPROVE/WAIT=CAUTION/SKIP=REJECT) · Risk Agent (overheating+volatility+liquidity+concentration+drawdown 5-차원 점수). 각 ✓ APPROVE / ○ CAUTION / ✗ REJECT" },
-        { col: "💬 PM Reason",    desc: "PM Agent의 한국어 commentary — 거시/섹터/스토리 관점에서 선정 이유" },
-        { col: "🎯 Trader Reason", desc: "Trading Agent의 영어 commentary — timing/execution 관점에서 진입 이유 + entry trigger + exit trigger" },
-        { col: "🛡 Risk Reason",  desc: "Risk Manager의 한국어 평가 — 5-차원 risk 점수 + 주요 위험 요인 + 사이즈 조정 권고" },
+        { col: "🎭 Debate Commentary", desc: "Debate synthesis + PM·Trading·Risk 3개 에이전트 reason을 하나로 통합한 코멘터리. 📊 PM(거시/섹터/스토리 선정 이유) · 🎯 Trading(timing/진입 이유) · 🛡 Risk(위험 평가)를 한 칼럼에 표시. 하단에 핵심 요인 + 최종 결정(INCLUDE/WATCH 등)" },
         { col: "5d ~ 1y",         desc: "Trailing total returns: 5 trading days · 21d (1mo) · 63d (3mo) · 126d (6mo) · 252d (1y). 가격 cache에 충분 history 부족 시 '—'" },
       ]} />
 

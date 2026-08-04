@@ -174,31 +174,33 @@ CATEGORY_BENCHMARK_ALT = {
 }
 
 GLOBAL_ETF_UNIVERSE = {
-    "EQ_Broad": {"tickers": {"SPY": "S&P 500", "QQQ": "Nasdaq 100", "DIA": "Dow Jones 30", "RSP": "S&P 500 Equal Weight", "IWF": "Russell 1000 Growth", "IWD": "Russell 1000 Value", "VUG": "Large Cap Growth", "VTV": "Large Cap Value", "IJH": "S&P MidCap 400", "IWM": "Russell 2000", "IJR": "S&P SmallCap 600", "VBR": "Small Cap Value", "VBK": "Small Cap Growth", "MGK": "Mega Cap Growth", "MGV": "Mega Cap Value", "OEF": "S&P 100 Mega Cap"}},
-    "EQ_Technology": {"tickers": {"XLK": "Technology", "SMH": "Semiconductors", "SOXX": "Semiconductor Index", "CIBR": "Cybersecurity", "HACK": "Cybersecurity", "BOTZ": "Robotics & AI"}},
-    "EQ_Healthcare": {"tickers": {"XLV": "Health Care", "IBB": "Biotech", "XBI": "Biotech Equal Weight"}},
-    "EQ_Financials": {"tickers": {"XLF": "Financials", "KRE": "Regional Banks"}},
+    "EQ_Broad": {"tickers": {"SPY": "S&P 500", "QQQ": "Nasdaq 100", "DIA": "Dow Jones 30", "RSP": "S&P 500 Equal Weight", "IWF": "Russell 1000 Growth", "IWD": "Russell 1000 Value", "VUG": "Large Cap Growth", "VTV": "Large Cap Value", "IJH": "S&P MidCap 400", "IWM": "Russell 2000", "IJR": "S&P SmallCap 600", "VBR": "Small Cap Value", "VBK": "Small Cap Growth", "MGK": "Mega Cap Growth", "MGV": "Mega Cap Value", "OEF": "S&P 100 Mega Cap", "QLD": "Ultra QQQ 2X", "TQQQ": "UltraPro QQQ 3X", "SQQQ": "UltraPro Short QQQ 3X", "SSO": "Ultra S&P500 2X", "UPRO": "UltraPro S&P500 3X", "SPXL": "Direxion S&P500 Bull 3X", "UDOW": "UltraPro Dow 3X", "TNA": "Small Cap Bull 3X", "UWM": "Ultra Russell2000 2X", "FNGU": "FANG+ Bull 3X"}},
+    "EQ_Technology": {"tickers": {"XLK": "Technology", "SMH": "Semiconductors", "SOXX": "Semiconductor Index", "CIBR": "Cybersecurity", "HACK": "Cybersecurity", "BOTZ": "Robotics & AI", "SOXL": "Semiconductor Bull 3X", "SOXS": "Semiconductor Bear 3X", "DRAM": "Memory Chips", "TECL": "Technology Bull 3X", "USD": "Ultra Semiconductors 2X"}},
+    "EQ_Healthcare": {"tickers": {"XLV": "Health Care", "IBB": "Biotech", "XBI": "Biotech Equal Weight", "LABU": "Biotech Bull 3X", "CURE": "Healthcare Bull 3X"}},
+    "EQ_Financials": {"tickers": {"XLF": "Financials", "KRE": "Regional Banks", "KBWB": "KBW Bank", "FAS": "Financial Bull 3X", "DPST": "Regional Banks Bull 3X"}},
     "EQ_ConsDisc": {"tickers": {"XLY": "Consumer Discretionary", "ITB": "Home Construction", "XHB": "Homebuilders"}},
     "EQ_ConsStaples": {"tickers": {"XLP": "Consumer Staples"}},
     "EQ_Industrials": {"tickers": {"XLI": "Industrials", "ITA": "Aerospace & Defense", "PAVE": "Infrastructure"}},
-    "EQ_Energy": {"tickers": {"XLE": "Energy"}},
+    "EQ_Energy": {"tickers": {"XLE": "Energy", "ERX": "Energy Bull 2X"}},
     "EQ_Materials": {"tickers": {"XLB": "Materials"}},
     "EQ_Utilities": {"tickers": {"XLU": "Utilities"}},
-    "EQ_RealEstate": {"tickers": {"XLRE": "Real Estate"}},
+    "EQ_RealEstate": {"tickers": {"XLRE": "Real Estate", "DRN": "Real Estate Bull 3X"}},
     "EQ_CommServices": {"tickers": {"XLC": "Communication Services"}},
     "EQ_Factor": {"tickers": {"MTUM": "Momentum", "QUAL": "Quality", "USMV": "Min Volatility", "VLUE": "Value Factor", "SIZE": "Size Factor", "SCHD": "Dividend Growth", "VIG": "Dividend Appreciation", "DVY": "High Dividend Yield", "NOBL": "Dividend Aristocrats", "COWZ": "Free Cash Flow Yield", "MOAT": "Wide Moat", "SPHQ": "S&P 500 Quality", "SPMO": "S&P 500 Momentum", "DYNF": "Dynamic Multi-Factor"}},
-    "EQ_Thematic": {"tickers": {"AIQ": "AI & Big Data", "ROBO": "Robotics & Automation", "ARKG": "Genomic Revolution", "ARKW": "Next Gen Internet", "DRIV": "Autonomous & EV", "UFO": "Space", "SKYY": "Cloud Computing", "FINX": "Fintech", "EDOC": "Telemedicine", "QCLN": "Clean Edge Green Energy", "BATT": "Battery Technology", "REMX": "Rare Earth Metals", "XSD": "Semiconductor SPDR", "IGV": "Software", "CLOU": "Cloud Computing", "SHLD": "Global Defense", "463250.KS": "TIGER K방산", "ARKK": "Disruptive Innovation", "TAN": "Solar Energy", "ICLN": "Clean Energy", "LIT": "Lithium & Battery"}},
+    "EQ_Thematic": {"tickers": {"AIQ": "AI & Big Data", "ROBO": "Robotics & Automation", "ARKG": "Genomic Revolution", "ARKW": "Next Gen Internet", "DRIV": "Autonomous & EV", "UFO": "Space", "SKYY": "Cloud Computing", "FINX": "Fintech", "EDOC": "Telemedicine", "QCLN": "Clean Edge Green Energy", "BATT": "Battery Technology", "REMX": "Rare Earth Metals", "XSD": "Semiconductor SPDR", "IGV": "Software", "CLOU": "Cloud Computing", "SHLD": "Global Defense", "ARKK": "Disruptive Innovation", "TAN": "Solar Energy", "ICLN": "Clean Energy", "LIT": "Lithium & Battery"}},
     "Intl_Developed": {"tickers": {"VEA": "FTSE Developed ex-US", "EFA": "MSCI EAFE", "IEFA": "MSCI EAFE Core", "SPDW": "S&P Developed ex-US", "VGK": "FTSE Europe", "EZU": "Eurozone", "HEDJ": "Europe Hedged", "FEZ": "Euro Stoxx 50", "EWJ": "MSCI Japan", "BBJP": "Japan BetaBuilders", "DXJ": "Japan Hedged Equity", "EWG": "Germany", "EWU": "United Kingdom", "EWQ": "France", "EWL": "Switzerland", "EWP": "Spain", "EWI": "Italy", "EWA": "Australia", "EWC": "Canada", "EIS": "Israel", "EWH": "Hong Kong", "EWS": "Singapore"}},
     "Emerging_Markets": {"tickers": {"VWO": "FTSE Emerging Markets", "EEM": "MSCI Emerging Markets", "IEMG": "MSCI EM Core", "EMXC": "EM ex-China", "EWZ": "Brazil", "EWT": "Taiwan", "EWY": "South Korea", "KORU": "South Korea Bull 3X", "INDA": "India", "FXI": "China Large-Cap", "KWEB": "China Internet", "MCHI": "MSCI China", "EWW": "Mexico", "THD": "Thailand", "VNM": "Vietnam", "EIDO": "Indonesia", "TUR": "Turkey", "EZA": "South Africa", "GXG": "Colombia", "ECH": "Chile", "EPOL": "Poland", "GREK": "Greece", "EGPT": "Egypt"}},
     "FI_Short": {"tickers": {"SHY": "1-3Y Treasury", "VCSH": "Short-Term Corp", "JAAA": "AAA CLO", "SGOV": "0-3M Treasury", "BIL": "1-3M T-Bill", "SHV": "0-1Y Treasury", "FLOT": "Floating Rate Bond", "USFR": "Floating Rate Treasury", "JPST": "Ultra-Short Income"}},
     "FI_Intermediate": {"tickers": {"IEI": "3-7Y Treasury", "VCIT": "Intermediate Corp", "AGG": "US Aggregate Bond", "BND": "Total Bond Market", "MBB": "MBS", "JBBB": "BB-B CLO", "IGIB": "5-10Y IG Corp", "GOVT": "US Treasury Full Curve"}},
     "FI_Long": {"tickers": {"IEF": "7-10Y Treasury", "TLH": "10-20Y Treasury", "TLT": "20+Y Treasury", "LQD": "Investment Grade Corp", "EDV": "Extended Duration STRIPS", "ZROZ": "25+Y Zero Coupon", "VGLT": "Long-Term Treasury", "VCLT": "Long-Term Corp"}},
-    "FI_Credit": {"tickers": {"HYG": "High Yield Corp", "USHY": "Broad High Yield", "PFF": "Preferred Stock", "ANGL": "Fallen Angel HY", "BKLN": "Senior Loan", "SRLN": "Blackstone Senior Loan", "FALN": "iShares Fallen Angels"}},
+    "FI_Credit": {"tickers": {"HYG": "High Yield Corp", "USHY": "Broad High Yield", "PFF": "Preferred Stock", "ANGL": "Fallen Angel HY", "BKLN": "Senior Loan", "SRLN": "Blackstone Senior Loan", "FALN": "iShares Fallen Angels", "PHYL": "PGIM Active High Yield"}},
     "FI_Inflation": {"tickers": {"TIP": "TIPS Bond", "VTIP": "Short-Term TIPS", "SCHP": "Schwab TIPS", "STIP": "0-5Y TIPS", "LTPZ": "15+Y TIPS"}},
     "FI_International": {"tickers": {"BNDX": "Total Intl Bond", "IAGG": "Intl Aggregate", "EMB": "EM Bonds USD", "CEMB": "EM HC Bonds", "LEMB": "EM LC Bonds", "VWOB": "EM Government Bond", "IGOV": "Intl Treasury", "BWX": "SPDR Intl Treasury"}},
-    "Commodities": {"tickers": {"GLD": "Gold", "SLV": "Silver", "GDX": "Gold Miners", "GDXJ": "Junior Gold Miners", "USO": "Crude Oil (WTI)", "BNO": "Brent Crude Oil", "UNG": "Natural Gas", "PPLT": "Platinum", "PALL": "Palladium", "DBA": "Agriculture", "DBC": "Commodity Index", "GSG": "S&P GSCI Commodity", "XOP": "S&P Oil and Exploration", "COPX": "Copper Miners", "WEAT": "Wheat", "CORN": "Corn", "URA": "Uranium", "CPER": "Copper", "SOYB": "Soybeans", "NIGS": "Sugar", "CANE": "Sugar", "PICK": "Metal Mining", "SIL": "Silver Miners", "SILJ": "Junior Silver Miners", "URNM": "Uranium Miners", "NUKZ": "Nuclear Energy", "XME": "S&P Metals & Mining", "GUNR": "Natural Resources", "MOO": "Agribusiness", "FTGC": "Commodity Strategy", "PDBC": "Optimum Yield Commodity", "COMT": "Commodity Strategy Broad", "FCG": "Natural Gas E&P", "OIH": "Oil Services", "GLDM": "Gold Mini", "SGOL": "Gold Physical", "IAU": "Gold Trust", "AAAU": "Goldman Gold", "BAR": "Gold Shares"}},
+    "Commodities": {"tickers": {"GLD": "Gold", "SLV": "Silver", "GDX": "Gold Miners", "GDXJ": "Junior Gold Miners", "USO": "Crude Oil (WTI)", "BNO": "Brent Crude Oil", "UNG": "Natural Gas", "PPLT": "Platinum", "PALL": "Palladium", "DBA": "Agriculture", "DBC": "Commodity Index", "GSG": "S&P GSCI Commodity", "XOP": "S&P Oil and Exploration", "COPX": "Copper Miners", "WEAT": "Wheat", "CORN": "Corn", "URA": "Uranium", "CPER": "Copper", "SOYB": "Soybeans", "NIGS": "Sugar", "CANE": "Sugar", "PICK": "Metal Mining", "SIL": "Silver Miners", "SILJ": "Junior Silver Miners", "URNM": "Uranium Miners", "NUKZ": "Nuclear Energy", "XME": "S&P Metals & Mining", "GUNR": "Natural Resources", "MOO": "Agribusiness", "FTGC": "Commodity Strategy", "PDBC": "Optimum Yield Commodity", "COMT": "Commodity Strategy Broad", "FCG": "Natural Gas E&P", "OIH": "Oil Services", "GLDM": "Gold Mini", "SGOL": "Gold Physical", "IAU": "Gold Trust", "AAAU": "Goldman Gold", "BAR": "Gold Shares", "GLDX": "Gold Strategy Plus Income", "NUGT": "Gold Miners Bull 2X", "JNUG": "Junior Gold Miners Bull 2X", "BOIL": "Natural Gas 2X", "UCO": "Crude Oil 2X"}},
     "Real_Assets": {"tickers": {"VNQ": "US Real Estate", "VNQI": "Intl Real Estate", "IYR": "US Real Estate Broad", "REM": "Mortgage REITs", "AMLP": "MLP Energy", "MLPX": "MLP Energy", "IFRA": "Infrastructure", "WOOD": "Timber & Forestry", "IBIT": "Bitcoin", "ETHA": "Ethereum"}},
     "Korea_Equity": {"tickers": {
+        # ── Thematic / Active ──
+        "456600.KS": "TIMEFOLIO 글로벌AI액티브",
         # ── Broad market ──
         "069500.KS": "KODEX 200",
         "102110.KS": "TIGER 200",
@@ -218,15 +220,15 @@ GLOBAL_ETF_UNIVERSE = {
         "305720.KS": "KODEX 2차전지",
         "466920.KS": "SOL 조선TOP3플러스",
         "487240.KS": "AI핵심전력설비",
-        "463250.KS": "TIGER K방산",
-        "139220.KS": "TIGER 200 IT",
-        "228810.KS": "TIGER 화장품",
-        "228790.KS": "TIGER 화학",
-        "228800.KS": "TIGER 생활소비재",
+        "463250.KS": "TIGER 우주테크",
+        "139220.KS": "TIGER 200 건설",
+        "228810.KS": "TIGER 미디어컨텐츠",
+        "228790.KS": "TIGER 화장품",
+        "228800.KS": "TIGER 여행레저",
         "139230.KS": "TIGER 200 중공업",
-        "139260.KS": "TIGER 200 건설",
+        "139260.KS": "TIGER 200 IT",
         "139270.KS": "TIGER 200 금융",
-        "266390.KS": "TIGER 코스피고배당",
+        "266390.KS": "KODEX 자유소비재",
         # ── Factor / Style ──
         "161510.KS": "PLUS 고배당주",
         "279530.KS": "KODEX 고배당",
@@ -234,9 +236,9 @@ GLOBAL_ETF_UNIVERSE = {
         "133690.KS": "TIGER 미국나스닥100",
         "360750.KS": "TIGER 미국S&P500",
         # ── Bond ──
-        "157450.KS": "KODEX 종합채권(AA-이상)",
-        "302190.KS": "TIGER 국고채30년",
-        "275980.KS": "TIGER 단기채권",
+        "157450.KS": "TIGER 머니마켓",
+        "302190.KS": "TIGER 국고채3-10년",
+        "275980.KS": "TIGER 모닝스타 글로벌",
         # ── Inverse / Leverage (SHORT 후보) ──
         "251340.KS": "KODEX 코스닥150 선물인버스",
         "252670.KS": "KODEX 200선물인버스2X",
@@ -287,7 +289,7 @@ STOCK_UNIVERSE = {
         "TEAM": "Atlassian", "DDOG": "Datadog",
         "FICO": "Fair Isaac", "ZS": "Zscaler",
         "NET": "Cloudflare", "HUBS": "HubSpot",
-        "VEEV": "Veeva Systems", "ANSS": "Ansys",
+        "VEEV": "Veeva Systems",
         "COIN": "Coinbase", "MDB": "MongoDB",
         "BILL": "BILL Holdings", "TWLO": "Twilio",
         "OKTA": "Okta", "PATH": "UiPath",
@@ -320,6 +322,7 @@ STOCK_UNIVERSE = {
         "CMCSA": "Comcast", "DIS": "Walt Disney",
         "GOOG": "Alphabet Class C", "NFLX": "Netflix",
         "T": "AT&T", "TMUS": "T-Mobile US", "VZ": "Verizon",
+        "TTWO": "Take-Two Interactive",
     }},
     # ══════════════════════════════════════════════════════════════════════
     # 3. Healthcare — 제약 / 바이오 / 메드테크 / 보험 / 서비스
@@ -350,6 +353,7 @@ STOCK_UNIVERSE = {
         "MOH": "Molina Healthcare", "TECH": "Bio-Techne",
         # ── Samsung Q.Pack additions ──
         "CVS": "CVS Health", "NVS": "Novartis",
+        "ELV": "Elevance Health",
     }},
     # ══════════════════════════════════════════════════════════════════════
     # 6. Financials — 은행 / 결제 / 보험 / 거래소 / 자산운용 / PE
@@ -415,6 +419,7 @@ STOCK_UNIVERSE = {
         "TPR": "Tapestry", "GRMN": "Garmin",
         # ── GICS reclassification ──
         "DASH": "DoorDash",
+        "EBAY": "eBay",
     }},
     # ══════════════════════════════════════════════════════════════════════
     # 6. Consumer Staples — 음료 / 가정용품 / 식품 / 담배
@@ -428,6 +433,7 @@ STOCK_UNIVERSE = {
         # ── GICS reclassification + Samsung Q.Pack additions ──
         "COST": "Costco",
         "BTI": "British American Tobacco", "BUD": "Anheuser-Busch InBev",
+        "KDP": "Keurig Dr Pepper",
     }},
     # ══════════════════════════════════════════════════════════════════════
     # 7. Industrials & Defense — 방산 / 항공 / 자본재 / 운송 / 폐기물
@@ -468,6 +474,8 @@ STOCK_UNIVERSE = {
         "UBER": "Uber",
         "ADP": "Automatic Data Processing", "CMI": "Cummins",
         "CP": "Canadian Pacific Kansas City", "JCI": "Johnson Controls",
+        "PCAR": "PACCAR", "ODFL": "Old Dominion Freight",
+        "ROP": "Roper Technologies",
     }},
     # ══════════════════════════════════════════════════════════════════════
     # 8. Energy — 석유 / 가스 / 정유 / 미드스트림 / 우라늄
@@ -520,7 +528,7 @@ STOCK_UNIVERSE = {
         "HL": "Hecla Mining", "MAG": "MAG Silver",
         # ── 리튬 / 배터리 원자재 ──
         "SQM": "Sociedad Quimica (Lithium)", "LAC": "Lithium Americas",
-        "ALTM": "Arcadium Lithium", "PLL": "Piedmont Lithium",
+        "PLL": "Piedmont Lithium",
         # ── 농업 / 비료 / 곡물 ──
         "NTR": "Nutrien", "MOS": "Mosaic Company",
         "CF": "CF Industries", "FMC": "FMC Corp",
@@ -544,6 +552,7 @@ STOCK_UNIVERSE = {
         # ── Samsung Q.Pack additions ──
         "DUK": "Duke Energy", "NEE": "NextEra Energy",
         "NGG": "National Grid", "SO": "Southern Company",
+        "EXC": "Exelon", "XEL": "Xcel Energy",
     }},
     # ══════════════════════════════════════════════════════════════════════
     # 11. Real Estate — 데이터센터 REIT
@@ -553,6 +562,7 @@ STOCK_UNIVERSE = {
         "DLR": "Digital Realty", "EQIX": "Equinix",
         # ── Samsung Q.Pack additions ──
         "AMT": "American Tower", "PLD": "Prologis", "WELL": "Welltower",
+        "CSGP": "CoStar Group",
     }},
     # ══════════════════════════════════════════════════════════════════════
     # 12. Korea — KOSPI 대형주 + 핵심 중형주
@@ -584,7 +594,6 @@ STOCK_UNIVERSE = {
         # ── KOSDAQ blue chips (NEW) ──
         "247540.KQ": "에코프로비엠",       # Battery materials
         "086520.KQ": "에코프로",           # Holding (Battery)
-        "091990.KQ": "셀트리온헬스케어",   # Biotech
         "041510.KQ": "에스엠",             # Entertainment
         "058470.KQ": "리노공업",           # Semiconductor equipment
         "067310.KQ": "하나마이크론",       # Semiconductor packaging
@@ -602,7 +611,7 @@ STOCK_UNIVERSE = {
         "MFG": "Mizuho Financial", "NMR": "Nomura Holdings",
         "HMC": "Honda Motor", "NTT": "Nippon Telegraph & Tel",
         "IX": "ORIX Corp", "TAK": "Takeda Pharmaceutical",
-        "SNE": "Sony (ADR alt)", "DSCSY": "Disco Corp",
+        "DSCSY": "Disco Corp",
         "NTDOY": "Nintendo", "KYOCY": "Kyocera",
         "FANUY": "Fanuc", "TOELY": "Tokyo Electron",
         "HXSCL": "Hamamatsu Photonics", "KNBWY": "Kobe Steel",
@@ -635,7 +644,7 @@ STOCK_UNIVERSE = {
         "PHG": "Philips", "ARGX": "argenx (EU Biotech)",
         "STLA": "Stellantis", "TEF": "Telefonica",
         "ERIC": "Ericsson", "NOK": "Nokia",
-        "DB": "Deutsche Bank", "CS": "Credit Suisse",
+        "DB": "Deutsche Bank",
         "SAN": "Banco Santander", "BBVA": "BBVA",
         "WPP": "WPP plc", "LOGI": "Logitech",
     }},
@@ -699,7 +708,7 @@ STOCK_THEMES = {
     "SNOW": "Data/AI Analytics", "DASH": "Delivery Platform", "TEAM": "DevOps/Collab",
     "DDOG": "Observability", "FICO": "Credit Analytics", "ZS": "Cybersecurity",
     "NET": "Edge/CDN", "HUBS": "Marketing SaaS", "VEEV": "Vertical SaaS (Pharma)",
-    "ANSS": "Simulation/CAE", "COIN": "Crypto Exchange", "MDB": "Database",
+    "COIN": "Crypto Exchange", "MDB": "Database",
     "RBLX": "Gaming Platform", "BILL": "SMB Fintech", "TWLO": "CPaaS/API",
     # ── AI Infra ──
     "CSCO": "Networking", "ETN": "Power/Transformer", "ANET": "Networking",
@@ -783,19 +792,18 @@ STOCK_THEMES = {
     "006400.KS": "Battery & EV Materials",     # Samsung SDI → Materials
     "051910.KS": "Battery & EV Materials",     # LG Chem → Materials
     "003670.KS": "Battery & EV Materials",     # 포스코퓨처엠 → Materials
-    "373220.KS": "Battery & EV Materials",     # LG에너지솔루션 → Materials
+    # (373220/316140/078930/000810/352820/259960/036570/402340/011070/096770/
+    #  034020/011200/267260/042700.KS는 아래 "Korea 추가" 세분 테마 블록에서 단독 정의 —
+    #  dict 중복 키는 마지막 값이 조용히 덮어쓰므로 여기 중복 정의 금지)
     "012450.KS": "Aerospace & Defense",        # 한화에어로 → Industrials
     "105560.KS": "Banks",                      # KB금융 → Financials
     "055550.KS": "Banks",                      # 신한지주 → Financials
     "086790.KS": "Banks",                      # 하나금융지주 → Financials
-    "316140.KS": "Banks",                      # 우리금융지주 → Financials
     "034730.KS": "Conglomerate & Holding",     # SK → Financials
     "028260.KS": "Conglomerate & Holding",     # 삼성물산 → Financials
     "003550.KS": "Conglomerate & Holding",     # LG → Financials
-    "078930.KS": "Conglomerate & Holding",     # GS → Financials
     "066570.KS": "Consumer Hardware",          # LG전자 → Technology
     "032830.KS": "Insurance",                  # 삼성생명 → Financials
-    "000810.KS": "Insurance",                  # 삼성화재 → Financials
     "009150.KS": "Industrial Technology",      # 삼성전기 → Technology
     "017670.KS": "Telecom & IT Services",      # SKT → CommServices
     "030200.KS": "Telecom & IT Services",      # KT → CommServices
@@ -803,20 +811,9 @@ STOCK_THEMES = {
     "010130.KS": "Base Metals & Mining",       # 고려아연 → Materials
     "010120.KS": "Power & Energy Infra",       # LS Electric → Utilities
     "018260.KS": "Telecom & IT Services",      # 삼성SDS → CommServices
-    "352820.KS": "Digital Media & Entertainment", # 하이브 → CommServices
-    "259960.KS": "Digital Media & Entertainment", # 크래프톤 → CommServices
-    "036570.KS": "Digital Media & Entertainment", # 엔씨소프트 → CommServices
-    "402340.KS": "Conglomerate & Holding",     # SK스퀘어 → Financials
-    "011070.KS": "Industrial Technology",      # LG이노텍 → Technology
-    "096770.KS": "Oil & Gas",                  # SK이노베이션 → Energy
-    "034020.KS": "Power & Energy Infra",       # 두산에너빌리티 → Utilities
-    "011200.KS": "Transport & Logistics",      # HMM → Industrials
-    "267260.KS": "Power & Energy Infra",       # HD현대일렉트릭 → Utilities
-    "042700.KS": "Semiconductor Equipment & EDA", # 한미반도체 → Technology
     # ── KOSDAQ (NEW) ──
     "247540.KQ": "Battery & EV Materials",      # 에코프로비엠 → Materials
     "086520.KQ": "Conglomerate & Holding",      # 에코프로 → Financials
-    "091990.KQ": "Biotech",                     # 셀트리온헬스케어 → Healthcare
     "041510.KQ": "Digital Media & Entertainment", # 에스엠 → CommServices
     "035900.KQ": "Digital Media & Entertainment", # JYP → CommServices
     "263750.KQ": "Digital Media & Entertainment", # 펄어비스 → CommServices
@@ -893,7 +890,7 @@ STOCK_THEMES = {
     "PAAS": "Silver Mining", "AG": "Silver Mining",
     "HL": "Silver/Gold Mining", "MAG": "Silver Mining (Explorer)",
     "SQM": "Lithium/Specialty Chem", "LAC": "Lithium Mining",
-    "ALTM": "Lithium", "PLL": "Lithium Mining",
+    "PLL": "Lithium Mining",
     "NTR": "Potash/Fertilizer", "MOS": "Phosphate/Potash",
     "CF": "Nitrogen Fertilizer", "FMC": "Crop Chemicals",
     "ADM": "Grain Trading/Processing", "BG": "Grain Trading/Processing",
@@ -915,7 +912,7 @@ STOCK_THEMES = {
     "MFG": "Mega Bank", "NMR": "Investment Bank",
     "HMC": "Auto OEM", "NTT": "Telecom/IT Services",
     "IX": "Leasing/Financial", "TAK": "Big Pharma",
-    "SNE": "Entertainment/Semicon", "DSCSY": "Semicon Equipment (Grind)",
+    "DSCSY": "Semicon Equipment (Grind)",
     "NTDOY": "Gaming", "KYOCY": "Electronic Components",
     "FANUY": "Factory Automation", "TOELY": "Semicon Equipment (Etch/Dep)",
     "HXSCL": "Photonics/Sensors", "KNBWY": "Steel/Materials",
@@ -939,7 +936,7 @@ STOCK_THEMES = {
     "RELX": "Data Analytics/Publishing", "ING": "Banking",
     "PHG": "Health Tech/Imaging", "ARGX": "Biotech (Autoimmune)",
     "ERIC": "Telecom Equipment", "NOK": "Telecom Equipment",
-    "DB": "Investment Bank", "CS": "Investment Bank",
+    "DB": "Investment Bank",
     "SAN": "Banking", "BBVA": "Banking",
     "WPP": "Advertising", "LOGI": "Peripherals/Hardware",
     "STLA": "Auto OEM", "TEF": "Telecom",
@@ -982,6 +979,14 @@ STOCK_THEMES = {
     "NGG": "Regulated Utility", "SO": "Regulated Utility",
     # ConsStaples additions
     "BTI": "Tobacco", "BUD": "Beverages",
+    # Index completeness additions (S&P500 top 100 + NASDAQ 100 + DJIA)
+    "KDP": "Beverages",
+    "PCAR": "Heavy Equipment", "ODFL": "Parcel/Logistics", "ROP": "Diversified Industrial",
+    "EXC": "Regulated Utility", "XEL": "Regulated Utility",
+    "CSGP": "Data Analytics",
+    "EBAY": "Online Marketplace",
+    "TTWO": "Gaming",
+    "ELV": "Managed Care",
 }
 
 # ── Theme Consolidation: 336 granular → ~47 macro themes ──
@@ -1178,7 +1183,7 @@ _THEME_CONSOLIDATION = {
     "Cable/Broadband": "Telecom & IT Services", "Media/Entertainment": "Digital Media & Entertainment",
     "Wireless Telecom": "Telecom & IT Services",
     "Healthcare Retail/PBM": "Healthcare Services",
-    "Custody Bank": "Banks", "Online Brokerage": "Fintech & Digital Finance",
+    "Custody Bank": "Banks",
     "Tower REIT": "Data Center & Networking", "Industrial REIT": "Real Estate",
     "Healthcare REIT": "Real Estate",
     "HR/Payroll Services": "Enterprise Software", "Engine/Power Systems": "Industrial Equipment",
@@ -1214,6 +1219,19 @@ ETF_SUBTHEMES = {
     "IWM": "Broad Market", "IJR": "Broad Market", "VBR": "Broad Market",
     "VBK": "Broad Market", "MGK": "Broad Market", "MGV": "Broad Market",
     "OEF": "Broad Market",
+    # ── Leveraged ETFs (Tier 1+2) — mapped to underlying SubTheme for peer aggregation ──
+    "SSO": "Broad Market", "UPRO": "Broad Market", "SPXL": "Broad Market",
+    "UDOW": "Broad Market", "TNA": "Broad Market", "UWM": "Broad Market",
+    "FNGU": "Broad Market",
+    "QLD": "Broad Market", "TQQQ": "Broad Market", "SQQQ": "Broad Market",
+    "TECL": "Sector Broad - Tech", "USD": "Semiconductor Design",
+    "SOXL": "Semiconductor Design", "SOXS": "Semiconductor Design",
+    "DRAM": "Semiconductor Memory",
+    "FAS": "Sector Broad - Financials", "DPST": "Banks",
+    "LABU": "Biotech", "CURE": "Sector Broad - Healthcare",
+    "ERX": "Sector Broad - Energy", "DRN": "Sector Broad - RealEstate",
+    "NUGT": "Precious Metals", "JNUG": "Precious Metals",
+    "BOIL": "Energy Commodities", "UCO": "Energy Commodities",
     # ── EQ_Technology ──
     "XLK": "Sector Broad - Tech",
     "SMH": "Semiconductor Design", "SOXX": "Semiconductor Design",
@@ -1223,7 +1241,7 @@ ETF_SUBTHEMES = {
     "XLV": "Sector Broad - Healthcare",
     "IBB": "Biotech", "XBI": "Biotech",
     # ── EQ_Financials ──
-    "XLF": "Sector Broad - Financials", "KRE": "Banks",
+    "XLF": "Sector Broad - Financials", "KRE": "Banks", "KBWB": "Banks",
     # ── EQ_ConsDisc ──
     "XLY": "Sector Broad - ConsDisc",
     "ITB": "Building & Construction", "XHB": "Building & Construction",
@@ -1255,7 +1273,7 @@ ETF_SUBTHEMES = {
     "BATT": "Battery & EV Materials", "REMX": "Uranium & Nuclear Fuel",
     "XSD": "Semiconductor Design", "IGV": "Cloud & Platform",
     "CLOU": "Cloud & Platform", "SHLD": "Aerospace & Defense",
-    "463250.KS": "Aerospace & Defense", "ARKK": "Disruptive Innovation",
+    "ARKK": "Disruptive Innovation",
     "TAN": "Power & Energy Infra", "ICLN": "Power & Energy Infra",
     "LIT": "Battery & EV Materials",
     # ── Intl_Developed ──
@@ -1318,7 +1336,7 @@ ETF_SUBTHEMES = {
     "LQD": "IG Corporate - Long", "VCLT": "IG Corporate - Long",
     # ── FI_Credit ──
     "HYG": "High Yield", "USHY": "High Yield",
-    "FALN": "High Yield", "ANGL": "High Yield",
+    "FALN": "High Yield", "ANGL": "High Yield", "PHYL": "High Yield",
     "BKLN": "Senior Loans", "SRLN": "Senior Loans",
     "PFF": "Preferred",
     # ── FI_Inflation ──
@@ -1330,6 +1348,7 @@ ETF_SUBTHEMES = {
     "EMB": "EM Bonds", "CEMB": "EM Bonds", "LEMB": "EM Bonds", "VWOB": "EM Bonds",
     # ── Commodities — Precious Metals / Mining ──
     "GLD": "Precious Metals", "SLV": "Precious Metals",
+    "GLDX": "Precious Metals",
     "GLDM": "Precious Metals", "SGOL": "Precious Metals",
     "IAU": "Precious Metals", "AAAU": "Precious Metals", "BAR": "Precious Metals",
     "PPLT": "Precious Metals", "PALL": "Precious Metals",
@@ -1370,14 +1389,15 @@ ETF_SUBTHEMES = {
     "305720.KS": "Battery & EV Materials",
     "466920.KS": "Industrial Equipment",
     "463250.KS": "Aerospace & Defense",
-    "139220.KS": "Sector Broad - Tech",
-    "228810.KS": "Consumer Brands",
-    "228790.KS": "Chemicals",
-    "228800.KS": "Consumer Staples",
+    "456600.KS": "Cloud & Platform",   # TIMEFOLIO 글로벌AI액티브 (AIQ와 동일 컨벤션)
+    "139220.KS": "Building & Construction",
+    "228810.KS": "Digital Media & Entertainment",  # TIGER 미디어컨텐츠 (기존 매핑 키로 통일)
+    "228790.KS": "Cosmetics & Beauty",
+    "228800.KS": "Travel & Leisure",
     "139230.KS": "Industrial Equipment",
-    "139260.KS": "Building & Construction",
+    "139260.KS": "Sector Broad - Tech",
     "139270.KS": "Sector Broad - Financials",
-    "266390.KS": "Factor - Dividend",
+    "266390.KS": "Sector Broad - ConsDisc",  # KODEX 자유소비재 (기존 매핑 키로 통일)
     # Factor / Style
     "161510.KS": "Factor - Dividend",
     "279530.KS": "Factor - Dividend",
@@ -1385,8 +1405,8 @@ ETF_SUBTHEMES = {
     "133690.KS": "Korea (Index)",
     "360750.KS": "Korea (Index)",
     # Bond
-    "157450.KS": "Sector Broad - Financials",
-    "302190.KS": "Sector Broad - Financials",
+    "157450.KS": "Money Market",
+    "302190.KS": "Government Bond",
     "275980.KS": "Sector Broad - Financials",
     # Inverse / Leverage
     "251340.KS": "Korea (Index)",
@@ -1402,6 +1422,142 @@ ETF_SUBTHEMES = {
     "AOM": "Asset Allocation", "AOK": "Asset Allocation",
     "RPAR": "Asset Allocation", "GAA": "Asset Allocation",
 }
+
+# (2026-07 B6) SUBTHEME_TO_SECTOR 정의를 api.py에서 이곳으로 이동 —
+# RSS within-sector 그룹핑(compute_percentile_ranks)이 스캐너 단계에서 필요.
+# api.py는 `from price_discovery import SUBTHEME_TO_SECTOR`로 재사용 (단일 소스).
+# ── SubTheme → Sector (Option B unified taxonomy) ──
+# 17 sectors × ~105 subthemes; ETFs and stocks share the same SubTheme namespace.
+SUBTHEME_TO_SECTOR = {
+    # ── Technology ──
+    "Semiconductor Design": "Technology", "Semiconductor Foundry": "Technology",
+    "Semiconductor Memory": "Technology", "Semiconductor Analog": "Technology",
+    "Semiconductor Equipment & EDA": "Technology", "Enterprise Software": "Technology",
+    "Cybersecurity": "Technology", "Cloud & Platform": "Technology",
+    "Data Center & Networking": "Technology", "Industrial Technology": "Technology",
+    "Consumer Hardware": "Technology", "Robotics & AI": "Technology",
+    "Sector Broad - Tech": "Technology",
+    # ── Communication Services ──
+    "Digital Advertising & Media": "Communication Services",
+    "Digital Media & Entertainment": "Communication Services",
+    "Telecom & IT Services": "Communication Services",
+    "Sector Broad - CommServices": "Communication Services",
+    # ── Healthcare ──
+    "Big Pharma": "Healthcare", "Biotech": "Healthcare",
+    "Healthcare Services": "Healthcare",
+    "Medical Devices & Diagnostics": "Healthcare", "Life Science Tools": "Healthcare",
+    "Sector Broad - Healthcare": "Healthcare",
+    # ── Financials ──
+    "Banks": "Financials", "Insurance": "Financials",
+    "Investment Banking & Asset Mgmt": "Financials",
+    "Payments & Exchanges": "Financials", "Financial Data & Analytics": "Financials",
+    "Fintech & Digital Finance": "Financials", "Consumer Finance": "Financials",
+    "Conglomerate & Holding": "Financials",
+    "Sector Broad - Financials": "Financials",
+    # ── Consumer Discretionary ──
+    "Auto & EV": "Consumer Discretionary", "Consumer Brands": "Consumer Discretionary",
+    "E-commerce & Delivery": "Consumer Discretionary",
+    "Restaurants & Leisure": "Consumer Discretionary", "Retail": "Consumer Discretionary",
+    "Cosmetics & Beauty": "Consumer Discretionary",   # TIGER 화장품 (내부 컨벤션: 뷰티=ConsDisc, EL과 동일)
+    "Travel & Leisure": "Consumer Discretionary",     # TIGER 여행레저
+    "Sector Broad - ConsDisc": "Consumer Discretionary",
+    # ── Consumer Staples ──
+    "Consumer Staples": "Consumer Staples",
+    "Sector Broad - ConsStaples": "Consumer Staples",
+    # ── Industrials ──
+    "Aerospace & Defense": "Industrials", "Industrial Equipment": "Industrials",
+    "Building & Construction": "Industrials", "Transport & Logistics": "Industrials",
+    "Environmental & Water": "Industrials",
+    "Sector Broad - Industrials": "Industrials",
+    # ── Energy ──
+    "Oil & Gas": "Energy", "Uranium & Nuclear Fuel": "Energy",
+    "Energy Commodities": "Energy", "Sector Broad - Energy": "Energy",
+    # ── Utilities ──
+    "Utilities": "Utilities", "Power & Energy Infra": "Utilities",
+    "Sector Broad - Utilities": "Utilities",
+    # ── Materials ──
+    "Chemicals": "Materials", "Steel & Metals": "Materials",
+    "Base Metals & Mining": "Materials", "Precious Metals": "Materials",
+    "Agriculture & Food": "Materials", "Battery & EV Materials": "Materials",
+    "Natural Resources": "Materials", "Broad Commodity": "Materials",
+    "Sector Broad - Materials": "Materials",
+    # ── Real Estate ──
+    "Real Estate": "Real Estate", "Sector Broad - RealEstate": "Real Estate",
+    # ── Equity Broad (broad / factor / disruptive) ──
+    "Broad Market": "Equity Broad", "Factor - Momentum": "Equity Broad",
+    "Factor - Quality": "Equity Broad", "Factor - Min Vol": "Equity Broad",
+    "Factor - Value": "Equity Broad", "Factor - Size": "Equity Broad",
+    "Factor - Dividend": "Equity Broad", "Factor - Multi": "Equity Broad",
+    "Disruptive Innovation": "Equity Broad",
+    # ── International — Broad multi-country (sector-diversified, 그대로 International) ──
+    "Developed Markets": "International", "EM Broad": "International",
+    "Europe Broad": "International",
+    # ── International — Country-level → GICS dominant sector ──
+    # 단일국가 ETF를 dominant sector로 매핑하여 Cyclical/Defensive 회전 매트릭스 참여 가능.
+    # (theme 필드는 국가명 그대로 유지 — granularity 보존)
+    #
+    # Europe (Developed)
+    "Europe - Germany": "Industrials",          # Siemens / BMW / VW / BASF
+    "Europe - UK": "Energy",                    # Shell / BP dominant
+    "Europe - France": "Consumer Discretionary",# LVMH / Hermes / L'Oreal (luxury)
+    "Europe - Switzerland": "Healthcare",       # Roche / Novartis / Nestle
+    "Europe - Spain": "Financials",             # Santander / BBVA / Telefonica
+    "Europe - Italy": "Financials",             # Banks + Enel
+    # Europe (EM)
+    "Europe - Poland": "Financials",            # banks dominant
+    "Europe - Greece": "Financials",            # Eurobank / NBG
+    # Asia / Pacific
+    "Japan": "Industrials",                     # Toyota / Sony / Honda heavy industrial mix
+    "Korea (Index)": "Technology",              # Samsung / SK Hynix tech dominance
+    "China": "Communication Services",          # Tencent / Alibaba / Meituan
+    "India": "Financials",                      # HDFC / Reliance financials
+    "Asia Pacific - Australia": "Materials",    # BHP / Rio Tinto
+    "Asia Pacific - Taiwan": "Technology",      # TSMC dominance
+    "Asia Pacific - Hong Kong": "Financials",   # HSBC / AIA
+    "Asia Pacific - Singapore": "Financials",   # DBS / OCBC / UOB
+    "Asia Pacific - Thailand": "Financials",    # bank-heavy
+    "Asia Pacific - Vietnam": "Financials",
+    "Asia Pacific - Indonesia": "Financials",
+    # Latin America
+    "Latin America - Brazil": "Materials",      # Vale + Petrobras
+    "Latin America - Mexico": "Consumer Staples",  # FEMSA + Walmex
+    "Latin America - Colombia": "Financials",
+    "Latin America - Chile": "Materials",       # copper
+    # EMEA
+    "EMEA - Turkey": "Financials",
+    "EMEA - South Africa": "Materials",         # mining heavy
+    "EMEA - Egypt": "Financials",
+    # Other
+    "Middle East - Israel": "Technology",       # Check Point / NICE / CyberArk
+    "North America - Canada": "Financials",     # RBC / TD / Scotia (banks dominant)
+    # ── Backward-compat fallbacks (이전 theme명 호환, 사용 안 되지만 안전망) ──
+    "Europe": "International", "Asia Pacific": "International",
+    "North America": "International", "Middle East": "International",
+    "Latin America": "International", "Other EM": "International",
+    # ── Fixed Income ──
+    "Treasury - Short": "Fixed Income", "Treasury - Intermediate": "Fixed Income",
+    "Treasury - Long": "Fixed Income",
+    "IG Corporate - Short": "Fixed Income", "IG Corporate - Intermediate": "Fixed Income",
+    "IG Corporate - Long": "Fixed Income", "Aggregate Bond": "Fixed Income",
+    "MBS": "Fixed Income", "CLO": "Fixed Income", "Floating Rate": "Fixed Income",
+    "High Yield": "Fixed Income", "Senior Loans": "Fixed Income",
+    "Preferred": "Fixed Income", "Inflation-Linked": "Fixed Income",
+    "International Bonds": "Fixed Income", "EM Bonds": "Fixed Income",
+    "Money Market": "Fixed Income",       # TIGER 머니마켓
+    "Government Bond": "Fixed Income",    # TIGER 국고채3-10년
+    # ── Macro / Multi-Asset / Alt ──
+    "Currency": "Macro", "Volatility": "Macro",
+    "Asset Allocation": "Multi-Asset",
+    "Crypto": "Alternatives",
+}
+
+
+def get_ticker_sector(tk: str) -> str:
+    """티커 → 17-Sector 해석. Stock은 consolidated theme, ETF는 subtheme 경유.
+    (api.py _load_cache의 df["sector"] 산출과 동일 로직 — 미매핑은 "Other")"""
+    theme = STOCK_THEMES_CONSOLIDATED.get(tk) or ETF_SUBTHEMES.get(tk)
+    return SUBTHEME_TO_SECTOR.get(theme, "Other") if theme else "Other"
+
 
 
 ###############################################################################
@@ -1437,6 +1593,13 @@ def _get_usdkrw_rate():
             _get_usdkrw_rate._rate = 1400.0
     return _get_usdkrw_rate._rate
 
+# market_cap is DISPLAY-ONLY (mktcap_B in tables/PDF) — NOT used by Composite,
+# classification, or the Eligibility Gate (which uses ADV = price×volume). The
+# `.info` totalAssets fallback for ETFs is the single slowest yfinance call
+# (~1-3s/ticker, ~271 ETFs) and dominated the realtime-fetch phase. Off by default;
+# fast_info marketCap (already fetched) still covers stocks.
+_USE_SLOW_INFO_MARKETCAP = False
+
 def _market_cap_usd(ticker, fi=None):
     """Extract market cap in USD from yfinance fast_info/info. Handles KRW conversion & ETFs."""
     try:
@@ -1444,17 +1607,18 @@ def _market_cap_usd(ticker, fi=None):
             fi = yf.Ticker(ticker).fast_info
         mc = fi.get('marketCap', fi.get('market_cap', None))
         cur = fi.get('currency', 'USD')
-        # ETFs: market_cap is None → try totalAssets from .info
+        # ETFs: market_cap is None → optionally try totalAssets from .info (slow; off by default)
         if mc is None or (isinstance(mc, float) and not np.isfinite(mc)):
-            try:
-                ta = yf.Ticker(ticker).info.get('totalAssets')
-                if ta and ta > 0:
-                    mc = float(ta)
-                    # totalAssets for Korean ETFs in KRW
-                    if cur == 'KRW':
-                        mc = mc / _get_usdkrw_rate()
-                    return mc
-            except: pass
+            if _USE_SLOW_INFO_MARKETCAP:
+                try:
+                    ta = yf.Ticker(ticker).info.get('totalAssets')
+                    if ta and ta > 0:
+                        mc = float(ta)
+                        # totalAssets for Korean ETFs in KRW
+                        if cur == 'KRW':
+                            mc = mc / _get_usdkrw_rate()
+                        return mc
+                except: pass
             return 0.0
         mc = float(mc)
         if not np.isfinite(mc):
@@ -1470,14 +1634,62 @@ def _fetch_market_cap(ticker):
     """Fetch market cap in USD via yfinance."""
     return _market_cap_usd(ticker)
 
-def _apply_realtime(df, ticker):
-    if df is None or df.empty: return df, False, 0.0
+def _batch_realtime_prices(tickers):
+    """Fetch latest prices for many tickers in ONE batched download.
+
+    Replaces per-ticker `fast_info` (which is ~2.5s/ticker → ~30 min for 800
+    tickers and the dominant cost of the realtime phase) with a single
+    `yf.download(period='2d')` call (~10-30s total). Returns {ticker: last_price}.
+    """
+    out = {}
+    if not tickers:
+        return out
     try:
-        fi = yf.Ticker(ticker).fast_info
-        lp = float(fi.get('lastPrice', fi.get('last_price', 0)))
-        mc = _market_cap_usd(ticker, fi)
+        bulk = yf.download(list(tickers), period="2d", interval="1d",
+                           progress=False, auto_adjust=False, group_by="ticker",
+                           threads=True)
+    except Exception:
+        return out
+    if bulk is None or bulk.empty:
+        return out
+    single = len(tickers) == 1
+    for t in tickers:
+        try:
+            if single:
+                col = bulk["Close"]
+            else:
+                if t not in bulk.columns.get_level_values(0):
+                    continue
+                col = bulk[t]["Close"]
+            col = col.dropna()
+            if len(col) == 0:
+                continue
+            lp = float(col.iloc[-1])
+            if np.isfinite(lp) and lp > 0:
+                out[t] = lp
+        except Exception:
+            continue
+    return out
+
+
+def _apply_realtime(df, ticker, live_price=None, market_cap=None):
+    """Overlay the latest price onto df's most recent bar.
+
+    live_price: pre-fetched price (from _batch_realtime_prices) → skips the slow
+        per-ticker fast_info. If None, falls back to fast_info (single-ticker path).
+    """
+    if df is None or df.empty: return df, False, 0.0
+    if live_price is not None:
+        lp = live_price
+        mc = market_cap if market_cap is not None else 0.0
         if lp <= 0 or not np.isfinite(lp): return df, False, mc
-    except: return df, False, 0.0
+    else:
+        try:
+            fi = yf.Ticker(ticker).fast_info
+            lp = float(fi.get('lastPrice', fi.get('last_price', 0)))
+            mc = _market_cap_usd(ticker, fi)
+            if lp <= 0 or not np.isfinite(lp): return df, False, mc
+        except: return df, False, 0.0
     today = pd.Timestamp(datetime.today().date())
     last_bar = pd.Timestamp(df.index[-1].date()) if hasattr(df.index[-1], 'date') else pd.Timestamp(df.index[-1])
     if last_bar == today:
@@ -1546,6 +1758,12 @@ class DataEngine:
             print(f"   ⚠️ Batch download failed ({e}), falling back to sequential...")
             bulk = None
 
+        # Batched realtime prices (ONE call instead of per-ticker fast_info) —
+        # the single biggest speedup for the realtime phase.
+        rt_prices = _batch_realtime_prices(all_tickers) if self.use_realtime else {}
+        if self.use_realtime:
+            print(f"   ⚡ Realtime: batched {len(rt_prices)}/{len(all_tickers)} live prices (1 call)")
+
         results = {}; rt = 0; failed = []
         if bulk is not None and not bulk.empty:
             for ticker in all_tickers:
@@ -1565,7 +1783,8 @@ class DataEngine:
                         af = (tdf['Adj Close'] / tdf['Close']).fillna(1.0)
                         for c in ['Open','High','Low','Close']: tdf[c] = tdf[c] * af
                     if self.use_realtime:
-                        tdf, rtu, mc = _apply_realtime(tdf, ticker)
+                        # Use the batched live price (no per-ticker fast_info)
+                        tdf, rtu, mc = _apply_realtime(tdf, ticker, live_price=rt_prices.get(ticker))
                         etf.realtime_updated = rtu
                         etf.market_cap = mc
                         if rtu: rt += 1
@@ -1612,7 +1831,7 @@ class NaiveDiscoveryDetector:
         self.benchmark_data = loaded.get("SPY", next(iter(loaded.values()), None))
         print(f"📌 Benchmarks loaded: {len(self.benchmark_map)} categories")
 
-    def compute_raw(self, df, category=""):
+    def compute_raw(self, df, category="", ticker=""):
         close = ss(df['Close'])
         volume = ss(df['Volume'])
 
@@ -1818,6 +2037,10 @@ class NaiveDiscoveryDetector:
         avg_vol_20d = sf(vol_valid.iloc[-20:].mean()) if len(vol_valid) >= 20 else sf(vol_valid.mean()) if len(vol_valid) > 0 else 0
         avg_price_5d = sf(close.iloc[-5:].mean()) if len(close) >= 5 else last_close
         adv_usd = avg_vol_20d * avg_price_5d
+        # KRW 상장(.KS/.KQ)은 로컬 통화 명목치 → USD 변환. 미변환 시 $5M 유동성
+        # 게이트가 ~5M KRW(≈$3.6k)로 무력화되어 한국 상장 전체가 무조건 통과했음.
+        if ticker and ticker.endswith(('.KS', '.KQ')):
+            adv_usd = adv_usd / _get_usdkrw_rate()
 
         # ── Strategy-specific indicators ──
         # SMA150 (Minervini SEPA)
@@ -2175,21 +2398,29 @@ class NaiveDiscoveryDetector:
             r['rss'] = ws * r['rss_short'] + wl * r['rss_long']
             ranks[t] = r
 
-        # ── Pass 2: 카테고리 RSS 평균/분산 + Within-sector RSS hybrid ──
-        # Universe-wide RSS만으로는 sector beta가 한쪽으로 쏠리면 (defensive 약세 시 tech 자동 상위)
-        # 종목 본인의 sector 내 상대 강도를 알 수 없음. 60% within-sector + 40% universe 로 hybrid.
-        # 작은 카테고리(n < 8)는 percentile noise가 크므로 universe-wide 그대로 사용.
-        WITHIN_SECTOR_WEIGHT = 0.60
-        UNIVERSE_RSS_WEIGHT = 1.0 - WITHIN_SECTOR_WEIGHT
-        MIN_CAT_N_FOR_WITHIN = 8
-
+        # ── Pass 2a: 카테고리 RSS 평균/분산 (URS PeerDispersion 입력 — category 단위 유지) ──
         for cat, tlist in cat_to_tickers.items():
             rss_arr = np.array([ranks[t]['rss'] for t in tlist], dtype=float)
             cat_stats[cat]['rss_mean'] = float(np.nanmean(rss_arr)) if len(rss_arr) > 0 else 50.0
             cat_stats[cat]['rss_std'] = float(np.nanstd(rss_arr)) if len(rss_arr) > 1 else 0.0
 
+        # ── Pass 2b: Within-sector RSS hybrid — 17-Sector 그룹핑 (2026-07 B6) ──
+        # Universe-wide RSS만으로는 sector beta가 한쪽으로 쏠리면 (defensive 약세 시 tech 자동 상위)
+        # 종목 본인의 sector 내 상대 강도를 알 수 없음. 60% within-sector + 40% universe 로 hybrid.
+        # (기존 legacy category(43버킷) 그룹핑은 14개 버킷이 n<8이라 US 섹터 ETF 전원이 within
+        #  보정을 못 받았음 → SubTheme→Sector(17버킷)로 전환. n<8 잔여: Macro/Multi-Asset/Alternatives)
+        WITHIN_SECTOR_WEIGHT = 0.60
+        UNIVERSE_RSS_WEIGHT = 1.0 - WITHIN_SECTOR_WEIGHT
+        MIN_SECTOR_N_FOR_WITHIN = 8
+
+        sec_to_tickers = defaultdict(list)
+        for t in tickers:
+            sec_to_tickers[get_ticker_sector(t)].append(t)
+
+        for sec, tlist in sec_to_tickers.items():
+            rss_arr = np.array([ranks[t]['rss'] for t in tlist], dtype=float)
             # Within-sector RSS: universe RSS 의 sector 내 percentile rank
-            if len(tlist) >= MIN_CAT_N_FOR_WITHIN:
+            if len(tlist) >= MIN_SECTOR_N_FOR_WITHIN:
                 for t in tlist:
                     rss_universe = ranks[t]['rss']
                     rss_within = pct_rank(rss_universe, rss_arr)
@@ -2200,7 +2431,7 @@ class NaiveDiscoveryDetector:
                         + UNIVERSE_RSS_WEIGHT * rss_universe, 1
                     )
             else:
-                # Small bucket — universe-wide RSS 유지, within=universe로 mirror
+                # Small sector — universe-wide RSS 유지, within=universe로 mirror
                 for t in tlist:
                     ranks[t]['rss_universe'] = round(ranks[t]['rss'], 1)
                     ranks[t]['rss_within_sector'] = round(ranks[t]['rss'], 1)
@@ -2242,6 +2473,98 @@ class NaiveDiscoveryDetector:
             r['urs_drift'] = round(fd_pctile, 1)
             r['urs_dispersion'] = round(pd_pctile, 1)
             r['urs'] = round(urs, 1)
+
+        # ── Pass 4: Mean Reversion (Oversold Reversion) ──────────────────────
+        # OER의 정확한 거울상: OER은 "과매수→하락 반전"만 (Composite 페널티로) 포착.
+        # MR은 "과매도→상승 반전"을 포착하되 Composite에 절대 블렌딩하지 않고
+        # 별도 tier 점수로만 노출 (api.py post-load gate에서 사용).
+        # 5 sub-signal: OU z-dislocation / idiosyncratic residual / stabilization /
+        #               long-term reversal(De Bondt-Thaler) / mean-distance stretch.
+        import math as _math
+        n_tk = len(tickers)
+        # category 단기 평균 (idiosyncratic residual 분리용)
+        cat_ret5_mean, cat_ret21_mean = {}, {}
+        for cat, tlist in cat_to_tickers.items():
+            a5 = np.array([all_raw[t].get('ret_5d', 0.0) or 0.0 for t in tlist], dtype=float)
+            a21 = np.array([all_raw[t].get('ret_21d', 0.0) or 0.0 for t in tlist], dtype=float)
+            cat_ret5_mean[cat] = float(np.nanmean(a5)) if len(a5) else 0.0
+            cat_ret21_mean[cat] = float(np.nanmean(a21)) if len(a21) else 0.0
+
+        ou_raw = np.zeros(n_tk); stretch_raw = np.zeros(n_tk); stab_raw = np.zeros(n_tk)
+        idio_raw = np.zeros(n_tk); neg_resid5 = np.zeros(n_tk); neg_resid21 = np.zeros(n_tk)
+        rvol_arr = np.zeros(n_tk)
+        for i, t in enumerate(tickers):
+            raw = all_raw[t]
+            sma20d = raw.get('sma20_dist', 0.0) or 0.0
+            sma50d = raw.get('sma50_dist', 0.0) or 0.0
+            rvol = raw.get('realized_vol', 0.0) or 0.0
+            rvol_arr[i] = rvol
+            # OU dislocation z-score — realized_vol는 ANNUALIZED PERCENT → N일 sigma = rvol*sqrt(N/252)
+            sig20 = rvol * _math.sqrt(20.0 / 252.0)
+            sig50 = rvol * _math.sqrt(50.0 / 252.0)
+            z20 = sma20d / max(sig20, 1e-6)
+            z50 = sma50d / max(sig50, 1e-6)
+            bz = 0.6 * z20 + 0.4 * z50
+            ou_raw[i] = max(0.0, min(3.0, -bz))             # oversold side only (z<0)
+            # Mean-distance stretch (절대 이격, 평균 아래만)
+            stretch_raw[i] = max(0.0, -sma20d) * 1.0 + max(0.0, -sma50d) * 1.5
+            # Stabilization (하락 소진 timing)
+            r5 = raw.get('ret_5d', 0.0) or 0.0
+            r21 = raw.get('ret_21d', 0.0) or 0.0
+            decel = r5 - (r21 / 21.0 * 5.0)                 # >0: 최근 5일이 21일 run-rate보다 덜 나쁨
+            decel_norm = max(0.0, min(1.0, 0.5 + decel / 20.0))
+            vr3 = raw.get('vol_ratio_3d_10d', 1.0) or 1.0
+            climax = max(0.0, min(1.0, (vr3 - 1.0) / 0.5)) if decel >= 0 else 0.0
+            rsi_v = raw.get('rsi', 50.0) or 50.0
+            rsi_turn = max(0.0, min(1.0, (rsi_v - 20.0) / 20.0))
+            gd = raw.get('gap_drift_30d', 0.0) or 0.0       # 부호: 양수=이벤트(하락) 방향 지속
+            recovery = max(0.0, min(1.0, -gd / 5.0))        # 하락이벤트 후 음수 drift=회복=강세
+            v3y = raw.get('vol_3y_ann', 0.0) or 0.0
+            vol_pen = max(0.0, min(1.0, (rvol / max(v3y, 1.0)) - 1.5))
+            stab_raw[i] = (0.35 * decel_norm + 0.25 * climax + 0.20 * rsi_turn
+                           + 0.20 * recovery - 0.30 * vol_pen)
+            # Idiosyncratic residual — 섹터 대비 혼자 빠졌나 (과잉반응) vs 같이 (정당한 재평가)
+            cat = raw.get('_category', 'Unknown')
+            neg_resid5[i] = -(r5 - cat_ret5_mean.get(cat, 0.0))   # 음수 잔차(섹터比 더 하락) → 큰 값
+            neg_resid21[i] = -(r21 - cat_ret21_mean.get(cat, 0.0))
+
+        # idio_raw 구성 (resid_part: 섹터 median 아래 거리 + 단기 잔차 rank)
+        for i, t in enumerate(tickers):
+            r = ranks[t]
+            resid_part = 0.7 * (50.0 - r['rss_within_sector']) + 0.3 * (50.0 - r['rss_universe'])
+            short_resid = (0.6 * pct_rank(neg_resid5[i], neg_resid5)
+                           + 0.4 * pct_rank(neg_resid21[i], neg_resid21))
+            idio_raw[i] = 0.6 * resid_part + 0.4 * short_resid
+
+        # vol percentile → half-life 버킷 (저변동=느린 회귀 20d / 고변동=빠른 snap-back 5d)
+        for i, t in enumerate(tickers):
+            raw = all_raw[t]; r = ranks[t]
+            ou_sub = pct_rank(ou_raw[i], ou_raw)
+            idio_sub = pct_rank(idio_raw[i], idio_raw)
+            stab_sub = pct_rank(stab_raw[i], stab_raw)
+            stretch_pct = pct_rank(stretch_raw[i], stretch_raw)
+            range_pct = raw.get('range_pct', 50.0)
+            range_floor = 100.0 - (range_pct if range_pct is not None else 50.0)
+            rsi_v = raw.get('rsi', 50.0) or 50.0
+            rsi_os = (100.0 if rsi_v < 25 else 80.0 if rsi_v < 30 else
+                      55.0 if rsi_v < 35 else 30.0 if rsi_v < 40 else 0.0)
+            stretch_sub = 0.45 * stretch_pct + 0.30 * range_floor + 0.25 * rsi_os
+            rev_pctile = raw.get('reversal_pctile', 50.0)
+            pfh = raw.get('pct_from_high', 0.0) or 0.0      # 자연히 음수
+            depth = max(0.0, min(1.0, -pfh / 40.0)) * 100.0
+            lt_sub = 0.65 * (100.0 - rev_pctile) + 0.35 * depth
+
+            mr = (0.30 * ou_sub + 0.20 * idio_sub + 0.18 * stab_sub
+                  + 0.15 * lt_sub + 0.17 * stretch_sub)
+            vpct = pct_rank(rvol_arr[i], rvol_arr)
+            half_life = 20 if vpct < 33 else 10 if vpct < 66 else 5
+            r['mr_score'] = round(mr, 1)
+            r['mr_ou'] = round(ou_sub, 1)
+            r['mr_idio'] = round(idio_sub, 1)
+            r['mr_stab'] = round(stab_sub, 1)
+            r['mr_lt'] = round(lt_sub, 1)
+            r['mr_stretch'] = round(stretch_sub, 1)
+            r['mr_half_life_days'] = half_life
 
         return ranks
 
@@ -2441,7 +2764,11 @@ class NaiveDiscoveryDetector:
 
         # (c) OVEREXTENDED: 과열 + 매수 후보 base.
         # FIX #6: PULLBACK과 COUNTER_RALLY도 가드 대상에 포함.
-        # CONTINUATION은 강한 모멘텀이므로 OER 체크 적용 (의도적).
+        # 2026-07(④): 주석은 "CONTINUATION도 OER 체크 적용(의도적)"이라 했으나 실제
+        # base_cls 집합에서 CONTINUATION이 누락돼 있었음 → 강추세 과열주(XBI/UNP/VLO 등
+        # CONTINUATION+OER高)가 절대 OVEREXTENDED로 재분류되지 않던 갭. 주석 의도대로
+        # CONTINUATION 추가. OVEREXTENDED는 스웜 롱 후보 풀(LONG_CLS)에서 제외되므로
+        # 극단 과열 CONTINUATION은 매수 후보에서 빠지고 Momentum 탭에만 남는다.
         # Hysteresis: 이전이 OVEREXTENDED였다면 진입 60 → 이탈 50으로 완화.
         oer_threshold_for_check = (oer_thresh - 10) if prev_was_oe else oer_thresh
         if oer >= oer_threshold_for_check and base_cls in (
@@ -2489,8 +2816,11 @@ class NaiveDiscoveryDetector:
         # Base: TCS/TFS/RSS/URS 가중합
         base = 0.30 * tcs + 0.25 * tfs + 0.30 * rss + 0.15 * urs
         # OER risk penalty — 과열 종목과 건전 추세주의 동일점수 비대칭 해소.
-        # OER ≤ 40: penalty 없음. OER 40 → 100 구간 선형 감점 (max -6점).
-        oer_penalty = 0.10 * max(0.0, float(oer) - 40.0)
+        # 2026-07 재보정(④): 기존 0.10·max(0,OER−40)(max −6)은 너무 약해(OER 45→−0.5,
+        # OER 60→−2) 이미 스트레치된 종목(XBI Comp 74.6·RSI 77·OER 45 등)을 못 끌어내렸다.
+        # 무릎 40→35, 기울기 0.10→0.18, 상한 6→12로 강화 → OER 45→−1.8, 60→−4.5,
+        # 92→−10.3. 과열-건전 비대칭을 실질적으로 반영. (OER≤35 무패널티는 유지.)
+        oer_penalty = min(12.0, 0.18 * max(0.0, float(oer) - 35.0))
         return round(max(0.0, base - oer_penalty), 1)
 
     # ── O'Neil (CANSLIM) Long / Short Signals ──
@@ -2745,8 +3075,8 @@ class NaiveDiscoveryDetector:
 
         return min(100, pts)
 
-    def analyze_single(self, df, category="", prev_classification=None):
-        raw = self.compute_raw(df, category)
+    def analyze_single(self, df, category="", prev_classification=None, ticker=""):
+        raw = self.compute_raw(df, category, ticker=ticker)
         tcs_b, tcs_s, tcs_l = self.score_tcs(raw)
         tfs_b, tfs_s, tfs_l = self.score_tfs(raw)
         oer = self.score_oer(raw)
@@ -3594,7 +3924,12 @@ class VizEngine:
 
 def run_scan(categories=None, lookback_days=365, custom_date=None,
              use_realtime=True, run_validation=False,
-             include_stocks=False, stock_categories=None):
+             include_stocks=False, stock_categories=None, fast=False):
+    """fast=True: skip heavy post-scoring phases (SVE 24-eval backtest, Phase 7
+    weekly backtest, GraphRAG, Factor Efficacy) that feed the Validation/Backtest/
+    Analysis tabs but NOT the buy list. Cuts scan ~11min → ~4min. Scoring +
+    classification (everything the buy list / swarm needs) is unaffected; code
+    falls back to default eligibility threshold (55) when SVE is skipped."""
 
     # ── Universal Hysteresis: 이전 스캔의 classification 로드 ──
     # 일별 분류 진동(false positive)을 방지하기 위해 직전 시점 분류를 classify()에 전달
@@ -3626,7 +3961,7 @@ def run_scan(categories=None, lookback_days=365, custom_date=None,
     all_raw = {}
     for ticker, etf in sorted(all_data.items()):
         if etf.valid and len(etf.df) >= 60:
-            try: all_raw[ticker] = detector.compute_raw(etf.df, etf.category)
+            try: all_raw[ticker] = detector.compute_raw(etf.df, etf.category, ticker=ticker)
             except: pass
 
     # ── 카테고리 태그 주입 (URS LeadLagGap & PeerDispersion 에서 사용) ──
@@ -3683,7 +4018,10 @@ def run_scan(categories=None, lookback_days=365, custom_date=None,
         cat_stats = compute_category_stats(all_raw)
 
     ve = SignalValidityEngine()
-    ve.compute(all_data, detector)
+    if not fast:
+        ve.compute(all_data, detector)
+    else:
+        print("   ⚡ fast mode: skipping SVE 24-eval backtest (buy list unaffected)")
 
     print(f"📊 Phase 4: Scoring and classification...")
     results = []
@@ -3787,6 +4125,16 @@ def run_scan(categories=None, lookback_days=365, custom_date=None,
                 'urs_attn_gap': ranks.get('urs_attn_gap', 50.0),
                 'urs_drift': ranks.get('urs_drift', 50.0),
                 'urs_dispersion': ranks.get('urs_dispersion', 50.0),
+                # ── Mean Reversion (Oversold Reversion) tier — Pass 4 ──
+                'mr_score': ranks.get('mr_score', 0.0),
+                'mr_ou': ranks.get('mr_ou', 50.0),
+                'mr_idio': ranks.get('mr_idio', 50.0),
+                'mr_stab': ranks.get('mr_stab', 50.0),
+                'mr_lt': ranks.get('mr_lt', 50.0),
+                'mr_stretch': ranks.get('mr_stretch', 50.0),
+                'mr_half_life_days': ranks.get('mr_half_life_days', 10),
+                'range_pct': round(raw.get('range_pct', 50.0) or 50.0, 1),
+                'pct_from_high': round(raw.get('pct_from_high', 0.0) or 0.0, 1),
                 'gap_drift_30d': round(raw.get('gap_drift_30d', 0.0), 2),
                 'gap_event_age': raw.get('gap_event_age', 0),
                 'tcs_short': tcs_s, 'tcs_long': tcs_l,
@@ -3820,6 +4168,16 @@ def run_scan(categories=None, lookback_days=365, custom_date=None,
                 'sma50_slope': round(raw['sma50_slope'], 4),
                 'ret_36_12m': round(raw['ret_36_12m'], 2) if raw.get('ret_36_12m') is not None else None,
                 'reversal_pctile': round(raw.get('reversal_pctile', 50), 1),
+                # Minervini SEPA Trend Template inputs (persist so the full 8-point
+                # template + VCP is reconstructable at API load; minervini_long already
+                # encodes the 0-100 SEPA score in **hedge_scores below).
+                'above_sma150': raw.get('above_sma150'),
+                'sma150_slope': round(raw.get('sma150_slope', 0), 4),
+                'sma200_slope': round(raw.get('sma200_slope', 0), 4),
+                'vcr': round(raw.get('vcr', 1.0), 3),
+                'breakout_10d': raw.get('breakout_10d'),
+                'breakout_20d': raw.get('breakout_20d'),
+                'vol_ratio': round(raw.get('vol_ratio', 1.0), 3),  # 돌파 확인용 거래량 배수(5d/20d)
                 **validity,
                 'score_1w': sc_1w, 'eligible_1w': el_1w, 'ret_1w': ret_1w,
                 'score_1m': sc_1m, 'eligible_1m': el_1m, 'ret_1m': ret_1m,
@@ -4000,7 +4358,7 @@ def run_scan(categories=None, lookback_days=365, custom_date=None,
         }
 
         # Weekly evaluation points (~5 trading days apart, up to 52 weeks)
-        eval_offsets = [i * 5 for i in range(1, 53)]
+        eval_offsets = [] if fast else [i * 5 for i in range(1, 53)]   # fast: skip weekly backtest
         eval_offsets = [o for o in eval_offsets if o + 5 < n_dates - 60]
 
         for offset in eval_offsets:
@@ -4020,7 +4378,7 @@ def run_scan(categories=None, lookback_days=365, custom_date=None,
                 if len(df_cut) < 60:
                     continue
                 try:
-                    raw = detector.compute_raw(df_cut, etf.category)
+                    raw = detector.compute_raw(df_cut, etf.category, ticker=ticker)
                     raw['_category'] = etf.category  # URS LeadLag/PeerDispersion 용
                     snap_raw[ticker] = raw
                 except:
@@ -4254,7 +4612,7 @@ def run_scan(categories=None, lookback_days=365, custom_date=None,
     # GRAPHRAG — Knowledge Graph Analysis
     # ═══════════════════════════════════════════════════════════════════════
     graph_data = {}
-    if HAS_GRAPH:
+    if HAS_GRAPH and not fast:
         print(f"\n🔗 Phase 6: GraphRAG Knowledge Graph...")
         try:
             pg = PriceDiscoveryGraph()
@@ -4286,16 +4644,17 @@ def run_scan(categories=None, lookback_days=365, custom_date=None,
     # FACTOR EFFICACY — Reverse Factor Model (5 Methodologies)
     # ═══════════════════════════════════════════════════════════════════════
     factor_efficacy_data = {}
-    try:
-        from factor_efficacy import FactorEfficacyEngine
-        print(f"\n📊 Phase 8: Factor Efficacy Analysis (Reverse Factor Model)...")
-        fe = FactorEfficacyEngine(all_data, detector)
-        factor_efficacy_data = fe.run()
-    except ImportError:
-        pass
-    except Exception as e:
-        print(f"   ⚠️ Factor Efficacy failed: {e}")
-        import traceback; traceback.print_exc()
+    if not fast:
+        try:
+            from factor_efficacy import FactorEfficacyEngine
+            print(f"\n📊 Phase 8: Factor Efficacy Analysis (Reverse Factor Model)...")
+            fe = FactorEfficacyEngine(all_data, detector)
+            factor_efficacy_data = fe.run()
+        except ImportError:
+            pass
+        except Exception as e:
+            print(f"   ⚠️ Factor Efficacy failed: {e}")
+            import traceback; traceback.print_exc()
 
     # ═══════════════════════════════════════════════════════════════════════
     # CACHE — save results + history + validity + graph for dashboard

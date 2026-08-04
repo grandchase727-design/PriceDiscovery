@@ -35,8 +35,10 @@ Cached to .elliott_stops_cache.json (date-keyed). Refresh once per day.
 """
 from __future__ import annotations
 
+import contextlib
 import json
 import os
+import threading
 import time
 import warnings
 from datetime import datetime, date
@@ -47,6 +49,14 @@ warnings.filterwarnings("ignore")
 
 CACHE_PATH = Path(".elliott_stops_cache.json")
 CACHE_TTL_HOURS = 24
+
+# api.py's endpoints are all sync `def` (real parallel threads under FastAPI/Starlette).
+# Serializes the load→mutate→save cycle in compute_stops_for_picks so concurrent callers
+# can't lose each other's freshly-computed entries (same root cause class as the
+# yf.download() contamination above — multiple concurrent sync endpoints sharing mutable
+# state — but this half is a lost-update risk on the cache FILE, not wrong OHLC data).
+_CACHE_IO_LOCK = threading.Lock()
+_NULL_CONTEXT = contextlib.nullcontext()
 
 
 def _find_swing_pivots(highs, lows, n_bars: int = 5):
@@ -136,6 +146,75 @@ def _apply_oneil_cap(stop_price: float, current_price: float) -> tuple[float, bo
     if stop_price < oneil_floor:
         return round(oneil_floor, 2), True
     return stop_price, False
+
+
+# 호라이즌별 표준 보유기간 (position_state MIN_CORE_HOLD_DAYS=21과 정합) —
+# ATR 스케일링용: 보유기간 동안의 정상 변동폭 = ATR × √days (diffusion scaling)
+_HOLD_DAYS = {"tactical": 5, "core": 21, "strategic": 63}
+# 호라이즌별 절대 손절 캡: tactical/core는 O'Neil -7%, strategic은 -10%
+_ABS_CAP_PCT = {"tactical": 0.07, "core": 0.07, "strategic": 0.10}
+
+
+def _finalize_stop(stop_info: dict, current_price: float, horizon: str,
+                   atr_pct: Optional[float] = None) -> dict:
+    """모든 브랜치의 스톱에 공통 위생 규칙 적용.
+
+    1. 역스톱(스톱 ≥ 현재가) → 파동 카운트 무효로 간주, MECHANICAL 폴백
+       (저변동성 ETF에서 W1 상단이 현재가 위에 캐시되던 버그 방지)
+    2. ATR 클램프: 손절 거리를 [1×, 3×] × ATR20·√보유일 범위로 —
+       채권 ETF의 노이즈 수준 스톱(-1%)과 과도하게 넓은 스톱을 변동성 단위로 정규화
+    3. 절대 캡: tactical/core -7% (O'Neil), strategic -10% — 전 브랜치 일괄 적용
+       (기존엔 tactical W4 브랜치만 캡, core가 -11.75%까지 방치됐음)
+    """
+    h = (horizon or "core").lower()
+    stop = float(stop_info.get("stop_price") or 0)
+    if current_price <= 0 or stop <= 0:
+        return stop_info
+
+    # 1) 역스톱 → MECHANICAL 폴백
+    # breached_at_recompute (L1): 원 파동 스톱이 현재가 위 = 그 레벨이 이미 깨진 뒤
+    # 재계산됐다는 뜻. 예전엔 이 사실이 소실된 채 새 가격 아래 -N% 스톱으로 조용히
+    # 대체됐음 — 플래그로 보존해 다운스트림(모노톤 스톱 래칫/재심사)이 증거로 쓰게 함.
+    if stop >= current_price * 0.995:
+        mech_pct = {"tactical": 0.03, "core": 0.05, "strategic": 0.08}.get(h, 0.05)
+        stop_info = {"stop_price": current_price * (1 - mech_pct),
+                     "stop_type": "MECHANICAL_INVALID_WAVE",
+                     "breached_at_recompute": True,
+                     "rationale": (f"파동 스톱({stop:.2f})이 현재가 위/직하 — 가격이 이미 "
+                                   f"무효화 레벨 아래로, 파동 카운트 신뢰 불가. 기계적 "
+                                   f"-{int(mech_pct*100)}% 손절로 대체.")}
+        stop = float(stop_info["stop_price"])
+
+    # 2) ATR 클램프 (ATR 가용 시)
+    if atr_pct and atr_pct > 0:
+        import math as _m
+        hold_days = _HOLD_DAYS.get(h, 21)
+        horizon_vol_pct = atr_pct * _m.sqrt(hold_days)      # 보유기간 정상 변동폭 %
+        dist_pct = (current_price - stop) / current_price * 100
+        lo, hi = 1.0 * horizon_vol_pct, 3.0 * horizon_vol_pct
+        if dist_pct < lo:
+            stop = current_price * (1 - lo / 100)
+            stop_info = {**stop_info, "stop_price": stop,
+                         "stop_type": stop_info.get("stop_type", "") + "+ATR_FLOOR",
+                         "rationale": stop_info.get("rationale", "") +
+                         f" [ATR 보정: 원 스톱 -{dist_pct:.1f}%는 {hold_days}일 정상 변동폭"
+                         f"({horizon_vol_pct:.1f}%) 이내 노이즈 → -{lo:.1f}%로 확장]"}
+        elif dist_pct > hi:
+            stop = current_price * (1 - hi / 100)
+            stop_info = {**stop_info, "stop_price": stop,
+                         "stop_type": stop_info.get("stop_type", "") + "+ATR_CAP",
+                         "rationale": stop_info.get("rationale", "") +
+                         f" [ATR 보정: 원 스톱 -{dist_pct:.1f}%는 변동성 대비 과도 → -{hi:.1f}%로 축소]"}
+
+    # 3) 절대 캡 (전 브랜치)
+    cap = _ABS_CAP_PCT.get(h, 0.07)
+    floor_price = current_price * (1 - cap)
+    if stop < floor_price:
+        stop_info = {**stop_info, "stop_price": round(floor_price, 4),
+                     "stop_type": stop_info.get("stop_type", "") + "+ONEIL_CAP",
+                     "rationale": stop_info.get("rationale", "") +
+                     f" [절대 손실 한도 -{int(cap*100)}% 캡 적용]"}
+    return stop_info
 
 
 def _pick_stop_for_horizon(wave_info: dict, current_price: float,
@@ -247,8 +326,15 @@ def compute_stop_for_ticker(ticker: str, horizon: str,
     try:
         import math
         import yfinance as yf
-        df = yf.download(ticker, period="6mo", interval="1d",
-                          progress=False, auto_adjust=True)
+        # THREAD SAFETY: yf.download() (even single-ticker) resets/repopulates a
+        # process-wide global (yfinance.shared._DFS) on every call — under concurrent
+        # callers (api.py's endpoints are all sync `def`, dispatched to real parallel
+        # threads by FastAPI/Starlette) this cross-contaminates different tickers' OHLC
+        # data. Empirically confirmed via .elliott_stops_cache.json: e.g. KRE's cached
+        # current_price was literally a Korean ticker's KRW price. yf.Ticker().history()
+        # is the per-object, thread-safe path (same fix as agents/entry_price.py and
+        # agents/elliott_wave_indices.py's _compute_one_fresh(), same underlying bug).
+        df = yf.Ticker(ticker).history(period="6mo", interval="1d", auto_adjust=True)
         if df.empty or len(df) < 30:
             return None
         # Flatten potential MultiIndex columns
@@ -287,6 +373,23 @@ def compute_stop_for_ticker(ticker: str, horizon: str,
         wave_info = _classify_wave_position(pivots)
         stop_info = _pick_stop_for_horizon(wave_info, current_price, horizon)
 
+        # ATR20 (% of price) — true range 기반, 스톱 위생(_finalize_stop)용
+        atr_pct = None
+        try:
+            if len(closes) >= 21:
+                trs = []
+                for i in range(-20, 0):
+                    tr = max(highs[i] - lows[i],
+                             abs(highs[i] - closes[i - 1]),
+                             abs(lows[i] - closes[i - 1]))
+                    trs.append(tr)
+                atr = sum(trs) / len(trs)
+                if math.isfinite(atr) and atr > 0:
+                    atr_pct = atr / current_price * 100
+        except Exception:
+            atr_pct = None
+        stop_info = _finalize_stop(stop_info, current_price, horizon, atr_pct)
+
         # JSON-safe: drop NaN/Inf values
         def _safe(v):
             if v is None: return None
@@ -313,6 +416,12 @@ def compute_stop_for_ticker(ticker: str, horizon: str,
             "n_pivots": len(pivots),
             "currency": currency,
             "currency_symbol": currency_symbol,
+            # L1 telemetry: atr_pct feeds volatility-scaled rules downstream;
+            # breached_at_recompute marks that the ORIGINAL wave stop was already
+            # at/above price when recomputed (i.e. the level had been broken and
+            # was silently replaced by a mechanical fallback below the new price).
+            "atr_pct": round(_safe(atr_pct), 3) if _safe(atr_pct) is not None else None,
+            "breached_at_recompute": bool(stop_info.get("breached_at_recompute", False)),
             "computed_at": datetime.now().isoformat(timespec="seconds"),
         }
 
@@ -340,35 +449,36 @@ def compute_stops_for_picks(picks: list, use_cache: bool = True,
     Returns:
         {ticker: stop_info_dict} keyed by ticker
     """
-    cache = _load_cache() if use_cache else {}
-    results = {}
-    total = len(picks)
-    for idx, pick in enumerate(picks):
-        ticker = pick.get("ticker")
-        horizon = pick.get("horizon", "core")
-        if not ticker:
-            continue
-        if progress_cb:
-            try: progress_cb(idx, total, ticker)
-            except Exception: pass
+    with _CACHE_IO_LOCK if use_cache else _NULL_CONTEXT:
+        cache = _load_cache() if use_cache else {}
+        results = {}
+        total = len(picks)
+        for idx, pick in enumerate(picks):
+            ticker = pick.get("ticker")
+            horizon = pick.get("horizon", "core")
+            if not ticker:
+                continue
+            if progress_cb:
+                try: progress_cb(idx, total, ticker)
+                except Exception: pass
 
-        cache_key = f"{ticker}::{horizon}"
-        if use_cache and cache_key in cache and _is_cache_fresh(cache[cache_key]):
-            results[ticker] = cache[cache_key]
-            continue
+            cache_key = f"{ticker}::{horizon}"
+            if use_cache and cache_key in cache and _is_cache_fresh(cache[cache_key]):
+                results[ticker] = cache[cache_key]
+                continue
 
-        info = compute_stop_for_ticker(ticker, horizon,
-                                        cache_dict=cache, use_cache=use_cache)
-        if info and not info.get("_error"):
-            results[ticker] = info
-        elif info:   # error case — still return so frontend shows the issue
-            results[ticker] = info
+            info = compute_stop_for_ticker(ticker, horizon,
+                                            cache_dict=cache, use_cache=use_cache)
+            if info and not info.get("_error"):
+                results[ticker] = info
+            elif info:   # error case — still return so frontend shows the issue
+                results[ticker] = info
 
-        if rate_limit_delay:
-            time.sleep(rate_limit_delay)
+            if rate_limit_delay:
+                time.sleep(rate_limit_delay)
 
-    if use_cache:
-        _save_cache(cache)
+        if use_cache:
+            _save_cache(cache)
     return results
 
 

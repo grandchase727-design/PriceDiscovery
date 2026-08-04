@@ -273,95 +273,216 @@ def fetch_one(ticker: str, asset_type: str) -> dict:
 # Batch pipeline
 # ──────────────────────────────────────────────────────────────────────
 
-def build_universe() -> list[tuple[str, str]]:
-    """Returns list of (ticker, asset_type) covering full universe."""
-    universe = []
+def _region_of(ticker: str) -> str:
+    """Coarse region bucket by listing suffix (diagnostics + fair-ordering)."""
+    t = str(ticker).upper()
+    if t.endswith(".KS") or t.endswith(".KQ"):
+        return "KR"
+    if t.endswith(".T"):
+        return "JP"
+    if t.endswith(".HK") or t.endswith(".SS") or t.endswith(".SZ"):
+        return "CN"
+    if t.endswith(".NS") or t.endswith(".BO"):
+        return "IN"
+    if t.endswith((".L", ".PA", ".DE", ".AS", ".SW", ".MI", ".MC", ".ST", ".BR", ".LS")):
+        return "EU"
+    return "US"
+
+
+def build_universe(interleave: bool = True) -> list[tuple[str, str]]:
+    """Returns list of (ticker, asset_type) covering the full universe.
+
+    ETFs first, then stocks, in each dict's category order — then DEDUPED by ticker
+    (first occurrence wins, so a ticker present in both universes is fetched as ETF).
+
+    When interleave=True (default) the deduped list is round-robin merged across its
+    source categories so no category is structurally submitted last. This fixes the
+    rate-limit tail bias where STOCK_UNIVERSE's trailing sections (Korea / Japan /
+    China / Europe / India) absorbed ~100% of the 429 failures under the un-throttled
+    batch. Set interleave=False for the raw dict-order stream (kept for reproducibility).
+    Signature stays list[tuple[str,str]] so both callers (run_pipeline, retry_failed)
+    are unaffected.
+    """
+    from collections import OrderedDict
+
+    # 1) ordered (category, ticker, asset_type) in dict order
+    ordered: list[tuple[str, str, str]] = []
     for cat, data in GLOBAL_ETF_UNIVERSE.items():
         for tk in data["tickers"].keys():
-            universe.append((tk, "ETF"))
+            ordered.append((cat, tk, "ETF"))
     for cat, data in STOCK_UNIVERSE.items():
         for tk in data["tickers"].keys():
-            universe.append((tk, "Stock"))
-    # Dedupe (in case a ticker appears in both)
-    seen = set()
-    uniq = []
-    for tk, at in universe:
-        if tk not in seen:
-            seen.add(tk)
-            uniq.append((tk, at))
-    return uniq
+            ordered.append((cat, tk, "Stock"))
+
+    # 2) dedupe by ticker (first occurrence wins), grouped back by source category
+    seen: set = set()
+    by_cat: "OrderedDict[str, list[tuple[str, str]]]" = OrderedDict()
+    for cat, tk, at in ordered:
+        if tk in seen:
+            continue
+        seen.add(tk)
+        by_cat.setdefault(cat, []).append((tk, at))
+
+    if not interleave:
+        return [pair for pairs in by_cat.values() for pair in pairs]
+
+    # 3) round-robin across categories → each pass takes one ticker per non-empty
+    #    category (in category order), so every region/sector is spread evenly through
+    #    the stream and no group is ever the structural tail of the submission queue.
+    queues = [list(pairs) for pairs in by_cat.values() if pairs]
+    merged: list[tuple[str, str]] = []
+    while queues:
+        next_round = []
+        for q in queues:
+            merged.append(q.pop(0))
+            if q:
+                next_round.append(q)
+        queues = next_round
+    return merged
+
+
+def _merge_results(existing: dict, fresh: dict) -> dict:
+    """Non-destructive merge of a fresh fetch batch into existing cache records.
+
+    Rule: a fresh record replaces the prior ONLY if it is a successful fetch, OR the
+    prior record was itself a failure/absent (so we keep the latest error for retry
+    visibility). A fresh FAILED fetch against a prior GOOD (fetch_ok=True) record is
+    DISCARDED — the good data is kept. This makes any re-run strictly monotonic: it can
+    upgrade a record or re-record an error on an already-bad slot, but can NEVER null out
+    previously-good fundamentals. This is the guard that stops a rate-limited full run
+    from re-destroying good (e.g. Korean) data.
+    """
+    merged = dict(existing or {})
+    for tk, r in (fresh or {}).items():
+        prior = merged.get(tk)
+        if r.get("fetch_ok"):
+            merged[tk] = r                               # success always wins
+        elif not (prior and prior.get("fetch_ok")):
+            merged[tk] = r                               # prior bad/absent → keep latest error
+        # else: fresh failed but prior was good → keep prior (discard fresh)
+    return merged
+
+
+def _recompute_stats(tickers_map: dict, total_attempted: int, duration: float) -> dict:
+    """Derive the cache stats block from the (possibly merged) full ticker map."""
+    vals = list(tickers_map.values())
+    failed_tk = [tk for tk, r in tickers_map.items() if not r.get("fetch_ok")]
+    return {
+        "total_attempted": total_attempted,
+        "stock_ok": sum(1 for r in vals if r.get("fetch_ok") and r.get("asset_type") == "Stock"),
+        "etf_ok": sum(1 for r in vals if r.get("fetch_ok") and r.get("asset_type") == "ETF"),
+        "has_estimates": sum(1 for r in vals if r.get("estimates")),
+        "has_revisions": sum(1 for r in vals if r.get("revisions")),
+        "failed_count": len(failed_tk),
+        "failed_tickers": failed_tk,
+        "duration_sec": round(duration, 1),
+    }
 
 
 def run_pipeline(
     tickers: Optional[list[tuple[str, str]]] = None,
-    max_workers: int = 8,
+    max_workers: int = 4,
     cache_path: str = CACHE_PATH,
     progress_every: int = 25,
+    chunk_size: int = 100,
+    chunk_cooldown: float = 15.0,
+    submit_delay: float = 0.05,
+    auto_retry: bool = True,
+    auto_retry_threshold: int = 30,
 ) -> dict:
-    """Fetch fundamentals in parallel and save cache."""
+    """Fetch fundamentals and MERGE into the cache (non-destructive).
+
+    Throttled + chunked: the interleaved universe is fetched in region-mixed chunks of
+    `chunk_size`, each on its own ThreadPoolExecutor(max_workers) pool with `submit_delay`
+    spacing between submissions and a `chunk_cooldown` pause between chunks. This lets
+    Yahoo's per-window rate budget recover between bursts and stops the mid-batch 429
+    cascade that used to dump ~100% of failures on the tail (Korea/Japan/China/Europe/
+    India). Results are MERGE-written via _merge_results so a rate-limited fetch can never
+    overwrite previously-good data. On a full run, if the post-merge failure count exceeds
+    `auto_retry_threshold`, retry_failed() is auto-invoked (non-destructive) so recovery
+    needs no manual --retry-failed.
+    """
+    is_full_run = tickers is None
     if tickers is None:
-        tickers = build_universe()
+        tickers = build_universe()   # interleaved by default
 
     started = datetime.now(timezone.utc)
-    print(f"[fundamentals] starting batch: {len(tickers)} tickers, {max_workers} workers")
+    print(f"[fundamentals] starting batch: {len(tickers)} tickers, {max_workers} workers, "
+          f"chunk={chunk_size}, cooldown={chunk_cooldown}s")
 
     results: dict[str, dict] = {}
     failed: list[str] = []
     t0 = time.time()
     done = 0
+    total = len(tickers)
 
-    with ThreadPoolExecutor(max_workers=max_workers) as pool:
-        future_to_tk = {pool.submit(fetch_one, tk, at): tk for tk, at in tickers}
-        for future in as_completed(future_to_tk):
-            tk = future_to_tk[future]
-            try:
-                r = future.result()
-                results[tk] = r
-                if not r["fetch_ok"]:
+    for ci in range(0, total, max(1, chunk_size)):
+        chunk = tickers[ci:ci + chunk_size]
+        with ThreadPoolExecutor(max_workers=max_workers) as pool:
+            future_to_tk = {}
+            for tk, at in chunk:
+                future_to_tk[pool.submit(fetch_one, tk, at)] = (tk, at)
+                if submit_delay > 0:
+                    time.sleep(submit_delay)   # space out submissions
+            for future in as_completed(future_to_tk):
+                tk, at = future_to_tk[future]
+                try:
+                    r = future.result()
+                    results[tk] = r
+                    if not r["fetch_ok"]:
+                        failed.append(tk)
+                except Exception as e:
                     failed.append(tk)
-            except Exception as e:
-                failed.append(tk)
-                results[tk] = {
-                    "ticker": tk, "fetch_ok": False, "error": str(e)[:200],
-                }
-            done += 1
-            if done % progress_every == 0 or done == len(tickers):
-                elapsed = time.time() - t0
-                rate = done / elapsed if elapsed else 0
-                eta = (len(tickers) - done) / rate if rate else 0
-                print(f"[fundamentals] {done}/{len(tickers)} "
-                      f"({100*done/len(tickers):.0f}%) "
-                      f"| {rate:.1f} tk/s | ETA {eta:.0f}s "
-                      f"| failed={len(failed)}")
+                    results[tk] = {
+                        "ticker": tk, "asset_type": at, "fetch_ok": False, "error": str(e)[:200],
+                    }
+                done += 1
+                if done % progress_every == 0 or done == total:
+                    elapsed = time.time() - t0
+                    rate = done / elapsed if elapsed else 0
+                    eta = (total - done) / rate if rate else 0
+                    print(f"[fundamentals] {done}/{total} "
+                          f"({100*done/total:.0f}%) "
+                          f"| {rate:.1f} tk/s | ETA {eta:.0f}s "
+                          f"| failed={len(failed)}")
+        # inter-chunk cooldown (skip after the final chunk)
+        if ci + chunk_size < total and chunk_cooldown > 0:
+            time.sleep(chunk_cooldown)
 
     duration = time.time() - t0
-    stock_ok = sum(1 for r in results.values() if r.get("fetch_ok") and r.get("asset_type") == "Stock")
-    etf_ok = sum(1 for r in results.values() if r.get("fetch_ok") and r.get("asset_type") == "ETF")
-    has_estimates = sum(1 for r in results.values() if r.get("estimates"))
-    has_revisions = sum(1 for r in results.values() if r.get("revisions"))
+
+    # ── MERGE-SAFE WRITE: fold this batch into the existing cache; a fresh failure
+    #    never overwrites a prior good record (see _merge_results).
+    prior = load_fundamentals_cache(cache_path)
+    prior_tickers = prior.get("tickers", {}) if isinstance(prior, dict) else {}
+    merged_tickers = _merge_results(prior_tickers, results)
 
     cache = {
         "fetched_at": started.isoformat(),
-        "tickers": results,
-        "stats": {
-            "total_attempted": len(tickers),
-            "stock_ok": stock_ok,
-            "etf_ok": etf_ok,
-            "has_estimates": has_estimates,
-            "has_revisions": has_revisions,
-            "failed_count": len(failed),
-            "failed_tickers": failed,
-            "duration_sec": round(duration, 1),
-        },
+        "tickers": merged_tickers,
+        "stats": _recompute_stats(merged_tickers, total, duration),
     }
 
     with open(cache_path, "wb") as f:
         pickle.dump(cache, f)
 
-    print(f"\n[fundamentals] DONE — saved to {cache_path}")
-    print(f"  Total: {len(tickers)} | Stock OK: {stock_ok} | ETF OK: {etf_ok}")
-    print(f"  With estimates: {has_estimates} | With revisions: {has_revisions}")
-    print(f"  Failed: {len(failed)} | Duration: {duration:.0f}s")
+    st = cache["stats"]
+    print(f"\n[fundamentals] DONE — merge-saved to {cache_path}")
+    print(f"  This batch: {total} attempted | fresh-failed: {len(failed)}")
+    print(f"  Cache total: Stock OK: {st['stock_ok']} | ETF OK: {st['etf_ok']} "
+          f"| failed (all): {st['failed_count']} | Duration: {duration:.0f}s")
+
+    # ── AUTO-HEAL: on a full run, if too many failures remain, run the non-destructive
+    #    rate-limit retry so recovery is human-free.
+    if is_full_run and auto_retry:
+        rl_failed = [tk for tk, r in merged_tickers.items()
+                     if not r.get("fetch_ok") and _is_rate_limited(r.get("error", ""))]
+        if len(rl_failed) >= auto_retry_threshold:
+            print(f"[fundamentals] auto-retry: {len(rl_failed)} rate-limited failures "
+                  f">= {auto_retry_threshold} → running retry_failed() (non-destructive)")
+            cache = retry_failed(cache_path=cache_path, cooldown_sec=90,
+                                 max_workers=2, per_request_delay=0.3, max_attempts=3)
+
     return cache
 
 
@@ -405,11 +526,15 @@ def retry_failed(
     max_workers: int = 2,
     per_request_delay: float = 0.3,
     max_attempts: int = 3,
+    include_all_failures: bool = False,
 ) -> dict:
-    """Reload cache, retry rate-limited failures with conservative settings.
+    """Reload cache, retry failed fetches with conservative settings (non-destructive merge).
 
-    Iterates up to `max_attempts` times — each round waits `cooldown_sec`
-    before retrying any tickers still rate-limited.
+    Iterates up to `max_attempts` times — each round waits `cooldown_sec` before retrying.
+    By default targets only rate-limited failures. Set `include_all_failures=True` to also
+    re-attempt non-rate-limit failures (e.g. a transient "NoneType is not iterable"), which
+    catches stragglers the rate-limit filter would skip — genuine delisted/no_info tickers
+    simply fail again harmlessly and are left with their latest error.
     """
     universe = dict(build_universe())
 
@@ -419,13 +544,18 @@ def retry_failed(
             print("[fundamentals] no cache to retry from")
             return {}
 
-        failed = [tk for tk, r in cache["tickers"].items()
-                  if not r.get("fetch_ok") and _is_rate_limited(r.get("error", ""))]
+        rate_limited = [tk for tk, r in cache["tickers"].items()
+                        if not r.get("fetch_ok") and _is_rate_limited(r.get("error", ""))]
+        if include_all_failures:
+            failed = [tk for tk, r in cache["tickers"].items() if not r.get("fetch_ok")]
+        else:
+            failed = rate_limited
         if not failed:
-            print("[fundamentals] no rate-limited failures remaining")
+            print("[fundamentals] no failures remaining to retry")
             return cache
 
-        print(f"\n[retry attempt {attempt}/{max_attempts}] {len(failed)} rate-limited tickers")
+        print(f"\n[retry attempt {attempt}/{max_attempts}] {len(failed)} tickers "
+              f"({len(rate_limited)} rate-limited)")
         print(f"  cooldown: {cooldown_sec}s | workers: {max_workers} | delay: {per_request_delay}s")
         time.sleep(cooldown_sec)
 
@@ -478,8 +608,14 @@ def retry_failed(
         print(f"  total OK: stock={cache['stats']['stock_ok']} etf={cache['stats']['etf_ok']} "
               f"failed={cache['stats']['failed_count']}")
 
-        if recovered == 0:
-            print("  no progress — aborting further retries")
+        # Abort ONLY when a round made no progress AND nothing is still rate-limited.
+        # If the round recovered nothing but tickers remain throttled (cooldown too
+        # short / Yahoo still 429ing), keep going — the next round's cooldown may clear
+        # it. This fixes the old behaviour of quitting after one throttled round.
+        round_rate_limited = sum(1 for r in results.values()
+                                 if not r.get("fetch_ok") and _is_rate_limited(r.get("error", "")))
+        if recovered == 0 and round_rate_limited == 0:
+            print("  no progress and no rate-limit errors remain — aborting further retries")
             break
 
     return cache
@@ -492,18 +628,27 @@ def retry_failed(
 def _cli():
     parser = argparse.ArgumentParser(description="Fundamentals cache builder")
     parser.add_argument("--tickers", nargs="*", help="Specific tickers (default: full universe)")
-    parser.add_argument("--workers", type=int, default=8, help="Parallel workers (default 8)")
+    parser.add_argument("--workers", type=int, default=4, help="Parallel workers (default 4)")
     parser.add_argument("--max-age-h", type=float, default=None,
                         help="Skip refresh if cache is younger than this many hours")
     parser.add_argument("--retry-failed", action="store_true",
-                        help="Retry only the rate-limited failures from the existing cache")
+                        help="Retry failures from the existing cache (non-destructive merge)")
     parser.add_argument("--retry-cooldown", type=int, default=300,
-                        help="Seconds to wait before retrying rate-limited tickers (default 300)")
+                        help="Seconds to wait before retrying failed tickers (default 300)")
+    parser.add_argument("--include-all-failures", action="store_true",
+                        help="With --retry-failed, also retry non-rate-limit failures (catches stragglers)")
+    parser.add_argument("--chunk-size", type=int, default=100,
+                        help="Tickers per throttled chunk on a full run (default 100)")
+    parser.add_argument("--chunk-cooldown", type=float, default=15.0,
+                        help="Seconds to pause between chunks (default 15)")
+    parser.add_argument("--no-auto-retry", action="store_true",
+                        help="Disable auto retry_failed() at the tail of a full run")
     parser.add_argument("--cache-path", default=CACHE_PATH)
     args = parser.parse_args()
 
     if args.retry_failed:
-        retry_failed(cache_path=args.cache_path, cooldown_sec=args.retry_cooldown)
+        retry_failed(cache_path=args.cache_path, cooldown_sec=args.retry_cooldown,
+                     include_all_failures=args.include_all_failures)
         return
 
     if args.max_age_h is not None:
@@ -513,13 +658,15 @@ def _cli():
             return
 
     if args.tickers:
-        # Look up asset_type from universe
+        # Look up asset_type from universe (targeted run: no chunking overhead, no auto-retry)
         full = dict(build_universe())
         targeted = [(tk, full.get(tk, "Stock")) for tk in args.tickers]
+        run_pipeline(tickers=targeted, max_workers=args.workers, cache_path=args.cache_path,
+                     chunk_size=max(len(targeted), 1), chunk_cooldown=0.0, auto_retry=False)
     else:
-        targeted = None
-
-    run_pipeline(tickers=targeted, max_workers=args.workers, cache_path=args.cache_path)
+        run_pipeline(tickers=None, max_workers=args.workers, cache_path=args.cache_path,
+                     chunk_size=args.chunk_size, chunk_cooldown=args.chunk_cooldown,
+                     auto_retry=not args.no_auto_retry)
 
 
 if __name__ == "__main__":

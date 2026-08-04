@@ -66,6 +66,8 @@ ETF_TARGETS = [
     "XLC",  # Communication Services
     # ── iShares Sector ETFs ──────────────────────────────────────────────
     "IYR",  # Real Estate
+    # ── Financials sub-sector ────────────────────────────────────────────
+    "KBWB", # Invesco KBW Bank (large-cap money-center + major banks)
     # ── Semiconductors / Tech sub-themes ─────────────────────────────────
     "SMH",  # VanEck Semi
     "SOXX", # iShares Semi
@@ -128,6 +130,15 @@ ETF_TARGETS = [
     "MCHI", # China
     "KWEB", # China Internet
     "EWT",  # Taiwan
+    # ── ETF-QVR-rollup 확장 배치 (2026-07-13) — 플랫 50 ETF의 구성종목 QVR 롤업용.
+    # US 주식형 ETF는 대부분 고커버리지로 실제 QVR 산출(예: MGV/CIBR/MGK/IWF/ITA/HACK/IBB);
+    # 국가/커모디티형은 유니버스 겹침 낮아 커버리지 게이트로 자동 플랫 유지(EWG/EWU/DBA 등).
+    "AMLP", "BBJP", "BOTZ", "CIBR", "DBA", "DRAM", "DRIV", "DVY", "DXJ", "DYNF", "ECH", "EDOC",
+    "EEM", "EFA", "EGPT", "EIDO", "EIS", "EMXC", "EPOL", "EWA", "EWC", "EWG", "EWH", "EWI",
+    "EWL", "EWP", "EWS", "EWU", "EWW", "EWZ", "EZA", "FXI", "GREK", "GXG", "HACK", "IBB",
+    "IEFA", "IEMG", "IFRA", "IJH", "IJR", "ITA", "ITB", "IWD", "IWF", "KRE", "MGK", "MGV",
+    "MLPX", "MOO", "OEF", "PAVE", "REM", "SIZE", "SPDW", "THD", "TUR", "UFO", "VBK", "VBR",
+    "VEA", "VIG", "VNM", "VNQ", "VNQI", "VTV", "VUG", "VWO", "WOOD", "XBI", "XHB",
 ]
 
 

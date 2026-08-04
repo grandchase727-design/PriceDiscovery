@@ -20,9 +20,7 @@ INPUT FORMAT (from per_ticker_debate.run_per_ticker_debate)
 ================================================================================
 
 pm_horizons = {
-  "tactical":  {"long_stocks":[...], "long_etfs":[...], "short_stocks":[...], "short_etfs":[...]},
-  "core":      {...},
-  "strategic": {...},
+  "core": {"long_stocks":[...], "long_etfs":[...], "short_stocks":[...], "short_etfs":[...]},
 }
 
 Each pick augmented with:
@@ -133,11 +131,20 @@ def _enforce_sector_cap(picks: list[dict], max_weight: float = MAX_SECTOR_WEIGHT
     total_target = len(picks)
     cap_count = max(1, int(total_target * max_weight))
 
+    # 노출 버킷 키 사용 — 랩퍼 ETF의 free-text 라벨 파편화(VTV='Broad',
+    # NOBL='Factor', 360750.KS='Korea_Equity' — 실체는 같은 US 밸류/배당 베타)로
+    # 캡이 우회되던 문제 보정. 오버라이드 없는 종목은 기존 sector 라벨 그대로.
+    try:
+        from agents.holdings_aware_selection import _exposure_key
+    except Exception:
+        def _exposure_key(p):  # fallback: 기존 동작
+            return p.get("sector") or "UNKNOWN"
+
     sector_counter: Counter = Counter()
     accepted = []
     capped = []
     for p in picks:
-        sector = p.get("sector") or "UNKNOWN"
+        sector = _exposure_key(p) or "UNKNOWN"
         if sector_counter[sector] < cap_count:
             sector_counter[sector] += 1
             accepted.append(p)
@@ -203,7 +210,7 @@ def compose_portfolio(pm_horizons: dict, regime_tag: str = "",
     horizon_dist: Counter = Counter()
     warnings = []
 
-    for h in ("tactical", "core", "strategic"):
+    for h in ("core",):
         hd = pm_horizons.get(h, {}) or {}
         out_horizons[h] = {}
 

@@ -5,6 +5,8 @@ import { PreMomentumTab } from "./PreMomentumTab";
 import { MomentumTab } from "./MomentumTab";
 import { NewPriceDiscoveryTab } from "./NewPriceDiscoveryTab";
 import { New2PriceDiscoveryTab } from "./New2PriceDiscoveryTab";
+import { MeanReversionTab } from "./MeanReversionTab";
+import { PreBreakoutBaseTab } from "./PreBreakoutBaseTab";
 import { ExcludedTab } from "./ExcludedTab";
 import { DARK_LAYOUT } from "../../styles/theme";
 import { CLASS_COLORS, C } from "../../styles/theme";
@@ -18,6 +20,8 @@ const SUBS = [
   { label: "Momentum", desc: "Confirmed momentum — eligible tickers with active trend" },
   { label: "Anti Lag Discovery", desc: "PROVISIONAL: Pre-Mom strong signals (Anti-Lag, 조기 surface)" },
   { label: "Sector Discovery", desc: "Sector-Segmented — 각 섹터별 독립 top-5 선별 (diversification)" },
+  { label: "Pre-Breakout Base", desc: "상승추세 속 VCP 베이스 → 돌파 대기/승격 (CONSOLIDATION 회수, 매수 확정과 별개)" },
+  { label: "Oversold Reversion", desc: "Mean-Reversion tier — OER 거울상, 과매도→반등 (Composite와 분리)" },
   { label: "Excluded", desc: "Bearish, overextended, or ineligible — not actionable" },
 ] as const;
 
@@ -1538,7 +1542,9 @@ export function PriceDiscoveryTab({ filters }: { filters: FilterParams }) {
       {sub === 1 && <MomentumTab filters={filters} totalUniverse={allResults.length} />}
       {sub === 2 && <NewPriceDiscoveryTab filters={filters} totalUniverse={allResults.length} />}
       {sub === 3 && <New2PriceDiscoveryTab filters={filters} totalUniverse={allResults.length} />}
-      {sub === 4 && <ExcludedTab filters={filters} totalUniverse={allResults.length} />}
+      {sub === 4 && <PreBreakoutBaseTab />}
+      {sub === 5 && <MeanReversionTab />}
+      {sub === 6 && <ExcludedTab filters={filters} totalUniverse={allResults.length} />}
     </div>
   );
 }

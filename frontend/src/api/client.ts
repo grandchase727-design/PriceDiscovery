@@ -29,6 +29,12 @@ export const fetchOverview = (f: FilterParams) => api.get("/overview", { params:
 export const fetchTable = (f: FilterParams) => api.get("/table", { params: toQuery(f) }).then((r) => r.data);
 export const fetchUniverse = (f: FilterParams) => api.get("/universe", { params: toQuery(f) }).then((r) => r.data);
 export const fetchMarketRegime = (f: FilterParams) => api.get("/market-regime", { params: toQuery(f) }).then((r) => r.data);
+export const fetchMarketInternals = () => api.get("/market-internals").then((r) => r.data);
+export const fetchMacroRegime = () => api.get("/macro-regime").then((r) => r.data);
+export const fetchMacroOrbit = (months = 54) => api.get("/macro-regime/orbit", { params: { months } }).then((r) => r.data);
+export const fetchOptionsRegime = () => api.get("/options-regime").then((r) => r.data);
+export const fetchOptionsFlow = () => api.get("/options-flow").then((r) => r.data);
+export const fetchHerdingRegime = () => api.get("/herding-regime").then((r) => r.data);
 export const fetchWeeklyHeatmap = () => api.get("/weekly-heatmap").then((r) => r.data);
 export const fetchEffectiveness = () => api.get("/effectiveness").then((r) => r.data);
 export const fetchReport = (f: FilterParams) => api.get("/report", { params: toQuery(f) }).then((r) => r.data);
@@ -49,6 +55,9 @@ export const fetchValidation = () => api.get("/validation").then((r) => r.data);
 export const fetchQuantStrategies = () => api.get("/quant-strategies").then((r) => r.data);
 export const fetchNewPDValidation = () => api.get("/new-pd/validation").then((r) => r.data);
 export const fetchNewPDv2Validation = () => api.get("/new-pd-v2/validation").then((r) => r.data);
+export const fetchMeanReversion = () => api.get("/mean-reversion").then((r) => r.data);
+export const fetchPreBreakoutBase = () => api.get("/pre-breakout-base").then((r) => r.data);
+export const fetchPortfolio = () => api.get("/portfolio").then((r) => r.data);
 
 // ─── ML-rescored endpoints (mirror /api/* but using ML-optimized Composite weights) ───
 export const fetchMlMeta = () => api.get("/ml/meta").then((r) => r.data);
@@ -241,7 +250,7 @@ export interface FinalListItem {
   name: string;
   sector: string;
   composite: number;
-  horizon: "tactical" | "core" | "strategic" | string;
+  horizon: "core" | string;
   bucket: string;
   stars: number;
   in_proxy_latest?: boolean;
@@ -367,6 +376,7 @@ export interface ActivePositionItem {
   bucket: string;
   state: string;
   entered_date?: string;
+  entered_price?: number | null;
   first_seen?: string;
   days_held: number;
   persistence_days: number;
@@ -488,7 +498,7 @@ export interface SwarmHedgePair {
   long: string;
   short: string;
   sector?: string;
-  horizon?: "tactical" | "core" | "strategic" | string;
+  horizon?: "core" | string;
   rationale: string;
 }
 export interface SwarmRiskBudget {
@@ -503,9 +513,7 @@ export interface SwarmHorizonPicks {
   short_etfs: SwarmPMPick[];
 }
 export interface SwarmHorizons {
-  tactical: SwarmHorizonPicks;   // 5d  — short-term tactical
   core: SwarmHorizonPicks;       // 21d — primary horizon, includes Phase 4 diff
-  strategic: SwarmHorizonPicks;  // 63d — multi-month strategic
 }
 export interface SwarmIterationRound {
   round: number;
@@ -675,6 +683,12 @@ export const fetchSwarmStatus = (): Promise<SwarmStatus> =>
 export const fetchSwarmResult = (): Promise<SwarmResultResponse> =>
   api.get("/market-leaders/swarm/result").then((r) => r.data);
 
+// ─── 목표매매횟수 (분할 매매 횟수) tranche agent ───
+export const startTrancheRefresh = (): Promise<{ ok: boolean; status?: string }> =>
+  api.post("/final-list/refresh-tranches", null, { params: { background: true } }).then((r) => r.data);
+export const fetchTrancheStatus = (): Promise<{ running: boolean; finished_at?: string | null; error?: string | null }> =>
+  api.get("/final-list/tranche-status").then((r) => r.data);
+
 // ─── PM Agent Backtest (deterministic proxy) ───
 export interface BacktestForwardDist {
   n: number;
@@ -762,9 +776,7 @@ export interface LifecycleRecord {
   bhd?: number | null;                // trading days elapsed since entry
 }
 export interface TradingLifecyclesCompact {
-  tactical:  Record<string, LifecycleRecord[]>;
   core:      Record<string, LifecycleRecord[]>;
-  strategic: Record<string, LifecycleRecord[]>;
 }
 export interface BacktestResult {
   as_of_run: string;
@@ -779,9 +791,7 @@ export interface BacktestResult {
     h63d: Record<string, BacktestBucketMetric>;
   };
   trading_metrics?: {
-    tactical:  TradingMetricsBucket;
-    core:      TradingMetricsBucket;
-    strategic: TradingMetricsBucket;
+    core: TradingMetricsBucket;
   };
   trading_lifecycles_compact?: TradingLifecyclesCompact;
 }
@@ -869,3 +879,11 @@ export interface PMHistorySummary {
 }
 export const fetchPMHistorySummary = (): Promise<PMHistorySummary> =>
   api.get("/pm-history/summary").then((r) => r.data);
+
+// ─── Elliott Wave Indices (ACWI / SPY / QQQ / IWM — wave count, YTD or 1개월) ───
+export const fetchElliottWaveIndices = (period: "ytd" | "1m" = "ytd") =>
+  api.get("/elliott-wave-indices", { params: { period } }).then((r) => r.data);
+
+// ─── Buy Final List Elliott Waves (per-ticker wave count for the live buy list) ───
+export const fetchFinalListEtfWaves = (period: "ytd" | "1m" = "ytd") =>
+  api.get("/final-list/elliott-waves", { params: { period } }).then((r) => r.data);

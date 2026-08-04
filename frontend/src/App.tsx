@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
-import { fetchMeta, startScan, fetchScanStatus, reloadCache, startAutoFill, fetchAutoFillStatus, startMarketLeadersSwarm, startBacktestRun, fetchBacktestStatus, type FilterParams } from "./api/client";
+import { fetchMeta, startScan, fetchScanStatus, reloadCache, startAutoFill, fetchAutoFillStatus, startMarketLeadersSwarm, startBacktestRun, fetchBacktestStatus, startTrancheRefresh, fetchTrancheStatus, type FilterParams } from "./api/client";
 import { MarketEnvironmentTab } from "./components/tabs/MarketEnvironmentTab";
 import { MarketCommentaryTab } from "./components/tabs/MarketCommentaryTab";
 import { PriceDiscoveryTab } from "./components/tabs/PriceDiscoveryTab";
@@ -9,34 +9,17 @@ import { AnalysisTab } from "./components/tabs/AnalysisTab";
 import { AppendixTab } from "./components/tabs/AppendixTab";
 import { AIPredictionTab } from "./components/tabs/AIPredictionTab";
 import FinalListPanel from "./components/shared/FinalListPanel";
+import ElliottWavePanel from "./components/shared/ElliottWavePanel";
+import FinalListEtfWavePanel from "./components/shared/FinalListEtfWavePanel";
+import MarketInternalsPanel from "./components/shared/MarketInternalsPanel";
+import PortfolioPanel from "./components/shared/PortfolioPanel";
 
 const TABS = ["Market Commentary", "Price Discovery", "Price Discovery (ML)", "Validation", "Market Environment", "Analysis", "AI Prediction", "Appendix"];
-
-// Asset class mode definitions (Option B unified taxonomy — sector-based)
-type AssetMode = "equity" | "fixed_income";
-
-const EQUITY_SECTORS = new Set([
-  "Technology", "Communication Services", "Healthcare", "Financials",
-  "Consumer Discretionary", "Consumer Staples", "Industrials", "Energy",
-  "Utilities", "Materials", "Real Estate",
-  "Equity Broad", "International",
-]);
-const FICC_SECTORS = new Set([
-  "Fixed Income", "Macro", "Multi-Asset", "Alternatives",
-]);
-
-function sectorsForMode(mode: AssetMode, allSectors: string[]): string[] {
-  const target = mode === "equity" ? EQUITY_SECTORS : FICC_SECTORS;
-  return allSectors.filter((s) => target.has(s));
-}
 
 export default function App() {
   const [meta, setMeta] = useState<any>(null);
   const [tab, setTab] = useState(0);
   const [dataVersion, setDataVersion] = useState(0); // bump to trigger re-fetch
-
-  // Asset class mode
-  const [assetMode, setAssetMode] = useState<AssetMode>("equity");
 
   // Scan state — single unified pipeline (scan → cache → swarm + backtest)
   const [scanning, setScanning] = useState(false);
@@ -52,6 +35,8 @@ export default function App() {
   //   95-100%: Final wrap-up
   const [progressPct, setProgressPct] = useState(0);
   const [progressStage, setProgressStage] = useState<string>("");
+  const [scanStartMs, setScanStartMs] = useState<number | null>(null);  // for ETA computation
+  const [nowMs, setNowMs] = useState<number>(Date.now());                // ticks every 5s during scan
 
   const SWARM_PHASE_PROGRESS: Record<string, number> = {
     // Maps swarm.phase → progress % within the 40-95 swarm range (inside pipeline)
@@ -60,7 +45,7 @@ export default function App() {
     phase3:           57,  // synthesis (neutral + averse)
     phase4:           62,  // action selector
     phase4_action:    65,
-    phase5:           70,  // PM × 3 horizons
+    phase5:           70,  // PM — core horizon
     phase5_pm:        72,
     phase5_5:         80,  // trading
     phase5_55:        85,  // risk_llm
@@ -83,19 +68,12 @@ export default function App() {
   const loadMeta = useCallback(() => {
     fetchMeta().then((m) => {
       setMeta(m);
-      setSectors(sectorsForMode(assetMode, m.sectors || []));
+      setSectors(m.sectors || []);
       setClassifications(m.classifications || []);
     });
-  }, [assetMode]);
+  }, []);
 
   useEffect(() => { loadMeta(); }, [loadMeta]);
-
-  // When mode changes, update sector filter
-  useEffect(() => {
-    if (meta?.sectors) {
-      setSectors(sectorsForMode(assetMode, meta.sectors));
-    }
-  }, [assetMode, meta?.sectors]);
 
   // Poll scan status when scanning
   const handleStartScan = useCallback(() => {
@@ -103,6 +81,7 @@ export default function App() {
     setProgressPct(2);
     setProgressStage("🔄 Live Scan 시작");
     setScanMsg("Starting scan...");
+    setScanStartMs(Date.now());   // anchor for ETA computation
     startScan({ lookback_years: lookbackYears, use_realtime: useRealtime, include_stocks: includeStocks })
       .then((r) => {
         if (r.status === "already_running") {
@@ -124,107 +103,31 @@ export default function App() {
                 setProgressStage("");
                 setScanMsg(`Error: ${s.last_error}`);
               } else {
-                // KEEP scanning=true through the rest of the pipeline (autofill + swarm + backtest)
-                // so FinalListPanel keeps polling for swarm cache updates.
-                setProgressPct(20);
-                setProgressStage("✓ Scan 완료 · Cache 재로딩");
-                setScanMsg("Scan complete! Reloading...");
+                // The backend now owns the whole pipeline (scan → swarm → backtest →
+                // final list) and keeps `running` True for the ENTIRE chain, so
+                // reaching here means everything finished server-side — it completes
+                // even if this tab was closed. We no longer start the swarm/backtest
+                // from the browser (that used to get killed on tab close & double-run).
+                const pipe = s.pipeline || {};
+                const fl = pipe.final_list || {};
+                const sw = pipe.swarm || {};
+                const swWarn = sw.ok === false ? " · ⚠ 스웜 실패(기존 캐시로 생성)" : "";
+                setProgressPct(100);
+                setProgressStage("✓ 전체 파이프라인 완료");
+                setScanMsg(
+                  fl.ok
+                    ? `✓ 완료 — 매수 ${fl.n_buy}개 · 매도 ${fl.n_sell}개 산출${swWarn}`
+                    : `✓ 스캔 완료${swWarn}`,
+                );
                 reloadCache().then(() => {
                   loadMeta();
                   setDataVersion((v) => v + 1);
-                  setProgressPct(30);
-                  setProgressStage("🤖 Debate Cache 준비");
-                  // After scan + reload, server auto-dispatches `claude -p`
-                  // for each uncached live pick (Max plan-billed). Poll status.
-                  // Chain function: start swarm + backtest + final poll
-                  const chainSwarmAndBacktest = () => {
-                    setProgressPct(40);
-                    setProgressStage("🤖 Swarm + Backtest 시작");
-                    const swP = startMarketLeadersSwarm(true).catch((e) => ({ status: "error", error: String(e) }));
-                    const btP = startBacktestRun().catch((e) => ({ status: "error", error: String(e) }));
-                    Promise.all([swP, btP]).then(([sw, bt]) => {
-                      const swSt = (sw as any).status || "?";
-                      const btSt = (bt as any).status || "?";
-                      setScanMsg(`🤖 Swarm: ${swSt} · 📊 Backtest: ${btSt} — 진행 중…`);
-                      let swDone = swSt === "already_running" || swSt === "cached" || swSt === "error";
-                      let btDone = btSt === "already_running" || btSt === "error";
-                      const finalPoll = setInterval(() => {
-                        Promise.all([
-                          fetch("/api/market-leaders/swarm/status").then((r) => r.json()).catch(() => null),
-                          fetchBacktestStatus().catch(() => null),
-                        ]).then(([swR, btR]) => {
-                          if (swR && !swR.running) swDone = true;
-                          if (btR && !btR.running) btDone = true;
-                          const swPhase = swR?.running ? `${swR.phase || "—"}` : (swR?.last_error ? "⚠" : "✓");
-                          const btPhase = btR?.running ? "실행 중" : (btR?.last_error ? "⚠" : "✓");
-                          // Map swarm.phase → progress %
-                          const swPctMap: Record<string, number> = {
-                            phase1: 45, phase2: 52, phase3: 57, phase4: 62, phase4_action: 65,
-                            phase5: 70, phase5_pm: 72, phase5_5: 80, phase5_55: 85, phase5_6a: 90, phase5_6: 93,
-                          };
-                          const swPct = swR?.running ? (swPctMap[swR.phase] ?? 50) : 95;
-                          setProgressPct(swPct);
-                          setProgressStage(`🤖 Swarm: ${swPhase} | 📊 Backtest: ${btPhase}`);
-                          setScanMsg(`🤖 Swarm: ${swPhase} | 📊 Backtest: ${btPhase}`);
-                          if (swDone && btDone) {
-                            clearInterval(finalPoll);
-                            setProgressPct(100);
-                            setProgressStage("✓ 전체 파이프라인 완료");
-                            setScanning(false);
-                            setScanMsg("✓ 전체 시스템 (Scan + Cache + Swarm + Backtest) 완료 — 대시보드 갱신됨");
-                            setDataVersion((v) => v + 1);
-                            setTimeout(() => { setScanMsg(""); setProgressPct(0); setProgressStage(""); }, 12000);
-                          }
-                        }).catch(() => {});
-                      }, 8000);
-                    });
-                  };
-
-                  startAutoFill().then((a) => {
-                    if (a.status === "no_claude_cli") {
-                      setScanning(false);
-                      setProgressPct(0);
-                      setProgressStage("");
-                      setScanMsg("Data refreshed. ⚠ Claude CLI not on server PATH — cache auto-fill unavailable.");
-                      setTimeout(() => setScanMsg(""), 8000);
-                      return;
-                    }
-                    if (a.status === "empty_queue" || a.status === "no_queue" || (a.n_total ?? 0) === 0) {
-                      setScanMsg("Data refreshed. ✓ Debate cache up to date.");
-                      chainSwarmAndBacktest();
-                      return;
-                    }
-                    setProgressPct(32);
-                    setProgressStage(`🤖 Debate Cache: ${a.n_total} jobs`);
-                    setScanMsg(`Data refreshed. Dispatching ${a.n_total} debate jobs...`);
-                    const pollId = setInterval(() => {
-                      fetchAutoFillStatus().then((st) => {
-                        if (!st.running) {
-                          clearInterval(pollId);
-                          setDataVersion((v) => v + 1);
-                          if (st.n_failed > 0) {
-                            setScanMsg(`✓ Cache filled: ${st.n_persisted}/${st.n_total} (${st.n_failed} failed) · swarm starting…`);
-                          } else {
-                            setScanMsg(`✓ Cache filled: ${st.n_persisted}/${st.n_total} · swarm starting…`);
-                          }
-                          chainSwarmAndBacktest();
-                        } else {
-                          const done = st.n_completed + st.n_failed;
-                          const debatePct = 32 + Math.round((done / Math.max(1, st.n_total)) * 8);  // 32 → 40
-                          setProgressPct(debatePct);
-                          setProgressStage(`🤖 Debate Cache: ${done}/${st.n_total}`);
-                          setScanMsg(`Filling cache: ${done}/${st.n_total} · current: ${st.current || "…"}`);
-                        }
-                      }).catch(() => clearInterval(pollId));
-                    }, 4000);
-                  }).catch(() => {
-                    setScanning(false);
-                    setProgressPct(0);
-                    setProgressStage("");
-                    setScanMsg("Data refreshed (cache auto-fill failed).");
-                    setTimeout(() => setScanMsg(""), 5000);
-                  });
                 });
+                setScanning(false);
+                // Best-effort: warm the per-ticker conviction-debate cache in the
+                // background (non-blocking, Max-plan billed). Not part of the buy list.
+                startAutoFill().catch(() => {});
+                setTimeout(() => { setScanMsg(""); setProgressPct(0); setProgressStage(""); }, 12000);
               }
             } else {
               // Phase-aware Live Scan progress mapping (matches api.py phase tracking):
@@ -241,6 +144,29 @@ export default function App() {
               const tail = (s.last_line || "").slice(0, 80);
               setScanMsg(`[${phase}] ${elapsed}s · ${tail}`);
 
+              // Post-scan server pipeline (Swarm → PM_Backtest → FinalList). The
+              // backend reports these AFTER the scan subprocess ends while `running`
+              // stays True. Map to the 40-99% band; the swarm sub-phase arrives as
+              // "Swarm:<phaseN>". (Live swarm detail also polled by SwarmAnalysis.)
+              if (phase.startsWith("Swarm") || phase === "PM_Backtest" || phase === "FinalList") {
+                let ppct = 42;
+                let pstage = "🤖 Market Leaders Swarm";
+                if (phase.startsWith("Swarm")) {
+                  const sub = phase.split(":")[1] || "";
+                  ppct = SWARM_PHASE_PROGRESS[sub] ?? 42;
+                  pstage = `🤖 Swarm${sub ? " · " + sub : ""}`;
+                } else if (phase === "PM_Backtest") {
+                  ppct = 95;
+                  pstage = "📊 PM Backtest";
+                } else if (phase === "FinalList") {
+                  ppct = 98;
+                  pstage = "🧾 Final List 생성";
+                }
+                setProgressPct((prev) => Math.max(prev, ppct));
+                setProgressStage(pstage);
+                return;
+              }
+
               let pct = 5;
               let evalLabel = "";
               // Phase mapping reflects ACTUAL scan order observed in logs:
@@ -251,9 +177,19 @@ export default function App() {
                 case "Init":
                   pct = 3;
                   break;
-                case "Downloading":
-                  pct = Math.min(5, 3 + Math.round(elapsed / 60));
+                case "Downloading": {
+                  // Parse yfinance "X of Y completed" for live download progress
+                  const m = (s.last_line || "").match(/(\d+)\s+of\s+(\d+)/i);
+                  if (m) {
+                    const cur = parseInt(m[1], 10);
+                    const tot = parseInt(m[2], 10) || 1;
+                    pct = Math.min(7, 4 + Math.round((cur / tot) * 3));
+                    evalLabel = ` (다운로드 ${cur}/${tot})`;
+                  } else {
+                    pct = Math.min(5, 4 + Math.round(elapsed / 120));
+                  }
                   break;
+                }
                 case "Indicators":  // Phase 1
                   pct = Math.min(8, 5 + Math.round(elapsed / 120));
                   break;
@@ -269,9 +205,18 @@ export default function App() {
                   }
                   break;
                 }
-                case "Validity":   // Phase 3
-                  pct = 12;
+                case "Validity": {   // SignalValidityEngine — "eval N/24"
+                  const m = (s.last_line || "").match(/eval\s+(\d+)\/(\d+)/i);
+                  if (m) {
+                    const cur = parseInt(m[1], 10);
+                    const tot = parseInt(m[2], 10) || 24;
+                    pct = Math.min(15, 11 + Math.round((cur / tot) * 4));
+                    evalLabel = ` (validity ${cur}/${tot})`;
+                  } else {
+                    pct = 12;
+                  }
                   break;
+                }
                 case "Scoring":    // Phase 4
                   pct = 13;
                   break;
@@ -326,16 +271,37 @@ export default function App() {
   // Cleanup poll on unmount
   useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current); }, []);
 
+  // Tick a clock every 5s while scanning so the ETA display stays live.
+  useEffect(() => {
+    if (!scanning) return;
+    const id = setInterval(() => setNowMs(Date.now()), 5000);
+    return () => clearInterval(id);
+  }, [scanning]);
+
+  // ETA: extrapolate remaining time from elapsed × (100 - pct) / pct.
+  // Only meaningful once progress has moved a bit (pct ≥ 5) and we have a start anchor.
+  const eta = (() => {
+    if (!scanning || !scanStartMs || progressPct < 5 || progressPct >= 100) return null;
+    const elapsedMs = nowMs - scanStartMs;
+    if (elapsedMs <= 0) return null;
+    const totalMs = (elapsedMs / progressPct) * 100;
+    const remainMs = Math.max(0, totalMs - elapsedMs);
+    const finishAt = new Date(nowMs + remainMs);
+    const remainMin = Math.round(remainMs / 60000);
+    const hh = String(finishAt.getHours()).padStart(2, "0");
+    const mm = String(finishAt.getMinutes()).padStart(2, "0");
+    return { finishLabel: `${hh}:${mm}`, remainMin, elapsedMin: Math.round(elapsedMs / 60000) };
+  })();
+
   // dataVersion in dependency forces all tabs to re-fetch after scan completes
-  // Always send sectors to enforce mode filter (never undefined)
   const filters: FilterParams = useMemo(() => ({
-    sectors: sectors.length > 0 ? sectors : sectorsForMode(assetMode, meta?.sectors || []),
+    sectors: sectors.length > 0 ? sectors : (meta?.sectors || []),
     classifications: classifications.length === (meta?.classifications?.length || 0) ? undefined : classifications,
     eligible_only: eligibleOnly,
     comp_min: compMin,
     comp_max: compMax,
     _v: dataVersion, // cache-bust key (not sent to API, triggers re-fetch)
-  } as any), [sectors, classifications, eligibleOnly, compMin, compMax, meta, dataVersion, assetMode]);
+  } as any), [sectors, classifications, eligibleOnly, compMin, compMax, meta, dataVersion]);
 
   if (!meta) {
     return (
@@ -351,33 +317,6 @@ export default function App() {
       <aside className="w-64 bg-[#FFFFFF] border-r border-[#E6D9CE] p-4 overflow-y-auto shrink-0">
         <h1 className="text-[20px] font-bold text-[#0F5499] mb-1">Price Discovery</h1>
         <div className="text-[14px] text-[#857F7A] mb-2">Scanner v5.0 | {meta.total_tickers} tickers</div>
-
-        {/* ── Asset Mode Toggle ── */}
-        <div className="mb-3 flex rounded-lg overflow-hidden border border-[#E6D9CE]">
-          <button
-            className={`flex-1 py-1.5 text-[14px] font-semibold transition-colors ${
-              assetMode === "equity"
-                ? "bg-[#0F5499] text-white"
-                : "bg-[#F2E5D7] text-[#66605C] hover:text-[#33302E]"
-            }`}
-            onClick={() => setAssetMode("equity")}>
-            주식형
-          </button>
-          <button
-            className={`flex-1 py-1.5 text-[14px] font-semibold transition-colors ${
-              assetMode === "fixed_income"
-                ? "bg-[#B85C00] text-white"
-                : "bg-[#F2E5D7] text-[#66605C] hover:text-[#33302E]"
-            }`}
-            onClick={() => setAssetMode("fixed_income")}>
-            FICC
-          </button>
-        </div>
-        <div className="text-[12px] text-[#857F7A] mb-3">
-          {assetMode === "equity"
-            ? "Equity · Sectors · Factors · International · Thematic · Stocks"
-            : "FICC — FI Short/Intermediate/Long/Credit/Inflation/Intl · Commodities · Real Assets · Currency · Multi-Asset"}
-        </div>
 
         <div className="text-[14px] text-[#857F7A] mb-3">
           Scan: {meta.scan_time ? new Date(meta.scan_time).toLocaleString("ko-KR", {
@@ -410,7 +349,7 @@ export default function App() {
           <button
             onClick={handleStartScan}
             disabled={scanning}
-            title="전체 시스템 실행 (단일 버튼): (1) Live Scan — 770 ticker 데이터 갱신 · (2) Auto-Fill Debate Cache · (3) Market Leaders Swarm — Phase 5/5.5/5.55/5.6a Option A Iterative Debate (PM × 3 horizons → Trading → Risk LLM → Synthesizer) · (4) PM Agent Backtest — Stock-Picker Skill Eval. 총 ~15-20분 소요."
+            title="전체 시스템 실행 (단일 버튼): (1) Live Scan — 810 ticker 데이터 갱신 · (2) Market Leaders Swarm — Phase 0~6 (Fact→Analyst→Strategist→Action→PM+Debate, core horizon) · 총 ~25-30분 소요."
             className={`w-full py-1.5 rounded text-[14px] font-semibold transition-colors ${
               scanning
                 ? "bg-[#F2E5D7] text-[#66605C] cursor-wait"
@@ -418,6 +357,18 @@ export default function App() {
             }`}>
             {scanning ? `Running… ${progressPct}%` : "Run Live Scan (전체 시스템)"}
           </button>
+
+          {/* ── ETA: 예상 완료 시간 (버튼 바로 밑) ── */}
+          {eta && (
+            <div className="flex items-center justify-between px-2 py-1 rounded text-[12px]"
+                 style={{ backgroundColor: "#E3EEF5", border: "1px solid #9CC3D5" }}
+                 title={`경과 ${eta.elapsedMin}분 · 진행률 ${progressPct}% 기반 선형 추정 (실제와 다를 수 있음)`}>
+              <span style={{ color: "#0F5499", fontWeight: 600 }}>⏱ 예상 완료</span>
+              <span className="font-mono font-bold" style={{ color: "#0F5499" }}>
+                ~{eta.finishLabel} <span style={{ color: "#66605C", fontWeight: 400 }}>({eta.remainMin}분 남음)</span>
+              </span>
+            </div>
+          )}
 
           {/* ── Progress Bar (visible during the whole 15-20 min pipeline) ── */}
           {(scanning || progressPct > 0) && (
@@ -476,58 +427,9 @@ export default function App() {
           Eligible only
         </label>
 
-        {/* Composite Range */}
-        <div className="mb-4">
-          <div className="text-[14px] text-[#857F7A] mb-1">Composite: {compMin} — {compMax}</div>
-          <div className="flex gap-2">
-            <input type="number" value={compMin} onChange={(e) => setCompMin(+e.target.value)}
-              className="w-16 px-1 py-0.5 text-[14px] bg-[#F2E5D7] border border-[#E6D9CE] rounded" min={0} max={100} />
-            <input type="number" value={compMax} onChange={(e) => setCompMax(+e.target.value)}
-              className="w-16 px-1 py-0.5 text-[14px] bg-[#F2E5D7] border border-[#E6D9CE] rounded" min={0} max={100} />
-          </div>
-        </div>
-
-        {/* Sectors (Option B unified taxonomy) */}
-        <div className="mb-4">
-          <div className="flex justify-between items-center mb-1">
-            <span className="text-[14px] text-[#857F7A]">Sectors ({sectors.length}/{(meta.sectors || []).length})</span>
-            <button className="text-[12px] text-[#0F5499] hover:underline"
-              onClick={() => setSectors(sectors.length === (meta.sectors || []).length ? [] : (meta.sectors || []))}>
-              {sectors.length === (meta.sectors || []).length ? "Clear" : "All"}
-            </button>
-          </div>
-          <div className="max-h-48 overflow-y-auto space-y-0.5">
-            {(meta.sectors || []).map((s: string) => (
-              <label key={s} className="flex items-center gap-1.5 text-[13px] cursor-pointer hover:text-[#33302E]">
-                <input type="checkbox" checked={sectors.includes(s)}
-                  onChange={(e) => setSectors(e.target.checked ? [...sectors, s] : sectors.filter((x) => x !== s))}
-                  className="rounded bg-[#F2E5D7] border-[#CCC1B7] w-3 h-3" />
-                {s}
-              </label>
-            ))}
-          </div>
-        </div>
-
-        {/* Classifications */}
-        <div className="mb-4">
-          <div className="flex justify-between items-center mb-1">
-            <span className="text-[14px] text-[#857F7A]">Classifications ({classifications.length}/{meta.classifications.length})</span>
-            <button className="text-[12px] text-[#0F5499] hover:underline"
-              onClick={() => setClassifications(classifications.length === meta.classifications.length ? [] : meta.classifications)}>
-              {classifications.length === meta.classifications.length ? "Clear" : "All"}
-            </button>
-          </div>
-          <div className="max-h-40 overflow-y-auto space-y-0.5">
-            {meta.classifications.map((c: string) => (
-              <label key={c} className="flex items-center gap-1.5 text-[13px] cursor-pointer hover:text-[#33302E]">
-                <input type="checkbox" checked={classifications.includes(c)}
-                  onChange={(e) => setClassifications(e.target.checked ? [...classifications, c] : classifications.filter((x) => x !== c))}
-                  className="rounded bg-[#F2E5D7] border-[#CCC1B7] w-3 h-3" />
-                {c.slice(0, 20)}
-              </label>
-            ))}
-          </div>
-        </div>
+        {/* Sidebar filters (Composite / Sectors / Classifications) removed per request.
+            filters state stays at show-all defaults (sectors = asset-mode scope,
+            all classifications, composite 0-100) so downstream tabs receive a no-op filter. */}
       </aside>
 
       {/* Main Content */}
@@ -535,17 +437,11 @@ export default function App() {
         {/* Tab Bar */}
         <div className="sticky top-0 z-20 bg-[#FFF1E5] border-b border-[#E6D9CE] px-4">
           <div className="flex items-center gap-0">
-            <span className={`px-3 py-2.5 text-[12px] font-bold uppercase tracking-wider ${
-              assetMode === "equity" ? "text-[#0F5499]" : "text-[#B85C00]"
-            }`}>
-              {assetMode === "equity" ? "주식형" : "FICC"}
-            </span>
-            <span className="text-[#33302E] mr-1">|</span>
             {TABS.map((t, i) => (
               <button key={t}
                 className={`px-4 py-2.5 text-[16px] font-medium border-b-2 transition-colors ${
                   tab === i
-                    ? assetMode === "equity" ? "border-[#0F5499] text-[#0F5499]" : "border-[#B85C00] text-[#B85C00]"
+                    ? "border-[#0F5499] text-[#0F5499]"
                     : "border-transparent text-[#857F7A] hover:text-[#33302E]"
                 }`}
                 onClick={() => setTab(i)}>
@@ -568,7 +464,11 @@ export default function App() {
 
           {/* Always-visible Final Buy/Sell List at the bottom of every tab —
               EXCEPT Market Commentary (tab 0), which embeds it right after Swarm Analysis. */}
+          {tab !== 0 && <MarketInternalsPanel />}
+          {tab !== 0 && <ElliottWavePanel />}
           {tab !== 0 && <FinalListPanel dataVersion={dataVersion} scanning={scanning} />}
+          {tab !== 0 && <FinalListEtfWavePanel />}
+          {tab !== 0 && <PortfolioPanel dataVersion={dataVersion} scanning={scanning} />}
         </div>
       </main>
     </div>

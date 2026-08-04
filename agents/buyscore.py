@@ -45,6 +45,25 @@ BEARISH_CLASS_PENALTY = {
 WEAK_QVR_PENALTY = 15
 WEAK_QVR_THRESHOLD = 40
 
+# ── ETF constituent-QVR soft penalty (Phase 4, 2026-07) ──
+# ETFs stay EXEMPT from the hard QVR≥40 Eligibility Gate (a hard gate on a top-10,
+# weekly-stale, ~60%-of-fund proxy was rejected in the design eval). Instead a SMALL,
+# Q-ANCHORED, high-coverage-only BuyScore penalty: fires only when the constituent
+# rollup is trustworthy (coverage ≥70%) AND the rolled QUALITY (not the blended score,
+# not Value) is genuinely weak (<40). Q-anchored → never penalizes a cheap-but-quality
+# sector ETF for the value-cheapness trap. Magnitude 8 < stock WeakQVR 15 (softer).
+ETF_WEAK_QVR_PENALTY = 8.0
+ETF_QVR_COV_FLOOR = 70.0
+ETF_QVR_Q_FLOOR = 40.0
+
+# ── Entry Timing + Pre-Momentum (2026-07, 방법론 ①②③⑤) ──
+# ETS(진입 적시성, 0-100, 중심 50)를 ±로 반영 — 이미 스트레치된 종목(ET 낮음) 감점,
+# 적시/신선 종목(ET 높음) 가점. composite(강도)와 직교하는 타이밍 축이라 OER 페널티와
+# 이중 계상 아님. Pre-Momentum forming 후보(③)는 composite가 낮아도 BuyScore로 surface.
+ENTRY_TIMING_K = 0.20            # (ETS−50)·K → 약 ±10점 범위
+PRE_MOM_PROVISIONAL_BONUS = 6.0 # provisional_eligible (STRONG 선행)
+PRE_MOM_FORMING_BONUS = 3.0     # pre_momentum≥45 + agreement≥0.4 (MODERATE 선행)
+
 # ── Classification-group split (2026-05 — Pre-Momentum vs Momentum stratification) ──
 # Goal: produce two distinct holding-period buckets so Tier-A turnover isn't daily.
 #   • MOMENTUM    — trend already established, target hold ≤ weekly
@@ -150,24 +169,66 @@ def compute_buyscore(
     # Lookup using RAW emoji-prefixed classification (matches frontend)
     bullish_bonus   = BULLISH_CLASS_BONUS.get(cls_raw, 0)
     bearish_penalty = BEARISH_CLASS_PENALTY.get(cls_raw, 0)
-    oer_penalty     = max(0.0, oer - 50.0) * 0.4
+    # OER 페널티는 composite에 이미 반영됨 (−0.10·max(0,OER−40)). 여기서 재차감하면
+    # 이중계상 (corr 0.979, 4배 slope) → stretched 리더 과소평가. T2 제거.
+    # 과열은 OVEREXTENDED(−8)/CYCLE_PEAK(−35) 분류 페널티(T3)로 충분히 반영됨.
+    oer_penalty     = 0.0
     consensus       = consensus_map.get(ticker, 0)
     consensus_bonus = consensus * 4
     ret_1m_bonus    = max(-5.0, min(5.0, ret_21d * 0.3))
     ytd_context     = 2 if ret_ytd > 10 else (-2 if ret_ytd < -10 else 0)
     sector_bonus    = 6 if sector in bull_sectors else (-6 if sector in bear_sectors else 0)
 
-    # ETF flag bonus (coverage-weighted reliability)
+    # ETF divergence-flag signal (coverage-weighted). ── RISK-ONLY as of 2026-07 ──
+    # A forward-return backtest (2015-2026, 24-ETF panel) showed NARROW_RALLY ETFs OUTPERFORM
+    # (+1.68%p fwd-1M, 73% win) while STEALTH_STRENGTH does NOT — i.e. scoring selection by this
+    # flag moved the WRONG way (it demoted the winners: SCHD/DVY). So it is NO LONGER added to
+    # BuyScore; it is surfaced as a concentration-risk indicator only (`etf_flag_risk` below).
     flag_weight = 1.0 if coverage >= 50 else (0.5 if coverage >= 30 else 0.0)
-    etf_flag_bonus = 0.0
+    etf_flag_risk = 0.0
     if asset == "etf" and flag:
-        etf_flag_bonus = ETF_FLAG_BONUS.get(flag, 0) * flag_weight
+        etf_flag_risk = ETF_FLAG_BONUS.get(flag, 0) * flag_weight
+
+    # ETF constituent-QVR weak-quality signal (Phase 4) — Q-anchored, high-coverage only.
+    # 2026-07: NO LONGER in BuyScore. ETF constituent-QVR is bottom-up aggregation, the same
+    # signal class rejected for ETF return-selection (etf_flag_bonus). Kept computed + surfaced
+    # as a risk/context indicator (`etf_qvr_risk`) — ETF selection is now purely momentum/tech.
+    etf_qvr_risk = 0.0
+    if asset == "etf" and row.get("qvr_etf_source") == "constituent_rollup_QC":
+        etf_cov = float(row.get("qvr_etf_cov") or 0)
+        q_roll = row.get("qvr_q_roll")
+        if q_roll is not None and etf_cov >= ETF_QVR_COV_FLOOR and float(q_roll) < ETF_QVR_Q_FLOOR:
+            etf_qvr_risk = ETF_WEAK_QVR_PENALTY
+
+    # Entry Timing 조정 (①②⑤) — ETS 중심 50 기준 ±. 필드 없으면 0(무영향).
+    entry_timing_adj = 0.0
+    _ets = row.get("entry_timing_score")
+    if _ets is not None:
+        try:
+            entry_timing_adj = (float(_ets) - 50.0) * ENTRY_TIMING_K
+        except (TypeError, ValueError):
+            entry_timing_adj = 0.0
+
+    # Pre-Momentum forming 보너스 (③) — composite 낮은 조기 후보를 매수 스코어에서 surface.
+    pre_mom_bonus = 0.0
+    if row.get("provisional_eligible"):
+        pre_mom_bonus = PRE_MOM_PROVISIONAL_BONUS
+    else:
+        try:
+            _pm = float(row.get("pre_momentum_score") or 0)
+            _ar = float(row.get("pm_agreement_ratio") or 0)
+            if _pm >= 45.0 and _ar >= 0.4:
+                pre_mom_bonus = PRE_MOM_FORMING_BONUS
+        except (TypeError, ValueError):
+            pass
 
     score = (
         composite + bullish_bonus - bearish_penalty - oer_penalty
         + consensus_bonus + ret_1m_bonus + ytd_context + sector_bonus
-        - weak_qvr_penalty + etf_flag_bonus
-    )
+        - weak_qvr_penalty
+        + entry_timing_adj + pre_mom_bonus
+    )   # etf_flag_bonus + etf_qvr_penalty BOTH REMOVED from BuyScore (bottom-up ETF signals
+        # rejected for ETF selection, 2026-07) — now risk-only (etf_flag_risk / etf_qvr_risk)
 
     return {
         "ticker": ticker,
@@ -175,6 +236,11 @@ def compute_buyscore(
         "hard_filter": rj["hard_filter"],
         "weak_qvr": rj["weak_qvr"],
         "qvr_score": rj["qvr_score"],
+        "entry_timing_status": row.get("entry_timing_status"),
+        # ETF divergence-flag concentration signal — NOT in BuyScore (risk display only, 2026-07)
+        "etf_flag_risk": {"flag": (flag if asset == "etf" else None), "signal": round(etf_flag_risk, 1)},
+        # ETF constituent-QVR weak-quality — NOT in BuyScore (risk display only, 2026-07)
+        "etf_qvr_risk": round(etf_qvr_risk, 1),
         "components": {
             "composite": composite,
             "bullish_bonus": bullish_bonus,
@@ -185,7 +251,10 @@ def compute_buyscore(
             "ytd_context": ytd_context,
             "sector_bonus": sector_bonus,
             "weak_qvr_penalty": weak_qvr_penalty,
-            "etf_flag_bonus": etf_flag_bonus,
+            "etf_flag_bonus": 0.0,   # RISK-ONLY (see etf_flag_risk) — removed from score 2026-07
+            "etf_qvr_penalty": 0.0,  # RISK-ONLY (see etf_qvr_risk) — removed from score 2026-07
+            "entry_timing_adj": round(entry_timing_adj, 1),
+            "pre_mom_bonus": pre_mom_bonus,
         },
     }
 

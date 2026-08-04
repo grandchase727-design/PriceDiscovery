@@ -20,9 +20,20 @@ LEGACY (14 WebSearch calls per swarm):
   → Same URLs hit multiple times
   → 14 queries total, ~5-10 unique URLs
 
-NEW (8-10 unified queries):
-  Phase 0 fact_collector → executes 8-10 high-coverage queries
+NEW (≈20 unified, authoritative-source queries):
+  Phase 0 fact_collector → executes the DEFAULT_QUERY_PLAN below
                           → produces shared evidence_pool
+
+  Macro coverage (all anchored to Trading Economics / FRED / OECD / S&P Global /
+  official central banks ECB·BOJ·BOE·BCB·BOK):
+    • Central-bank policy rates: Fed, ECB, BOE, BOJ, BOK, Brazil (Selic/BCB)
+    • PMI: US ISM + S&P Global + China (Caixin/NBS) manufacturing & services
+    • Growth/prices/labor (global): GDP, inflation (CPI), employment — US + Eurozone/
+      Japan/UK/Korea/China/India
+    • Fiscal & external: budget/fiscal balance, trade balance, exports/imports
+  Cross-asset coverage:
+    • Yield curve (UST 10Y/2Y), credit spreads (IG/HY OAS), DXY + FX, global yields
+      (JGB/Bund/Gilt), commodities (oil/gold/copper), VIX
   Phase 1 agents → no WebSearch tool; consume evidence_pool
                   → faster, deterministic, shared facts
 
@@ -42,29 +53,17 @@ When enabled:
 from __future__ import annotations
 
 import json
+import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Optional, Callable
 
 
-# Curated query plan — 10 queries covering all 5 agent domains
+# 뉴스 2쿼리만 유지 — 매크로/크로스에셋/센티먼트 제거 (scan cache가 이미 커버)
 DEFAULT_QUERY_PLAN = [
-    # Macro
-    {"id": "fed_decision",      "query": "Federal Reserve latest interest rate decision dot plot {asof}"},
-    {"id": "us_pmi_jobs",       "query": "US ISM manufacturing services PMI jobs report unemployment {asof}"},
-    # Cross-asset
-    {"id": "global_rates",      "query": "10-year Treasury yield VIX credit spreads DXY level {asof}"},
-    {"id": "boj_ecb_bok",       "query": "BOJ ECB BOK central bank rate decisions {asof}"},
-    {"id": "commodities",       "query": "oil gold copper commodities price levels {asof}"},
-    # Flow + sector
-    {"id": "etf_flows",         "query": "SPY QQQ IWM sector ETF inflows outflows weekly {asof}"},
-    {"id": "sector_leadership", "query": "S&P 500 sector leadership rotation YTD {asof}"},
-    # News (source-targeted to encourage diverse cross-source coverage)
-    {"id": "market_today",      "query": "stock market biggest story today {asof} site:finviz.com OR site:finance.yahoo.com OR site:reuters.com"},
-    {"id": "finviz_news",       "query": "finviz news headlines today {asof} pre-market movers analyst chatter"},
-    {"id": "korea_market",      "query": "한국 주식시장 코스피 코스닥 주요 뉴스 {asof}"},
-    # Sentiment (quantitative — feeds news_narrative + cross_asset agents)
-    {"id": "fear_greed_index",  "query": "CNN Fear and Greed Index current value {asof} previous week previous month historical comparison"},
-    # Geopolitical
-    {"id": "geopolitical",      "query": "geopolitical risk events tariffs sanctions {asof}"},
+    # ── Market news: 시장 주요 뉴스 ──
+    {"id": "market_today",    "query": "stock market biggest story today {asof} site:cnbc.com OR site:reuters.com OR site:finance.yahoo.com"},
+    # ── Korea: 코스피/코스닥 뉴스 ──
+    {"id": "korea_market",    "query": "코스피 코스닥 삼성전자 SK하이닉스 주요 뉴스 {asof} site:kedglobal.com OR site:tradingeconomics.com"},
 ]
 
 
@@ -147,21 +146,38 @@ EXECUTION RULES:
 Return STRICTLY a fenced ```json block."""
 
 
+def _collect_shard(asof: str, shard_plan: list, run_claude_fn: Callable, timeout: int) -> dict:
+    """Run one fact-collection shard (a subset of the query plan) as a single call."""
+    prompt = _build_fact_collector_prompt(asof, shard_plan)
+    result = run_claude_fn(prompt, timeout, 1)
+    if isinstance(result, dict) and result.get("evidence_pool"):
+        return result
+    return {"_failed": True, "evidence_pool": []}
+
+
 def run_fact_collector(
     asof: str,
     run_claude_fn: Callable,
     _emit_fn: Optional[Callable] = None,
     query_plan: list = None,
     timeout: int = 600,
+    max_workers: int = None,
 ) -> dict:
-    """Execute Phase 0 fact collection.
+    """Execute Phase 0 fact collection — parallel-sharded across collectors.
+
+    The query plan is split into `max_workers` shards that run CONCURRENTLY
+    (bounded by the subprocess semaphore), then their evidence pools are merged.
+    Identical queries/output to the single-call path — only wall-clock drops
+    (e.g. 20 queries serial ~8.5 min → 3 shards ~3 min). max_workers<=1 or a tiny
+    plan falls back to a single call.
 
     Args:
         asof: as-of date for queries (YYYY-MM-DD)
         run_claude_fn: claude -p subprocess wrapper
         _emit_fn: progress emission
         query_plan: optional override of DEFAULT_QUERY_PLAN
-        timeout: subprocess timeout in seconds (600 = 10 min)
+        timeout: per-call subprocess timeout (capped per-shard)
+        max_workers: shard count (default: CLAUDE_MAX_CONCURRENCY env, else 3)
 
     Returns:
         {as_of, n_queries_executed, evidence_pool, summary} or
@@ -172,19 +188,68 @@ def run_fact_collector(
             try: _emit_fn(phase, "fact_collector", status)
             except Exception: pass
 
-    _emit("phase0_fact", "started")
-    prompt = _build_fact_collector_prompt(asof, query_plan)
+    plan = query_plan if query_plan is not None else DEFAULT_QUERY_PLAN
+    if max_workers is None:
+        try: max_workers = max(1, int(os.environ.get("CLAUDE_MAX_CONCURRENCY", "2")))
+        except (TypeError, ValueError): max_workers = 2
 
-    try:
-        result = run_claude_fn(prompt, timeout, 2)
-        if not isinstance(result, dict) or not result.get("evidence_pool"):
-            _emit("phase0_fact", "failed_invalid_output")
-            return {"_failed": True, "_failure_reason": "no_evidence_pool", "evidence_pool": []}
-        _emit("phase0_fact", f"ok n={len(result.get('evidence_pool',[]))}")
-        return result
-    except Exception as e:
-        _emit("phase0_fact", f"failed: {str(e)[:100]}")
-        return {"_failed": True, "_failure_reason": str(e)[:200], "evidence_pool": []}
+    _emit("phase0_fact", "started")
+
+    # ── Single-call path (very small plan only) ──
+    # max_workers<=1 조건 제거: 단일 콜에 22쿼리가 몰리면 900s timeout에 걸리기 쉬움.
+    # 항상 sharding → 각 shard 프롬프트가 작아져 timeout 위험 감소.
+    # (max_workers=1이면 shard가 직렬 실행되지만 각 call이 더 짧아 fault isolation 효과)
+    if len(plan) <= 6:
+        try:
+            result = run_claude_fn(_build_fact_collector_prompt(asof, plan), timeout, 2)
+            if not isinstance(result, dict) or not result.get("evidence_pool"):
+                _emit("phase0_fact", "failed_invalid_output")
+                return {"_failed": True, "_failure_reason": "no_evidence_pool", "evidence_pool": []}
+            _emit("phase0_fact", f"ok n={len(result.get('evidence_pool',[]))}")
+            return result
+        except Exception as e:
+            _emit("phase0_fact", f"failed: {str(e)[:100]}")
+            return {"_failed": True, "_failure_reason": str(e)[:200], "evidence_pool": []}
+
+    # ── Parallel-sharded path ──
+    # 2쿼리: 각 shard가 1쿼리씩 → 단일 웹검색 1~2분, timeout 120s로 충분.
+    n_shards = min(max_workers, len(plan))
+    shards = [plan[i::n_shards] for i in range(n_shards)]
+    shard_timeout = min(timeout, 120)   # 쿼리 1개 → 2분이면 충분
+    _emit("phase0_fact", f"sharded n_shards={n_shards} ({len(plan)} queries)")
+
+    results: list = [None] * n_shards
+    with ThreadPoolExecutor(max_workers=n_shards) as ex:
+        fut_map = {ex.submit(_collect_shard, asof, shards[i], run_claude_fn, shard_timeout): i
+                   for i in range(n_shards)}
+        for fut in as_completed(fut_map):
+            i = fut_map[fut]
+            try:
+                results[i] = fut.result()
+            except Exception as e:
+                results[i] = {"_failed": True, "evidence_pool": [], "_err": str(e)[:120]}
+            ok = bool(results[i] and results[i].get("evidence_pool"))
+            _emit("phase0_fact", f"shard{i+1}/{n_shards} {'ok' if ok else 'empty'}")
+
+    # ── Merge evidence pools ──
+    merged_pool: list = []
+    n_exec = 0
+    summaries: list = []
+    n_ok = 0
+    for r in results:
+        if r and r.get("evidence_pool"):
+            merged_pool.extend(r["evidence_pool"])
+            n_exec += r.get("n_queries_executed", len(r["evidence_pool"]))
+            if r.get("summary"): summaries.append(r["summary"])
+            n_ok += 1
+
+    if not merged_pool:
+        _emit("phase0_fact", "failed_all_shards")
+        return {"_failed": True, "_failure_reason": "all shards empty", "evidence_pool": []}
+
+    _emit("phase0_fact", f"ok n={len(merged_pool)} ({n_ok}/{n_shards} shards)")
+    return {"as_of": asof, "n_queries_executed": n_exec, "evidence_pool": merged_pool,
+            "summary": " | ".join(summaries), "_shards": n_shards, "_shards_ok": n_ok}
 
 
 def filter_evidence_for_agent(evidence_pool: list, agent_name: str) -> list:

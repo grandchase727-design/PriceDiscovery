@@ -52,7 +52,21 @@ const AGENT_META: Record<string, { label: string; emoji: string }> = {
   news_narrative_analyst: { label: "News Narrative", emoji: "📰" },
 };
 
-function Phase1Card({ id, v }: { id: string; v: SwarmPhase1Verdict | undefined }) {
+// 내러티브 정량값 as-of/출처 표기 헬퍼 — 스웜 내러티브 수치는 생성시각(generated_at)의
+// 웹서치 스냅샷이라 라이브가 아님. 각 카드에 기준시각 + 실제 출처 도메인을 노출한다.
+function fmtAsOf(ts?: string): string {
+  if (!ts) return "";
+  // "2026-08-04T09:38:40" → "2026-08-04 09:38"
+  const m = /^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})/.exec(ts);
+  return m ? `${m[1]} ${m[2]}` : ts.slice(0, 16).replace("T", " ");
+}
+function domainOf(url?: string): string {
+  if (!url) return "";
+  try { return new URL(url).hostname.replace(/^www\./, ""); }
+  catch { return (url.split("/")[2] || url).replace(/^www\./, ""); }
+}
+
+function Phase1Card({ id, v, generatedAt }: { id: string; v: SwarmPhase1Verdict | undefined; generatedAt?: string }) {
   const meta = AGENT_META[id] || { label: id, emoji: "🤖" };
   if (!v) {
     return (
@@ -64,23 +78,37 @@ function Phase1Card({ id, v }: { id: string; v: SwarmPhase1Verdict | undefined }
   const rColor = ratingColor(v.rating);
   return (
     <div className="rounded p-3 h-full" style={{ backgroundColor: C.bg, border: `1px solid ${C.border}` }}>
-      <div className="flex items-center justify-between mb-2 pb-1.5 border-b" style={{ borderColor: C.border }}>
-        <span className="text-[13px] font-bold" style={{ color: C.text }}>
+      <div className="flex items-center justify-between gap-x-2 gap-y-1 mb-2 pb-1.5 border-b flex-wrap" style={{ borderColor: C.border }}>
+        <span className="text-[13px] font-bold whitespace-nowrap" style={{ color: C.text }}>
           {meta.emoji} {meta.label}
         </span>
-        <span className="text-[12px] flex items-center gap-1.5">
+        <span className="text-[12px] flex items-center gap-1.5 flex-wrap justify-end">
           <span className="px-2 py-0.5 rounded font-bold whitespace-nowrap"
                 style={{ backgroundColor: rColor + "25", color: rColor, border: `1px solid ${rColor}70` }}>
             {v.rating}
           </span>
-          <span style={{ color: C.gray }}>conf {Math.round(v.confidence * 100)}%</span>
+          <span className="whitespace-nowrap" style={{ color: C.gray }}>
+            conf {Math.round((v.confidence ?? 0) * 100)}%
+          </span>
+          {generatedAt && (
+            <span className="whitespace-nowrap px-1.5 py-0.5 rounded"
+                  title="이 분석의 정량값 기준시각 — 생성 당시 웹서치 스냅샷(라이브 아님)"
+                  style={{ backgroundColor: C.cyan + "18", color: C.cyan, border: `1px solid ${C.cyan}55`, fontSize: 10.5 }}>
+              📅 as-of {fmtAsOf(generatedAt)}
+            </span>
+          )}
         </span>
       </div>
 
       {v.narrative && (
-        <div className="text-[12px] leading-relaxed mb-2 whitespace-pre-wrap" style={{ color: C.text, lineHeight: 1.55 }}>
-          {v.narrative}
-        </div>
+        <>
+          <div className="text-[12px] leading-relaxed mb-1 whitespace-pre-wrap" style={{ color: C.text, lineHeight: 1.55 }}>
+            {v.narrative}
+          </div>
+          <div className="text-[10.5px] mb-2" style={{ color: C.gray }}>
+            📌 본문 정량값(금리·VIX·DXY·환율 등)은 <b>{fmtAsOf(generatedAt) || "생성 시각"}</b> 웹서치 스냅샷 — 라이브 아님, 장중 변동 가능
+          </div>
+        </>
       )}
 
       {v.key_signals && v.key_signals.length > 0 && (
@@ -105,11 +133,34 @@ function Phase1Card({ id, v }: { id: string; v: SwarmPhase1Verdict | undefined }
         </div>
       )}
 
-      {v.websearch_queries && v.websearch_queries.length > 0 && v.websearch_queries[0] !== "none" && (
-        <div className="mt-1 text-[11px]" style={{ color: C.gray }}>
-          🔍 {v.websearch_queries.join(" · ")}
-        </div>
-      )}
+      {(() => {
+        const results = ((v as any).websearch_results as Array<{ query?: string; url?: string; snippet?: string }>) || [];
+        const srcs = results.filter((r) => r && r.url);
+        const queries = (v.websearch_queries || []).filter((q) => q && q !== "none");
+        if (srcs.length === 0 && queries.length === 0) return null;
+        // dedup source domains, keep first URL per domain
+        const seen = new Set<string>();
+        const uniq = srcs.filter((r) => { const d = domainOf(r.url); if (seen.has(d)) return false; seen.add(d); return true; });
+        return (
+          <div className="mt-1.5 pt-1.5 border-t text-[10.5px]" style={{ borderColor: C.border, color: C.gray }}>
+            {uniq.length > 0 && (
+              <div className="flex items-start gap-1 flex-wrap">
+                <span style={{ color: C.gray }}>🔗 출처:</span>
+                {uniq.map((r, i) => (
+                  <a key={i} href={r.url} target="_blank" rel="noopener noreferrer"
+                     title={r.query || r.url}
+                     style={{ color: C.cyan, textDecoration: "underline", textUnderlineOffset: 2 }}>
+                    {domainOf(r.url)}
+                  </a>
+                ))}
+              </div>
+            )}
+            {queries.length > 0 && (
+              <div className="mt-0.5" style={{ color: C.gray }}>🔍 {queries.join(" · ")}</div>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 }
@@ -264,11 +315,11 @@ export function SwarmAnalysis() {
               Phase 1 — 5 Domain Analysts (parallel, WebSearch + WebFetch)
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-2">
-              <Phase1Card id="macro_analyst"          v={result.phase1.macro_analyst} />
-              <Phase1Card id="cross_asset_analyst"    v={result.phase1.cross_asset_analyst} />
-              <Phase1Card id="sector_theme_analyst"   v={result.phase1.sector_theme_analyst} />
-              <Phase1Card id="flow_momentum_analyst"  v={result.phase1.flow_momentum_analyst} />
-              <Phase1Card id="news_narrative_analyst" v={result.phase1.news_narrative_analyst} />
+              <Phase1Card id="macro_analyst"          v={result.phase1.macro_analyst}          generatedAt={result.generated_at} />
+              <Phase1Card id="cross_asset_analyst"    v={result.phase1.cross_asset_analyst}    generatedAt={result.generated_at} />
+              <Phase1Card id="sector_theme_analyst"   v={result.phase1.sector_theme_analyst}   generatedAt={result.generated_at} />
+              <Phase1Card id="flow_momentum_analyst"  v={result.phase1.flow_momentum_analyst}  generatedAt={result.generated_at} />
+              <Phase1Card id="news_narrative_analyst" v={result.phase1.news_narrative_analyst} generatedAt={result.generated_at} />
             </div>
           </div>
 
@@ -831,12 +882,10 @@ function PMTable({ title, color, picks, isShort }:
   );
 }
 
-type HorizonKey = "tactical" | "core" | "strategic";
+type HorizonKey = "core";
 
 const HORIZON_META: Record<HorizonKey, { label: string; emoji: string; days: string; sub: string; color: string }> = {
-  tactical:  { label: "Tactical",  emoji: "🚀", days: "5d",  sub: "1-week catalysts · News + Cross-Asset + Flow",       color: C.amber },
-  core:      { label: "Core",      emoji: "⚓", days: "21d", sub: "1-month regime · all Phase 1 + Phase 3 (Phase 4 diff)", color: C.purple },
-  strategic: { label: "Strategic", emoji: "🌐", days: "63d", sub: "3-month thesis · Macro + Sector/Theme dominant",       color: C.cyan },
+  core: { label: "Core", emoji: "⚓", days: "21d", sub: "1-month regime · all Phase 1 + Phase 3 (Phase 4 diff)", color: C.purple },
 };
 
 function Phase5Output({ pm, p4 }:
@@ -854,18 +903,10 @@ function Phase5Output({ pm, p4 }:
   };
 
   const horizonCounts = {
-    tactical:  (pm.horizons?.tactical?.long_stocks?.length  || 0) +
-               (pm.horizons?.tactical?.long_etfs?.length    || 0) +
-               (pm.horizons?.tactical?.short_stocks?.length || 0) +
-               (pm.horizons?.tactical?.short_etfs?.length   || 0),
-    core:      (pm.horizons?.core?.long_stocks?.length  || pm.long_stocks?.length  || 0) +
-               (pm.horizons?.core?.long_etfs?.length    || pm.long_etfs?.length    || 0) +
-               (pm.horizons?.core?.short_stocks?.length || pm.short_stocks?.length || 0) +
-               (pm.horizons?.core?.short_etfs?.length   || pm.short_etfs?.length   || 0),
-    strategic: (pm.horizons?.strategic?.long_stocks?.length  || 0) +
-               (pm.horizons?.strategic?.long_etfs?.length    || 0) +
-               (pm.horizons?.strategic?.short_stocks?.length || 0) +
-               (pm.horizons?.strategic?.short_etfs?.length   || 0),
+    core: (pm.horizons?.core?.long_stocks?.length  || pm.long_stocks?.length  || 0) +
+          (pm.horizons?.core?.long_etfs?.length    || pm.long_etfs?.length    || 0) +
+          (pm.horizons?.core?.short_stocks?.length || pm.short_stocks?.length || 0) +
+          (pm.horizons?.core?.short_etfs?.length   || pm.short_etfs?.length   || 0),
   };
 
   if (pm._error) {
@@ -886,7 +927,7 @@ function Phase5Output({ pm, p4 }:
          style={{ backgroundColor: C.bg, border: `2px solid ${C.purple}80` }}>
       <div className="flex items-center justify-between mb-2 pb-2 border-b" style={{ borderColor: C.border }}>
         <div className="text-[13px] uppercase font-bold" style={{ color: C.purple }}>
-          🎯 Phase 5 — PM Agent (3-horizon portfolio-constructed picks)
+          🎯 Phase 5 — PM Agent (Core horizon · 21d)
         </div>
         <div className="flex items-center gap-3 text-[11px]" style={{ color: C.gray }}>
           <span>Legend:</span>
@@ -897,99 +938,8 @@ function Phase5Output({ pm, p4 }:
         </div>
       </div>
 
-      {/* Iterative Swarm — Convergence summary (Option 2: 5-round convergent) */}
-      {pm.iteration && (
-        <div className="mb-3 px-3 py-2 rounded"
-             style={{ backgroundColor: C.cyan + "12",
-                      border: `1.5px solid ${C.cyan}60`,
-                      borderLeft: `5px solid ${C.cyan}` }}>
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-[13px] uppercase font-bold tracking-wide" style={{ color: C.cyan }}>
-              🔄 Iterative Swarm — Convergence
-            </div>
-            <div className="text-[11px]" style={{ color: C.gray }}>
-              {pm.iteration.converged ? (
-                <span style={{ color: C.green, fontWeight: "bold" }}>
-                  ✓ Converged at Round {pm.iteration.converged_at_round} (Δ &lt; {(pm.iteration.convergence_threshold * 100).toFixed(0)}%)
-                </span>
-              ) : (
-                <span style={{ color: C.amber, fontWeight: "bold" }}>
-                  ⚠ Max rounds reached ({pm.iteration.max_rounds}) without convergence
-                </span>
-              )}
-            </div>
-          </div>
-          {/* Per-round history table */}
-          <table className="w-full text-[12px]" style={{ borderCollapse: "collapse" }}>
-            <thead>
-              <tr style={{ backgroundColor: C.bgAlt }}>
-                <th className="text-left px-2 py-1" style={{ color: C.gray }}>Round</th>
-                <th className="text-right px-2 py-1" style={{ color: C.gray }}>Tickers</th>
-                <th className="text-right px-2 py-1" style={{ color: C.gray }}>Δ</th>
-                <th className="text-right px-2 py-1" style={{ color: C.gray }}>Obj</th>
-                <th className="text-right px-2 py-1" style={{ color: C.gray }}
-                    title="Pinned picks (no objections, survival-bias protected with age-aware re-audit)">
-                  📌Pin
-                </th>
-                <th className="text-right px-2 py-1" style={{ color: C.gray }}
-                    title="Picks added this round (PM's response to objections)">
-                  ➕
-                </th>
-                <th className="text-right px-2 py-1" style={{ color: C.gray }}
-                    title="Picks removed this round (rejected, retained in rejected_pool for future reconsideration)">
-                  ➖
-                </th>
-                <th className="text-left px-2 py-1" style={{ color: C.gray }}>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pm.iteration.history.map((r) => {
-                const isConverged = pm.iteration!.converged && r.round === pm.iteration!.converged_at_round;
-                const deltaC = r.delta < pm.iteration!.convergence_threshold ? C.green
-                             : r.delta < 0.30 ? C.amber : C.red;
-                return (
-                  <tr key={r.round} style={{ borderTop: `1px solid ${C.border}40` }}>
-                    <td className="px-2 py-1 font-bold" style={{ color: isConverged ? C.green : C.text }}>
-                      R{r.round}
-                    </td>
-                    <td className="text-right px-2 py-1 font-mono" style={{ color: C.text }}>{r.n_tickers}</td>
-                    <td className="text-right px-2 py-1 font-mono" style={{ color: deltaC, fontWeight: "bold" }}>
-                      {r.round === 1 ? "—" : `${(r.delta * 100).toFixed(1)}%`}
-                    </td>
-                    <td className="text-right px-2 py-1 font-mono"
-                        style={{ color: r.n_objections > 50 ? C.red : r.n_objections > 20 ? C.amber : C.gray }}>
-                      {r.n_objections}
-                    </td>
-                    <td className="text-right px-2 py-1 font-mono" style={{ color: C.cyan }}>
-                      {r.n_pinned ?? "—"}
-                      {r.n_newly_pinned ? <span style={{ color: C.green, fontSize: "10px" }}> (+{r.n_newly_pinned})</span> : null}
-                    </td>
-                    <td className="text-right px-2 py-1 font-mono"
-                        style={{ color: C.green, fontSize: "11px" }}
-                        title={(r.added_tickers || []).slice(0, 10).join(", ")}>
-                      {r.added_tickers?.length ?? "—"}
-                    </td>
-                    <td className="text-right px-2 py-1 font-mono"
-                        style={{ color: C.red, fontSize: "11px" }}
-                        title={(r.removed_tickers || []).slice(0, 10).join(", ")}>
-                      {r.removed_tickers?.length ?? "—"}
-                    </td>
-                    <td className="px-2 py-1 text-[11px]" style={{ color: C.gray }}>
-                      {isConverged ? "✓ Converged" : r.round === pm.iteration!.history.length ? "▶ Final" : "→ continued"}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          <div className="mt-1.5 text-[11px]" style={{ color: C.gray, fontStyle: "italic", lineHeight: 1.5 }}>
-            ⓘ <b>4-Fix Iterative Swarm:</b> Δ&lt;{(pm.iteration.convergence_threshold * 100).toFixed(0)}% + quality gate (Fix 1) ·
-            Sequential memory + rejected_pool (Fix 3) ·
-            📌Pin no-objection picks with age≤3 + 20% random re-audit (Fix 4 survival-bias prevention) ·
-            Wildcard injection from outside pool + Pareto trade-off framing (Fix 5 overfitting prevention).
-          </div>
-        </div>
-      )}
+      {/* Iterative Swarm — Convergence panel removed 2026-07: outer PM iteration
+          loop flattened to single-pass; per-ticker debate is the sole refinement. */}
 
       {/* ───── Option C: Per-Ticker Debate Summary ───── */}
       {pm.per_ticker_debate_summary && (

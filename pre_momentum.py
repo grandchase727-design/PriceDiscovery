@@ -1019,6 +1019,11 @@ class PreMomentumOrchestrator:
         self.history: dict = cache.get("history", {})
         self.fundamentals: dict = cache.get("fundamentals", {})  # injected by api.py
         self.indices: dict = _build_indices(self.results)
+        # Phase 3 (2026-07): {ticker: rollup_qvr} for ETFs — replaces the flat-50 the
+        # QVR agent returns for ETFs, so a strong-constituent ETF can finally clear the
+        # strict >50 agreement vote. Empty {} → behaviour identical to before. api.py
+        # populates this from the constituent-QVR rollup only when _ETF_QVR_FEED_PREMOM.
+        self.qvr_override: dict = cache.get("qvr_etf_override", {}) or {}
 
     def run(self) -> dict:
         """Execute the full pre-momentum detection pipeline."""
@@ -1178,6 +1183,19 @@ class PreMomentumOrchestrator:
                 "quality": 50.0, "value": 50.0, "revision": 50.0,
                 "net_30d": 0, "ratio_30d": 50, "n_analysts": 0,
             }, "QVR agent unavailable"
+
+        # Phase 3 override — ETF constituent-QVR rollup replaces the agent's flat 50
+        # (the agent has no fundamentals for ETFs). Only high-coverage ETFs are in the
+        # map (api.py gates on source==constituent_rollup_QC), so this cannot inject a
+        # spurious vote from a thinly-covered ETF. Non-ETF / uncovered tickers: no-op.
+        _ovr = self.qvr_override.get(r.get("ticker"))
+        if _ovr is not None:
+            try:
+                qvr_score = float(_ovr)
+                qvr_signals = {**(qvr_signals or {}), "qvr_source": "constituent_rollup_QC"}
+                qvr_summary = f"ETF 구성종목 QVR 롤업 {qvr_score:.1f}"
+            except (TypeError, ValueError):
+                pass
 
         # Final weighted score
         pre_momentum_score = (

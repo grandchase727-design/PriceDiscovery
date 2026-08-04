@@ -537,7 +537,7 @@ def _unified_prompt(items_by_category: dict, market_context: str = "") -> str:
     pool_str = "\n".join(pool_lines)
 
     # Build per-horizon ticker pools for horizon-specific commentary sections
-    by_horizon: dict[str, list[dict]] = {"tactical": [], "core": [], "strategic": []}
+    by_horizon: dict[str, list[dict]] = {"core": []}
     for r in all_items:
         h = r.get("horizon")
         if h in by_horizon:
@@ -563,9 +563,7 @@ def _unified_prompt(items_by_category: dict, market_context: str = "") -> str:
             )
         return "\n".join(lines)
 
-    tactical_pool   = _fmt_horizon_pool("tactical")
-    core_pool       = _fmt_horizon_pool("core")
-    strategic_pool  = _fmt_horizon_pool("strategic")
+    core_pool = _fmt_horizon_pool("core")
 
     return f"""당신은 시니어 포트폴리오 전략가입니다. 아래 매수 Final List 전체 (오늘 진입 / 보유 중 / 청산 후보 / 신규 후보)를 통합 분석하여 **정확히 한국어 12,000자 (±400자 허용)** 의 매우 자세한 Executive Commentary를 작성하세요.
 
@@ -577,16 +575,10 @@ def _unified_prompt(items_by_category: dict, market_context: str = "") -> str:
 {category_summary}
 
 ═══════════════════════════════════════════════════════════════════
-## 호라이즌별 풀 (tactical 5d / core 21d / strategic 63d)
+## 호라이즌별 풀 (core 21d)
 ═══════════════════════════════════════════════════════════════════
-[TACTICAL 5d]
-{tactical_pool}
-
 [CORE 21d]
 {core_pool}
-
-[STRATEGIC 63d]
-{strategic_pool}
 
 ═══════════════════════════════════════════════════════════════════
 ## 전체 종목 풀 (Top-3 유심히 보아야 할 종목 선정용)
@@ -637,20 +629,10 @@ Regime-Flip이 sector-wide인지 ticker-specific인지 (매크로 vs 개별)
 시장 신호 모니터링 포인트
 
 ═══════════════════════════════════════════════════════════════════
-## 호라이즌별 분석 (NEW — 시간축별 깊이 있는 분석)
+## 호라이즌별 분석
 ═══════════════════════════════════════════════════════════════════
 
-[섹션 6: ⚡ TACTICAL 5d 호라이즌 종합 분석 + 전망 — 약 1,200자]
-Tactical (5-day) 호라이즌 종목 풀 전체에 대한 종합 분석.
-- 5일 단기 전략의 핵심 thesis (단기 모멘텀 + 기술적 브레이크아웃 + 즉시 catalyst)
-- Tactical 종목들의 공통적 시그널 (예: FORMATION 분류 비율, OER 평균, RSS short)
-- 1주일 내 예상 시나리오 (가격 행동, 실현 가능한 수익률 분포)
-- Tactical에서만 등장하는 종목 vs Core/Strategic과 중복되는 종목 구분
-- 단기 catalyst (실적, 매크로 이벤트, 기술적 이정표) 임박도
-- Tactical 호라이즌만의 위험 요인 (whipsaw, false breakout, 유동성 갑작스러운 변화)
-- 5일 후 어떤 종목이 ENTERED → HOLDING으로 안착할지 예측
-
-[섹션 7: 📊 CORE 21d 호라이즌 종합 분석 + 전망 — 약 1,200자]
+[섹션 6: 📊 CORE 21d 호라이즌 종합 분석 + 전망 — 약 1,200자]
 Core (21-day, 1개월) 호라이즌 종목 풀 전체에 대한 종합 분석.
 - 1개월 중기 전략의 핵심 thesis (추세 확립 + 펀더멘털 + 섹터 로테이션 정합)
 - Core 종목들의 공통적 시그널 (예: CONTINUATION 분류, RSS long, QVR 분포)
@@ -658,17 +640,7 @@ Core (21-day, 1개월) 호라이즌 종목 풀 전체에 대한 종합 분석.
 - Core 호라이즌의 portfolio 안정성 기여 (핵심 보유 axis 역할)
 - 1개월 중기 catalyst (분기 실적, FOMC, ECB 결정) 영향
 - Core 호라이즌만의 위험 요인 (regime change, theme exhaustion)
-- 1개월 후 어떤 종목이 strategic으로 승격되거나 청산될지 예측
-
-[섹션 8: 🎯 STRATEGIC 63d 호라이즌 종합 분석 + 전망 — 약 1,200자]
-Strategic (63-day, 3개월) 호라이즌 종목 풀 전체에 대한 종합 분석.
-- 3개월 장기 전략의 핵심 thesis (구조적 변화 + 매크로 cycle + secular trend)
-- Strategic 종목들의 공통적 시그널 (장기 추세 안정성, 펀더멘털 우위, 매크로 정합)
-- 3개월 내 예상 시나리오 (cyclical/secular 분리, 글로벌 자본 흐름)
-- Strategic 호라이즌의 portfolio anchor 역할 (장기 베타 + 알파)
-- 3개월 장기 catalyst (대선, 정책 변화, sector cycle 진행) 영향
-- Strategic 호라이즌만의 위험 요인 (long-term theme reversal, 매크로 regime change)
-- 3개월 후 portfolio의 sector tilt가 어떻게 변할지 예측
+- 1개월 후 어떤 종목이 청산될지 예측
 
 ═══════════════════════════════════════════════════════════════════
 ## 역사적 유사 구간 분석 (NEW)
@@ -725,7 +697,7 @@ Strategic (63-day, 3개월) 호라이즌 종목 풀 전체에 대한 종합 분�
 - Asymmetry (잠재 상승 vs 하방 risk 비대칭)
 - Catalyst 임박성 (실적/규제/매크로 이벤트)
 - Sector rotation alignment (현재 시장 leadership과 정합)
-- Multi-horizon 일치 (tactical+core+strategic 모두 등장 → 강한 확신)
+- Core 호라이즌 확신도 (UNANIMOUS/MAJORITY 비중, debate 결과)
 - Risk-adjusted attractiveness
 - **섹션 9의 과거 유사 구간 학습 반영** (해당 패턴에서 outperform한 섹터/스타일과 정합되는 종목 우선)
 
@@ -738,7 +710,7 @@ Strategic (63-day, 3개월) 호라이즌 종목 풀 전체에 대한 종합 분�
 - 이번 매수 Final List가 말하는 다음 1-12주 시장 시나리오
 - Base case / Bull case / Bear case 시나리오 별 portfolio 대응
 - **각 시나리오의 확률은 섹션 9 과거 유사 사례의 분포에서 도출 (예: 사례 1·2 모두 상승 마감 → Base case 확률 ↑)**
-- 호라이즌별 비중 배분 권고 (tactical/core/strategic 가중치)
+- Core 21d 호라이즌 비중 배분 권고
 - 종합적 실행 우선순위 (오늘 / 1주 / 1개월 / 3개월)
 - 모니터링해야 할 거시 지표/event (Fed dot plot, ECB rate, BOJ stance, HY OAS, VIX, DXY)
 - Cross-asset 정합성 확인 포인트
@@ -748,8 +720,8 @@ Strategic (63-day, 3개월) 호라이즌 종목 풀 전체에 대한 종합 분�
 ## 출력 요구사항
 ═══════════════════════════════════════════════════════════════════
 - 정확히 한국어 12,000자 (±400자 허용)
-- 모든 11개 섹션 포함 (1: 거시, 2-5: 카테고리, 6-8: 호라이즌, 9: 과거 유사 구간 (NEW), 10: Top-3, 11: 액션 플랜)
-- 각 섹션 시작에 ## 헤더 사용 (예: "## 섹션 6: ⚡ TACTICAL 5d 호라이즌 종합 분석", "## 섹션 9: 🕰 과거 유사 구간 분석")
+- 모든 9개 섹션 포함 (1: 거시, 2-5: 카테고리, 6: 호라이즌 (Core 21d), 7: 과거 유사 구간, 8: Top-3, 9: 액션 플랜)
+- 각 섹션 시작에 ## 헤더 사용 (예: "## 섹션 6: 📊 CORE 21d 호라이즌 종합 분석", "## 섹션 7: 🕰 과거 유사 구간 분석")
 - 구체적 종목 ticker 풍부히 언급 (★★★ UNANIMOUS 위주)
 - 객관적 분석 톤 (sales talk 금지)
 - Top-3는 1순위/2순위/3순위 명확히 구분 (🥇🥈🥉)
@@ -880,7 +852,7 @@ def _stock_prompt(stocks_by_cat: dict, market_context: str = "") -> str:
     category_summary = _summarize_categories_for_unified(stocks_by_cat)
 
     # Build per-horizon pools
-    by_horizon: dict[str, list[dict]] = {"tactical": [], "core": [], "strategic": []}
+    by_horizon: dict[str, list[dict]] = {"core": []}
     all_stocks: list[dict] = []
     for cat in ("ENTERED", "NEW", "HOLDING", "EXIT_PENDING"):
         for r in stocks_by_cat.get(cat) or []:
@@ -928,16 +900,10 @@ ETF는 별도 commentary로 분석되므로 이 commentary에서는 **개별 종
 {category_summary}
 
 ═══════════════════════════════════════════════════════════════════
-## 호라이즌별 Stock 풀
+## 호라이즌별 Stock 풀 (Core 21d)
 ═══════════════════════════════════════════════════════════════════
-[TACTICAL 5d]
-{_fmt_pool('tactical')}
-
 [CORE 21d]
 {_fmt_pool('core')}
-
-[STRATEGIC 63d]
-{_fmt_pool('strategic')}
 
 ═══════════════════════════════════════════════════════════════════
 ## 전체 Stock 풀 (Top-3 선정용)
@@ -973,10 +939,8 @@ NEW 카테고리 Stock의 emerging theme + 펀더멘털 변화 시그널
 HOLDING Stock의 평균 보유 일수, profit-taking 검토
 EXIT_PENDING Stock의 청산 우선순위 (실적 미스, 가이던스 하향, 펀더멘털 악화)
 
-[섹션 S5: ⚡ Stock 호라이즌별 (Tactical / Core / Strategic) — 약 900자]
-- Tactical Stock (5d): 단기 catalyst + 기술적 entry/stop
-- Core Stock (21d): 1개월 실적 cycle + 펀더멘털 thesis
-- Strategic Stock (63d): 분기 실적 + 산업 cycle 위치
+[섹션 S5: 📊 Stock Core 21d 호라이즌 분석 — 약 900자]
+- Core Stock (21d): 1개월 실적 cycle + 펀더멘털 thesis + 진입/청산 전략
 
 [섹션 S6: 🌟 Stock Top-3 유심히 보아야 할 종목 — 약 1,500자]
 Stock 전용 Top-3 (ETF는 제외) — 약 500자씩:
@@ -1012,7 +976,7 @@ def _etf_prompt(etfs_by_cat: dict, market_context: str = "") -> str:
     phase1_briefing = _build_phase1_briefing()
     category_summary = _summarize_categories_for_unified(etfs_by_cat)
 
-    by_horizon: dict[str, list[dict]] = {"tactical": [], "core": [], "strategic": []}
+    by_horizon: dict[str, list[dict]] = {"core": []}
     all_etfs: list[dict] = []
     for cat in ("ENTERED", "NEW", "HOLDING", "EXIT_PENDING"):
         for r in etfs_by_cat.get(cat) or []:
@@ -1060,16 +1024,10 @@ def _etf_prompt(etfs_by_cat: dict, market_context: str = "") -> str:
 {category_summary}
 
 ═══════════════════════════════════════════════════════════════════
-## 호라이즌별 ETF 풀
+## 호라이즌별 ETF 풀 (Core 21d)
 ═══════════════════════════════════════════════════════════════════
-[TACTICAL 5d]
-{_fmt_pool('tactical')}
-
 [CORE 21d]
 {_fmt_pool('core')}
-
-[STRATEGIC 63d]
-{_fmt_pool('strategic')}
 
 ═══════════════════════════════════════════════════════════════════
 ## 전체 ETF 풀 (Top-3 선정용)
@@ -1105,10 +1063,8 @@ ETF 구성 분석 (top holdings concentration, region tilt, factor exposure)
 HOLDING ETF의 평균 보유 일수, 섹터 비중 조절
 EXIT_PENDING ETF의 청산 우선순위 (섹터 약세, region 약세, factor reversal)
 
-[섹션 E5: 🎯 ETF 호라이즌별 (Tactical / Core / Strategic) — 약 900자]
-- Tactical ETF (5d): 단기 sector rotation + factor 회전
-- Core ETF (21d): 1개월 sector cycle + region/style 비중
-- Strategic ETF (63d): 분기 매크로 cycle + secular trend
+[섹션 E5: 📊 ETF Core 21d 호라이즌 분석 — 약 900자]
+- Core ETF (21d): 1개월 sector cycle + region/style 비중 + 섹터 로테이션 방향
 
 [섹션 E6: 🌟 ETF Top-3 유심히 보아야 할 종목 — 약 1,500자]
 ETF 전용 Top-3 (개별 stock 제외) — 약 500자씩:

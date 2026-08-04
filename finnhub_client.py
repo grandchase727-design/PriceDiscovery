@@ -75,10 +75,13 @@ class FinnhubClient:
             pass
 
     def _wait_if_needed(self) -> None:
-        """If remaining is low, sleep until reset window passes."""
+        """If remaining is low, sleep until reset window passes.
+        wait는 60s로 캡 — client state drift로 reset_at이 먼 미래로 잘못 잡혀도
+        호출당 1분 넘게 블록되지 않도록 방지."""
         if self._remaining <= 1 and self._reset_at > 0:
             now = time.time()
             wait = max(0.0, self._reset_at - now + 0.5)
+            wait = min(wait, 60.0)   # 절대 1분 초과 sleep 금지
             if wait > 0:
                 time.sleep(wait)
 
